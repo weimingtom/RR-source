@@ -1,0 +1,9 @@
+*.o
+*~
+*_client
+*_server
+/enet/.deps/*
+/enet/.libs/*
+/enet/autom4te.cache/*
+*.gch
+
