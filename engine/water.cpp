@@ -66,12 +66,14 @@ void rendercaustics(float surface, float syl, float syr)
     glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
     setupcaustics(0, surface);
     SETSHADER(caustics);
-    glBegin(GL_TRIANGLE_STRIP);
-    glVertex2f(1, -1);
-    glVertex2f(-1, -1);
-    glVertex2f(1, syr);
-    glVertex2f(-1, syl);
-    glEnd();
+    gle::defvertex(2);
+    gle::begin(GL_TRIANGLE_STRIP);
+    gle::attribf(1, -1);
+    gle::attribf(-1, -1);
+    gle::attribf(1, syr);
+    gle::attribf(-1, syl);
+    gle::end();
+    gle::disable();
 }
 
 void renderwaterfog(int mat, float surface)
@@ -119,12 +121,14 @@ void renderwaterfog(int mat, float surface)
     GLOBALPARAM(waterfogmatrix, m);
 
     SETSHADER(waterfog);
-    glBegin(GL_TRIANGLE_STRIP);
-    glVertex2f(1, -1);
-    glVertex2f(-1, -1);
-    glVertex2f(1, syr);
-    glVertex2f(-1, syl);
-    glEnd();
+    gle::defvertex(2);
+    gle::begin(GL_TRIANGLE_STRIP);
+    gle::attribf(1, -1);
+    gle::attribf(-1, -1);
+    gle::attribf(1, syr);
+    gle::attribf(-1, syl);
+    gle::end();
+    gle::disable();
 
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
@@ -140,7 +144,7 @@ static float whscale, whoffset;
 #define VERTW(vertw, defbody, body) \
     static inline void def##vertw() \
     { \
-        varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT); \
+        gle::defvertex(); \
         defbody; \
     } \
     static inline void vertw(float v1, float v2, float v3) \
@@ -149,19 +153,19 @@ static float whscale, whoffset;
         float s = angle - int(angle) - 0.5f; \
         s *= 8 - fabs(s)*16; \
         float h = WATER_AMPLITUDE*s-WATER_OFFSET; \
-        varray::attrib<float>(v1, v2, v3+h); \
+        gle::attribf(v1, v2, v3+h); \
         body; \
     }
 #define VERTWN(vertw, defbody, body) \
     static inline void def##vertw() \
     { \
-        varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT); \
+        gle::defvertex(); \
         defbody; \
     } \
     static inline void vertw(float v1, float v2, float v3) \
     { \
         float h = -WATER_OFFSET; \
-        varray::attrib<float>(v1, v2, v3+h); \
+        gle::attribf(v1, v2, v3+h); \
         body; \
     }
 #define VERTWT(vertwt, defbody, body) \
@@ -173,34 +177,34 @@ static float whscale, whoffset;
     })
 
 VERTW(vertwt, {
-    varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    gle::deftexcoord0();
 }, {
-    varray::attrib<float>(v1/8.0f, v2/8.0f);
+    gle::attribf(v1/8.0f, v2/8.0f);
 })
 VERTWN(vertwtn, {
-    varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    gle::deftexcoord0();
 }, {
-    varray::attrib<float>(v1/8.0f, v2/8.0f);
+    gle::attribf(v1/8.0f, v2/8.0f);
 })
 
 static float lavaxk = 1.0f, lavayk = 1.0f, lavascroll = 0.0f;
 
 VERTW(vertl, {
-    varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    gle::deftexcoord0();
 }, {
-    varray::attrib<float>(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
+    gle::attribf(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
 })
 VERTWN(vertln, {
-    varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
+    gle::deftexcoord0();
 }, {
-    varray::attrib<float>(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
+    gle::attribf(lavaxk*(v1+lavascroll), lavayk*(v2+lavascroll));
 })
 
 #define renderwaterstrips(vertw, z) { \
     def##vertw(); \
     for(int x = wx1; x<wx2; x += subdiv) \
     { \
-        varray::begin(GL_TRIANGLE_STRIP); \
+        gle::begin(GL_TRIANGLE_STRIP); \
         vertw(x,        wy1, z); \
         vertw(x+subdiv, wy1, z); \
         for(int y = wy1; y<wy2; y += subdiv) \
@@ -208,7 +212,7 @@ VERTWN(vertln, {
             vertw(x,        y+subdiv, z); \
             vertw(x+subdiv, y+subdiv, z); \
         } \
-        xtraverts += varray::end(); \
+        xtraverts += gle::end(); \
     } \
 }
 
@@ -303,7 +307,7 @@ uint renderwaterlod(int x, int y, int z, uint size, int mat)
 
 #define renderwaterquad(vertwn, z) \
     { \
-        if(varray::data.empty()) { def##vertwn(); varray::begin(GL_QUADS); } \
+        if(gle::data.empty()) { def##vertwn(); gle::begin(GL_QUADS); } \
         vertwn(x, y, z); \
         vertwn(x+rsize, y, z); \
         vertwn(x+rsize, y+csize, z); \
@@ -465,12 +469,12 @@ static float wfwave, wfscroll, wfxscale, wfyscale;
 
 static void renderwaterfall(const materialsurface &m, float offset, const vec *normal = NULL)
 {
-    if(varray::data.empty())
+    if(gle::data.empty())
     {
-        varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
-        if(normal) varray::defattrib(varray::ATTRIB_NORMAL, 3, GL_FLOAT);
-        varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
-        varray::begin(GL_QUADS);
+        gle::defvertex();
+        if(normal) gle::defnormal();
+        gle::deftexcoord0();
+        gle::begin(GL_QUADS);
     }
     float x = m.o.x, y = m.o.y, zmin = m.o.z, zmax = zmin;
     if(m.ends&1) zmin += -WATER_OFFSET-WATER_AMPLITUDE;
@@ -482,19 +486,19 @@ static void renderwaterfall(const materialsurface &m, float offset, const vec *n
 #define GENFACEVERTX(orient, vert, mx,my,mz, sx,sy,sz) \
             { \
                 vec v(mx sx, my sy, mz sz); \
-                varray::attrib<float>(v.x, v.y, v.z); \
+                gle::attribf(v.x, v.y, v.z); \
                 GENFACENORMAL \
-                varray::attrib<float>(wfxscale*v.y, -wfyscale*(v.z+wfscroll)); \
+                gle::attribf(wfxscale*v.y, -wfyscale*(v.z+wfscroll)); \
             }
 #undef GENFACEVERTY
 #define GENFACEVERTY(orient, vert, mx,my,mz, sx,sy,sz) \
             { \
                 vec v(mx sx, my sy, mz sz); \
-                varray::attrib<float>(v.x, v.y, v.z); \
+                gle::attribf(v.x, v.y, v.z); \
                 GENFACENORMAL \
-                varray::attrib<float>(wfxscale*v.x, -wfyscale*(v.z+wfscroll)); \
+                gle::attribf(wfxscale*v.x, -wfyscale*(v.z+wfscroll)); \
             }
-#define GENFACENORMAL varray::attrib<float>(n.x, n.y, n.z);
+#define GENFACENORMAL gle::attribf(n.x, n.y, n.z);
     if(normal)
     {
         vec n = *normal;
@@ -539,7 +543,7 @@ void renderlava()
 
             vector<materialsurface> &surfs = lavasurfs[k];
             loopv(surfs) renderlava(surfs[i], tex, lslot.scale);
-            xtraverts += varray::end();
+            xtraverts += gle::end();
         }
 
         if(drawtex != DRAWTEX_MINIMAP && lavafallsurfs[k].length())
@@ -564,7 +568,7 @@ void renderlava()
                 materialsurface &m = surfs[i];
                 renderwaterfall(m, 0.1f, &matnormals[m.orient]);
             }
-            xtraverts += varray::end();
+            xtraverts += gle::end();
         }
     }
 }
@@ -617,7 +621,7 @@ void renderwaterfalls()
             materialsurface &m = surfs[i];
             renderwaterfall(m, 0.1f, &matnormals[m.orient]);
         }
-        xtraverts += varray::end();
+        xtraverts += gle::end();
     }
 }
 
@@ -689,7 +693,7 @@ void renderwater()
             if(camera1->o.z < m.o.z - WATER_OFFSET) continue;
             renderwater(m);
         }
-        xtraverts += varray::end();
+        xtraverts += gle::end();
 
         if(belowshader)
         {
@@ -700,7 +704,7 @@ void renderwater()
                 if(camera1->o.z >= m.o.z - WATER_OFFSET) continue;
                 renderwater(m);
             }
-            xtraverts += varray::end();
+            xtraverts += gle::end();
         }
     }
 }

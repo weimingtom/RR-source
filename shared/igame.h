@@ -58,6 +58,7 @@ namespace game
     extern void dynentcollide(physent *d, physent *o, const vec &dir);
     extern const char *getclientmap();
     extern const char *getmapinfo();
+    extern const char *getscreenshotinfo();
     extern void resetgamestate();
     extern void suicide(physent *d);
     extern void newmap(int size);
@@ -112,8 +113,7 @@ namespace server
     extern void serverupdate();
     extern bool servercompatible(char *name, char *sdec, char *map, int ping, const vector<int> &attr, int np);
     extern int laninfoport();
-    extern int serverinfoport(int servport = -1);
-    extern int serverport(int infoport = -1);
+    extern int serverport();
     extern const char *defaultmaster();
     extern int masterport();
     extern void processmasterinput(const char *cmd, int cmdlen, const char *args);

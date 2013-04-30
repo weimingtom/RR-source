@@ -74,10 +74,10 @@ struct QuadNode
 
 static void drawmaterial(const materialsurface &m, float offset)
 {
-    if(varray::data.empty())
+    if(gle::data.empty())
     {
-        varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
-        varray::begin(GL_QUADS);
+        gle::defvertex();
+        gle::begin(GL_QUADS);
     }
     float x = m.o.x, y = m.o.y, z = m.o.z, csize = m.csize, rsize = m.rsize;
     switch(m.orient)
@@ -85,7 +85,7 @@ static void drawmaterial(const materialsurface &m, float offset)
 #define GENFACEORIENT(orient, v0, v1, v2, v3) \
         case orient: v0 v1 v2 v3 break;
 #define GENFACEVERT(orient, vert, mx,my,mz, sx,sy,sz) \
-            varray::attrib<float>(mx sx, my sy, mz sz); 
+            gle::attribf(mx sx, my sy, mz sz); 
         GENFACEVERTS(x, x, y, y, z, z, /**/, + csize, /**/, + rsize, + offset, - offset)
 #undef GENFACEORIENT
 #undef GENFACEVERT
@@ -141,7 +141,7 @@ const char *getmaterialdesc(int mat, const char *prefix)
     return desc;
 }
     
-int visiblematerial(const cube &c, int orient, int x, int y, int z, int size, uchar matmask)
+int visiblematerial(const cube &c, int orient, int x, int y, int z, int size, ushort matmask)
 {   
     ushort mat = c.material&matmask;
     switch(mat)
@@ -175,7 +175,7 @@ void genmatsurfs(const cube &c, int cx, int cy, int cz, int size, vector<materia
         static const ushort matmasks[] = { MATF_VOLUME|MATF_INDEX, MATF_CLIP, MAT_DEATH, MAT_ALPHA };
         loopj(sizeof(matmasks)/sizeof(matmasks[0]))
         {
-            int matmask = matmasks[j];
+            ushort matmask = matmasks[j];
             int vis = visiblematerial(c, i, cx, cy, cz, size, matmask&~MATF_INDEX);
             if(vis != MATSURF_NOT_VISIBLE) 
             {
@@ -482,7 +482,7 @@ void rendermatgrid()
         materialsurface &m = editsurfs[i];
         if(m.material != lastmat)
         {
-            xtraverts += varray::end();
+            xtraverts += gle::end();
             bvec color;
             switch(m.material&~MATF_INDEX)
             {
@@ -496,12 +496,16 @@ void rendermatgrid()
                 case MAT_ALPHA:    color = bvec(85,  0, 85); break; // pink
                 default: continue;
             }
+<<<<<<< HEAD:engine/material.cpp
             glColor3f(color.x*ldrscaleb, color.y*ldrscaleb, color.z*ldrscaleb);
+=======
+            gle::colorf(color.x*ldrscaleb, color.y*ldrscaleb, color.z*ldrscaleb);
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/material.cpp
             lastmat = m.material;
         }
         drawmaterial(m, -0.1f);
     }
-    xtraverts += varray::end();
+    xtraverts += gle::end();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     disablepolygonoffset(GL_POLYGON_OFFSET_LINE);
 }
@@ -510,12 +514,19 @@ static float glassxscale = 0, glassyscale = 0;
 
 static void drawglass(const materialsurface &m, float offset, const vec *normal = NULL)
 {
-    if(varray::data.empty())
+    if(gle::data.empty())
     {
+<<<<<<< HEAD:engine/material.cpp
         varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
         if(normal) varray::defattrib(varray::ATTRIB_NORMAL, 3, GL_FLOAT);
         varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
         varray::begin(GL_QUADS);
+=======
+        gle::defvertex();
+        if(normal) gle::defnormal();
+        gle::deftexcoord0();
+        gle::begin(GL_QUADS);
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/material.cpp
     }
     #define GENFACEORIENT(orient, v0, v1, v2, v3) \
         case orient: v0 v1 v2 v3 break;
@@ -523,27 +534,47 @@ static void drawglass(const materialsurface &m, float offset, const vec *normal 
     #define GENFACEVERTX(orient, vert, mx,my,mz, sx,sy,sz) \
         { \
             vec v(mx sx, my sy, mz sz); \
+<<<<<<< HEAD:engine/material.cpp
             varray::attrib<float>(v.x, v.y, v.z); \
             GENFACENORMAL \
             varray::attrib<float>(glassxscale*v.y, -glassyscale*v.z); \
+=======
+            gle::attribf(v.x, v.y, v.z); \
+            GENFACENORMAL \
+            gle::attribf(glassxscale*v.y, -glassyscale*v.z); \
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/material.cpp
         }
     #undef GENFACEVERTY
     #define GENFACEVERTY(orient, vert, mx,my,mz, sx,sy,sz) \
         { \
             vec v(mx sx, my sy, mz sz); \
+<<<<<<< HEAD:engine/material.cpp
             varray::attrib<float>(v.x, v.y, v.z); \
             GENFACENORMAL \
             varray::attrib<float>(glassxscale*v.x, -glassyscale*v.z); \
+=======
+            gle::attribf(v.x, v.y, v.z); \
+            GENFACENORMAL \
+            gle::attribf(glassxscale*v.x, -glassyscale*v.z); \
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/material.cpp
         }
     #undef GENFACEVERTZ
     #define GENFACEVERTZ(orient, vert, mx,my,mz, sx,sy,sz) \
         { \
             vec v(mx sx, my sy, mz sz); \
+<<<<<<< HEAD:engine/material.cpp
             varray::attrib<float>(v.x, v.y, v.z); \
             GENFACENORMAL \
             varray::attrib<float>(glassxscale*v.x, glassyscale*v.y); \
         }
     #define GENFACENORMAL varray::attrib<float>(n.x, n.y, n.z);
+=======
+            gle::attribf(v.x, v.y, v.z); \
+            GENFACENORMAL \
+            gle::attribf(glassxscale*v.x, glassyscale*v.y); \
+        }
+    #define GENFACENORMAL gle::attribf(n.x, n.y, n.z);
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/material.cpp
     float x = m.o.x, y = m.o.y, z = m.o.z, csize = m.csize, rsize = m.rsize;
     if(normal)
     {
@@ -666,8 +697,8 @@ void rendermaterialmask()
     loopk(4) { vector<materialsurface> &surfs = glasssurfs[k]; loopv(surfs) drawmaterial(surfs[i], 0.1f); }
     loopk(4) { vector<materialsurface> &surfs = watersurfs[k]; loopv(surfs) drawmaterial(surfs[i], WATER_OFFSET); }
     loopk(4) { vector<materialsurface> &surfs = waterfallsurfs[k]; loopv(surfs) drawmaterial(surfs[i], 0.1f); }
-    xtraverts += varray::end();
-    varray::disable();
+    xtraverts += gle::end();
+    gle::disable();
     glEnable(GL_CULL_FACE);
 }
 
@@ -734,7 +765,7 @@ void renderglass()
             materialsurface &m = surfs[i];
             if(m.envmap != envmap && glassenv)
             {
-                xtraverts += varray::end();
+                xtraverts += gle::end();
                 if(m.envmap != EMID_NONE && glassenv) SETSHADER(glassenv);
                 else SETSHADER(glass);
                 glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, lookupenvmap(m.envmap));
@@ -742,7 +773,7 @@ void renderglass()
             }
             drawglass(m, 0.1f, &matnormals[m.orient]);
         }    
-        xtraverts += varray::end();
+        xtraverts += gle::end();
     }
 }
 
@@ -755,7 +786,7 @@ void renderliquidmaterials()
     renderwater();
     renderwaterfalls();
 
-    varray::disable();
+    gle::disable();
     glEnable(GL_CULL_FACE);
 }
 
@@ -766,7 +797,7 @@ void rendersolidmaterials()
 
     renderglass();
 
-    varray::disable();
+    gle::disable();
     glEnable(GL_CULL_FACE);
 }
 
@@ -792,7 +823,7 @@ void rendereditmaterials()
         const materialsurface &m = editsurfs[i];
         if(lastmat!=m.material)
         {
-            xtraverts += varray::end();
+            xtraverts += gle::end();
             bvec color;
             switch(m.material&~MATF_INDEX)
             {
@@ -806,13 +837,17 @@ void rendereditmaterials()
                 case MAT_ALPHA:    color = bvec(  0, 255,   0); break; // pink
                 default: continue;
             }
+<<<<<<< HEAD:engine/material.cpp
             glColor3ub(color.x, color.y, color.z);
+=======
+            gle::color(color);
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/material.cpp
             lastmat = m.material;
         }
         drawmaterial(m, -0.1f);
     }
 
-    xtraverts += varray::end();
+    xtraverts += gle::end();
 
     glDisable(GL_BLEND);
 
@@ -820,7 +855,7 @@ void rendereditmaterials()
 
     rendermatgrid();
     
-    varray::disable();
+    gle::disable();
     glEnable(GL_CULL_FACE);
 }
 
@@ -832,7 +867,7 @@ void renderminimapmaterials()
     renderlava();
     renderwater();
 
-    varray::disable();
+    gle::disable();
     glEnable(GL_CULL_FACE);
 }
 

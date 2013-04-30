@@ -425,7 +425,7 @@ vector<releaseaction> releaseactions;
 
 const char *addreleaseaction(char *s)
 {
-    if(!keypressed) return NULL;
+    if(!keypressed) { delete[] s; return NULL; }
     releaseaction &ra = releaseactions.add();
     ra.key = keypressed;
     ra.action = s;
@@ -472,7 +472,7 @@ void execbind(keym &k, bool isdown)
 void consolekey(int code, bool isdown, int cooked)
 {
     #ifdef __APPLE__
-        #define MOD_KEYS (KMOD_LMETA|KMOD_RMETA) 
+        #define MOD_KEYS (KMOD_LGUI|KMOD_RGUI) 
     #else
         #define MOD_KEYS (KMOD_LCTRL|KMOD_RCTRL)
     #endif

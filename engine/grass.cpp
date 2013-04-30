@@ -253,6 +253,15 @@ void rendergrass()
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(2, GL_FLOAT, sizeof(grassvert), &grassverts[0].u);
 
+    const grassvert *ptr = 0;
+    gle::vertexpointer(sizeof(grassvert), ptr->pos.v);
+    gle::colorpointer(sizeof(grassvert), ptr->color);
+    gle::texcoord0pointer(sizeof(grassvert), &ptr->u);
+    gle::enablevertex();
+    gle::enablecolor();
+    gle::enabletexcoord0();
+    gle::enablequads();
+ 
     static Shader *grassshader = NULL;
     if(!grassshader) grassshader = lookupshaderbyname("grass");
     
@@ -282,13 +291,16 @@ void rendergrass()
             blend = g.tri->blend;
         }
 
-        glDrawArrays(GL_QUADS, g.offset, 4*g.numquads);
+        gle::drawquads(g.offset, g.numquads);
         xtravertsva += 4*g.numquads;
     }
 
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    gle::disablequads();
+    gle::disablevertex();
+    gle::disablecolor();
+    gle::disabletexcoord0();
+
+    glBindBuffer_(GL_ARRAY_BUFFER, 0);
 
     glEnable(GL_CULL_FACE);
 }

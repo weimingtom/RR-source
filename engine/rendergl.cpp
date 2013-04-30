@@ -196,6 +196,8 @@ void *getprocaddress(const char *name)
     return SDL_GL_GetProcAddress(name);
 }
 
+VAR(glerr, 0, 0, 1);
+
 void glerror(const char *file, int line, GLenum error)
 {
     const char *desc = "unknown";
@@ -278,11 +280,131 @@ void gl_checkextensions()
     if(sscanf(version, " %u.%u", &glmajorversion, &glminorversion) != 2) glversion = 100;
     else glversion = glmajorversion*100 + glminorversion*10;
 
+<<<<<<< HEAD:engine/rendergl.cpp
     GLint val;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &val);
     hwtexsize = val;
     if(hwtexsize < 4096)
         fatal("Large texture support is required!");
+=======
+    if(glversion < 210) fatal("OpenGL 2.1 or greater is required!");
+
+#ifndef __APPLE__
+    glActiveTexture_ =            (PFNGLACTIVETEXTUREPROC)            getprocaddress("glActiveTexture");
+
+    glBlendEquation_ =            (PFNGLBLENDEQUATIONPROC)            getprocaddress("glBlendEquation");
+    glBlendColor_ =               (PFNGLBLENDCOLORPROC)               getprocaddress("glBlendColor");
+
+    glTexImage3D_ =               (PFNGLTEXIMAGE3DPROC)               getprocaddress("glTexImage3D");
+    glTexSubImage3D_ =            (PFNGLTEXSUBIMAGE3DPROC)            getprocaddress("glTexSubImage3D");
+    glCopyTexSubImage3D_ =        (PFNGLCOPYTEXSUBIMAGE3DPROC)        getprocaddress("glCopyTexSubImage3D");
+
+    glCompressedTexImage3D_ =     (PFNGLCOMPRESSEDTEXIMAGE3DPROC)     getprocaddress("glCompressedTexImage3D");
+    glCompressedTexImage2D_ =     (PFNGLCOMPRESSEDTEXIMAGE2DPROC)     getprocaddress("glCompressedTexImage2D");
+    glCompressedTexImage1D_ =     (PFNGLCOMPRESSEDTEXIMAGE1DPROC)     getprocaddress("glCompressedTexImage1D");
+    glCompressedTexSubImage3D_ =  (PFNGLCOMPRESSEDTEXSUBIMAGE3DPROC)  getprocaddress("glCompressedTexSubImage3D");
+    glCompressedTexSubImage2D_ =  (PFNGLCOMPRESSEDTEXSUBIMAGE2DPROC)  getprocaddress("glCompressedTexSubImage2D");
+    glCompressedTexSubImage1D_ =  (PFNGLCOMPRESSEDTEXSUBIMAGE1DPROC)  getprocaddress("glCompressedTexSubImage1D");
+    glGetCompressedTexImage_ =    (PFNGLGETCOMPRESSEDTEXIMAGEPROC)    getprocaddress("glGetCompressedTexImage");
+
+    glDrawRangeElements_ =        (PFNGLDRAWRANGEELEMENTSPROC)        getprocaddress("glDrawRangeElements");
+    glMultiDrawArrays_ =          (PFNGLMULTIDRAWARRAYSPROC)          getprocaddress("glMultiDrawArrays");
+    glMultiDrawElements_ =        (PFNGLMULTIDRAWELEMENTSPROC)        getprocaddress("glMultiDrawElements");
+
+    glGenBuffers_ =               (PFNGLGENBUFFERSPROC)               getprocaddress("glGenBuffers");
+    glBindBuffer_ =               (PFNGLBINDBUFFERPROC)               getprocaddress("glBindBuffer");
+    glMapBuffer_ =                (PFNGLMAPBUFFERPROC)                getprocaddress("glMapBuffer");
+    glUnmapBuffer_ =              (PFNGLUNMAPBUFFERPROC)              getprocaddress("glUnmapBuffer");
+    glBufferData_ =               (PFNGLBUFFERDATAPROC)               getprocaddress("glBufferData");
+    glBufferSubData_ =            (PFNGLBUFFERSUBDATAPROC)            getprocaddress("glBufferSubData");
+    glDeleteBuffers_ =            (PFNGLDELETEBUFFERSPROC)            getprocaddress("glDeleteBuffers");
+    glGetBufferSubData_ =         (PFNGLGETBUFFERSUBDATAPROC)         getprocaddress("glGetBufferSubData");
+
+    glGetQueryiv_ =               (PFNGLGETQUERYIVPROC)               getprocaddress("glGetQueryiv");
+    glGenQueries_ =               (PFNGLGENQUERIESPROC)               getprocaddress("glGenQueries");
+    glDeleteQueries_ =            (PFNGLDELETEQUERIESPROC)            getprocaddress("glDeleteQueries");
+    glBeginQuery_ =               (PFNGLBEGINQUERYPROC)               getprocaddress("glBeginQuery");
+    glEndQuery_ =                 (PFNGLENDQUERYPROC)                 getprocaddress("glEndQuery");
+    glGetQueryObjectiv_ =         (PFNGLGETQUERYOBJECTIVPROC)         getprocaddress("glGetQueryObjectiv");
+    glGetQueryObjectuiv_ =        (PFNGLGETQUERYOBJECTUIVPROC)        getprocaddress("glGetQueryObjectuiv");
+
+    glCreateProgram_ =            (PFNGLCREATEPROGRAMPROC)            getprocaddress("glCreateProgram");
+    glDeleteProgram_ =            (PFNGLDELETEPROGRAMPROC)            getprocaddress("glDeleteProgram");
+    glUseProgram_ =               (PFNGLUSEPROGRAMPROC)               getprocaddress("glUseProgram");
+    glCreateShader_ =             (PFNGLCREATESHADERPROC)             getprocaddress("glCreateShader");
+    glDeleteShader_ =             (PFNGLDELETESHADERPROC)             getprocaddress("glDeleteShader");
+    glShaderSource_ =             (PFNGLSHADERSOURCEPROC)             getprocaddress("glShaderSource");
+    glCompileShader_ =            (PFNGLCOMPILESHADERPROC)            getprocaddress("glCompileShader");
+    glGetShaderiv_ =              (PFNGLGETSHADERIVPROC)              getprocaddress("glGetShaderiv");
+    glGetProgramiv_ =             (PFNGLGETPROGRAMIVPROC)             getprocaddress("glGetProgramiv");
+    glAttachShader_ =             (PFNGLATTACHSHADERPROC)             getprocaddress("glAttachShader");
+    glGetProgramInfoLog_ =        (PFNGLGETPROGRAMINFOLOGPROC)        getprocaddress("glGetProgramInfoLog");
+    glGetShaderInfoLog_ =         (PFNGLGETSHADERINFOLOGPROC)         getprocaddress("glGetShaderInfoLog");
+    glLinkProgram_ =              (PFNGLLINKPROGRAMPROC)              getprocaddress("glLinkProgram");
+    glGetUniformLocation_ =       (PFNGLGETUNIFORMLOCATIONPROC)       getprocaddress("glGetUniformLocation");
+    glUniform1f_ =                (PFNGLUNIFORM1FPROC)                getprocaddress("glUniform1f");
+    glUniform2f_ =                (PFNGLUNIFORM2FPROC)                getprocaddress("glUniform2f");
+    glUniform3f_ =                (PFNGLUNIFORM3FPROC)                getprocaddress("glUniform3f");
+    glUniform4f_ =                (PFNGLUNIFORM4FPROC)                getprocaddress("glUniform4f");
+    glUniform1fv_ =               (PFNGLUNIFORM1FVPROC)               getprocaddress("glUniform1fv");
+    glUniform2fv_ =               (PFNGLUNIFORM2FVPROC)               getprocaddress("glUniform2fv");
+    glUniform3fv_ =               (PFNGLUNIFORM3FVPROC)               getprocaddress("glUniform3fv");
+    glUniform4fv_ =               (PFNGLUNIFORM4FVPROC)               getprocaddress("glUniform4fv");
+    glUniform1i_ =                (PFNGLUNIFORM1IPROC)                getprocaddress("glUniform1i");
+    glUniform2i_ =                (PFNGLUNIFORM2IPROC)                getprocaddress("glUniform2i");
+    glUniform3i_ =                (PFNGLUNIFORM3IPROC)                getprocaddress("glUniform3i");
+    glUniform4i_ =                (PFNGLUNIFORM4IPROC)                getprocaddress("glUniform4i");
+    glUniform1iv_ =               (PFNGLUNIFORM1IVPROC)               getprocaddress("glUniform1iv");
+    glUniform2iv_ =               (PFNGLUNIFORM2IVPROC)               getprocaddress("glUniform2iv");
+    glUniform3iv_ =               (PFNGLUNIFORM3IVPROC)               getprocaddress("glUniform3iv");
+    glUniform4iv_ =               (PFNGLUNIFORM4IVPROC)               getprocaddress("glUniform4iv");
+    glUniformMatrix2fv_ =         (PFNGLUNIFORMMATRIX2FVPROC)         getprocaddress("glUniformMatrix2fv");
+    glUniformMatrix3fv_ =         (PFNGLUNIFORMMATRIX3FVPROC)         getprocaddress("glUniformMatrix3fv");
+    glUniformMatrix4fv_ =         (PFNGLUNIFORMMATRIX4FVPROC)         getprocaddress("glUniformMatrix4fv");
+    glBindAttribLocation_ =       (PFNGLBINDATTRIBLOCATIONPROC)       getprocaddress("glBindAttribLocation");
+    glGetActiveUniform_ =         (PFNGLGETACTIVEUNIFORMPROC)         getprocaddress("glGetActiveUniform");
+    glEnableVertexAttribArray_ =  (PFNGLENABLEVERTEXATTRIBARRAYPROC)  getprocaddress("glEnableVertexAttribArray");
+    glDisableVertexAttribArray_ = (PFNGLDISABLEVERTEXATTRIBARRAYPROC) getprocaddress("glDisableVertexAttribArray");
+
+    glVertexAttrib1f_ =           (PFNGLVERTEXATTRIB1FPROC)           getprocaddress("glVertexAttrib1f");
+    glVertexAttrib1fv_ =          (PFNGLVERTEXATTRIB1FVPROC)          getprocaddress("glVertexAttrib1fv");
+    glVertexAttrib1s_ =           (PFNGLVERTEXATTRIB1SPROC)           getprocaddress("glVertexAttrib1s");
+    glVertexAttrib1sv_ =          (PFNGLVERTEXATTRIB1SVPROC)          getprocaddress("glVertexAttrib1sv");
+    glVertexAttrib2f_ =           (PFNGLVERTEXATTRIB2FPROC)           getprocaddress("glVertexAttrib2f");
+    glVertexAttrib2fv_ =          (PFNGLVERTEXATTRIB2FVPROC)          getprocaddress("glVertexAttrib2fv");
+    glVertexAttrib2s_ =           (PFNGLVERTEXATTRIB2SPROC)           getprocaddress("glVertexAttrib2s");
+    glVertexAttrib2sv_ =          (PFNGLVERTEXATTRIB2SVPROC)          getprocaddress("glVertexAttrib2sv");
+    glVertexAttrib3f_ =           (PFNGLVERTEXATTRIB3FPROC)           getprocaddress("glVertexAttrib3f");
+    glVertexAttrib3fv_ =          (PFNGLVERTEXATTRIB3FVPROC)          getprocaddress("glVertexAttrib3fv");
+    glVertexAttrib3s_ =           (PFNGLVERTEXATTRIB3SPROC)           getprocaddress("glVertexAttrib3s");
+    glVertexAttrib3sv_ =          (PFNGLVERTEXATTRIB3SVPROC)          getprocaddress("glVertexAttrib3sv");
+    glVertexAttrib4f_ =           (PFNGLVERTEXATTRIB4FPROC)           getprocaddress("glVertexAttrib4f");
+    glVertexAttrib4fv_ =          (PFNGLVERTEXATTRIB4FVPROC)          getprocaddress("glVertexAttrib4fv");
+    glVertexAttrib4s_ =           (PFNGLVERTEXATTRIB4SPROC)           getprocaddress("glVertexAttrib4s");
+    glVertexAttrib4sv_ =          (PFNGLVERTEXATTRIB4SVPROC)          getprocaddress("glVertexAttrib4sv");
+    glVertexAttrib4bv_ =          (PFNGLVERTEXATTRIB4BVPROC)          getprocaddress("glVertexAttrib4bv");
+    glVertexAttrib4iv_ =          (PFNGLVERTEXATTRIB4IVPROC)          getprocaddress("glVertexAttrib4iv");
+    glVertexAttrib4ubv_ =         (PFNGLVERTEXATTRIB4UBVPROC)         getprocaddress("glVertexAttrib4ubv");
+    glVertexAttrib4uiv_ =         (PFNGLVERTEXATTRIB4UIVPROC)         getprocaddress("glVertexAttrib4uiv");
+    glVertexAttrib4usv_ =         (PFNGLVERTEXATTRIB4USVPROC)         getprocaddress("glVertexAttrib4usv");
+    glVertexAttrib4Nbv_ =         (PFNGLVERTEXATTRIB4NBVPROC)         getprocaddress("glVertexAttrib4Nbv");
+    glVertexAttrib4Niv_ =         (PFNGLVERTEXATTRIB4NIVPROC)         getprocaddress("glVertexAttrib4Niv");
+    glVertexAttrib4Nub_ =         (PFNGLVERTEXATTRIB4NUBPROC)         getprocaddress("glVertexAttrib4Nub");
+    glVertexAttrib4Nubv_ =        (PFNGLVERTEXATTRIB4NUBVPROC)        getprocaddress("glVertexAttrib4Nubv");
+    glVertexAttrib4Nuiv_ =        (PFNGLVERTEXATTRIB4NUIVPROC)        getprocaddress("glVertexAttrib4Nuiv");
+    glVertexAttrib4Nusv_ =        (PFNGLVERTEXATTRIB4NUSVPROC)        getprocaddress("glVertexAttrib4Nusv");
+    glVertexAttribPointer_ =      (PFNGLVERTEXATTRIBPOINTERPROC)      getprocaddress("glVertexAttribPointer");
+
+    glUniformMatrix2x3fv_ =       (PFNGLUNIFORMMATRIX2X3FVPROC)       getprocaddress("glUniformMatrix2x3fv");
+    glUniformMatrix3x2fv_ =       (PFNGLUNIFORMMATRIX3X2FVPROC)       getprocaddress("glUniformMatrix3x2fv");
+    glUniformMatrix2x4fv_ =       (PFNGLUNIFORMMATRIX2X4FVPROC)       getprocaddress("glUniformMatrix2x4fv");
+    glUniformMatrix4x2fv_ =       (PFNGLUNIFORMMATRIX4X2FVPROC)       getprocaddress("glUniformMatrix4x2fv");
+    glUniformMatrix3x4fv_ =       (PFNGLUNIFORMMATRIX3X4FVPROC)       getprocaddress("glUniformMatrix3x4fv");
+    glUniformMatrix4x3fv_ =       (PFNGLUNIFORMMATRIX4X3FVPROC)       getprocaddress("glUniformMatrix4x3fv");
+
+    glDrawBuffers_ =              (PFNGLDRAWBUFFERSPROC)              getprocaddress("glDrawBuffers");
+#endif
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/rendergl.cpp
 
     if(hasext(exts, "GL_ARB_multitexture"))
     {
@@ -992,6 +1114,11 @@ void gl_init(int w, int h, int bpp)
 
     renderpath = R_GLSLANG;
 
+<<<<<<< HEAD:engine/rendergl.cpp
+=======
+    gle::setup();
+
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/rendergl.cpp
     extern void setupshaders();
     setupshaders();
 
@@ -1003,9 +1130,6 @@ void gl_init(int w, int h, int bpp)
     vieww = w;
     viewh = h;
 }
-
-#define VARRAY_INTERNAL
-#include "varray.h"
 
 VAR(wireframe, 0, 0, 1);
 
@@ -1549,6 +1673,7 @@ bool calcspotscissor(const vec &origin, float radius, const vec &dir, int spot, 
     return true;
 }
 
+<<<<<<< HEAD:engine/rendergl.cpp
 void screenquad(float sw, float sh)
 {
     glBegin(GL_TRIANGLE_STRIP);
@@ -1557,36 +1682,109 @@ void screenquad(float sw, float sh)
     glTexCoord2f(sw, sh); glVertex2f(1, 1);
     glTexCoord2f(0, sh); glVertex2f(-1, 1);
     glEnd();
+=======
+void screenquad()
+{
+    gle::defvertex(2);
+    gle::begin(GL_TRIANGLE_STRIP);
+    gle::attribf(1, -1);
+    gle::attribf(-1, -1);
+    gle::attribf(1, 1);
+    gle::attribf(-1, 1);
+    gle::end();
+    gle::disable();
+}
+
+#define SCREENQUAD1(x1, y1, x2, y2, sx1, sy1, sx2, sy2) { \
+    gle::defvertex(2); \
+    gle::deftexcoord0(); \
+    gle::begin(GL_TRIANGLE_STRIP); \
+    gle::attribf(x2, y1); gle::attribf(sx2, sy1); \
+    gle::attribf(x1, y1); gle::attribf(sx1, sy1); \
+    gle::attribf(x2, y2); gle::attribf(sx2, sy2); \
+    gle::attribf(x1, y2); gle::attribf(sx1, sy2); \
+    gle::end(); \
+}
+
+void screenquad(float sw, float sh)
+{
+    SCREENQUAD1(-1, -1, 1, 1, 0, 0, sw, sh);
+    gle::disable();
+}
+
+void screenquadflipped(float sw, float sh)
+{
+    SCREENQUAD1(-1, -1, 1, 1, 0, sh, sw, 0);
+    gle::disable();
+}
+
+#define SCREENQUAD2(x1, y1, x2, y2, sx1, sy1, sx2, sy2, tx1, ty1, tx2, ty2) { \
+    gle::defvertex(2); \
+    gle::deftexcoord0(); \
+    gle::deftexcoord1(); \
+    gle::begin(GL_TRIANGLE_STRIP); \
+    gle::attribf(x2, y1); gle::attribf(sx2, sy1); gle::attribf(tx2, ty1); \
+    gle::attribf(x1, y1); gle::attribf(sx1, sy1); gle::attribf(tx1, ty1); \
+    gle::attribf(x2, y2); gle::attribf(sx2, sy2); gle::attribf(tx2, ty2); \
+    gle::attribf(x1, y2); gle::attribf(sx1, sy2); gle::attribf(tx1, ty2); \
+    gle::end(); \
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/rendergl.cpp
 }
 
 void screenquad(float sw, float sh, float sw2, float sh2)
 {
+<<<<<<< HEAD:engine/rendergl.cpp
     glBegin(GL_TRIANGLE_STRIP);
     glMultiTexCoord2f_(GL_TEXTURE0_ARB, sw, 0); glMultiTexCoord2f_(GL_TEXTURE1_ARB, sw2, 0); glVertex2f(1, -1);
     glMultiTexCoord2f_(GL_TEXTURE0_ARB, 0, 0); glMultiTexCoord2f_(GL_TEXTURE1_ARB, 0, 0); glVertex2f(-1, -1);
     glMultiTexCoord2f_(GL_TEXTURE0_ARB, sw, sh); glMultiTexCoord2f_(GL_TEXTURE1_ARB, sw2, sh2); glVertex2f(1, 1);
     glMultiTexCoord2f_(GL_TEXTURE0_ARB, 0, sh); glMultiTexCoord2f_(GL_TEXTURE1_ARB, 0, sh2); glVertex2f(-1, 1);
     glEnd();
+=======
+    SCREENQUAD2(-1, -1, 1, 1, 0, 0, sw, sh, 0, 0, sw2, sh2);
+    gle::disable();
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/rendergl.cpp
 }
 
 void screenquadoffset(float x, float y, float w, float h)
 {
+<<<<<<< HEAD:engine/rendergl.cpp
     glBegin(GL_TRIANGLE_STRIP);
     glTexCoord2f(x + w, y); glVertex2f(1, -1);
     glTexCoord2f(x, y); glVertex2f(-1, -1);
     glTexCoord2f(x + w, y + h); glVertex2f(1, 1);
     glTexCoord2f(x, y + h); glVertex2f(-1, 1);
     glEnd();
+=======
+    SCREENQUAD1(-1, -1, 1, 1, x, y, x+w, y+h);
+    gle::disable();
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/rendergl.cpp
 }
 
 void screenquadoffset(float x, float y, float w, float h, float x2, float y2, float w2, float h2)
 {
+<<<<<<< HEAD:engine/rendergl.cpp
     glBegin(GL_TRIANGLE_STRIP);
     glMultiTexCoord2f_(GL_TEXTURE0_ARB, x+w, y); glMultiTexCoord2f_(GL_TEXTURE1_ARB, x2+w2, y2); glVertex2f(1, -1);
     glMultiTexCoord2f_(GL_TEXTURE0_ARB, x, y); glMultiTexCoord2f_(GL_TEXTURE1_ARB, x2, y2); glVertex2f(-1, -1);
     glMultiTexCoord2f_(GL_TEXTURE0_ARB, x+w, y+h); glMultiTexCoord2f_(GL_TEXTURE1_ARB, x2+w2, y2+h2); glVertex2f(1, 1);
     glMultiTexCoord2f_(GL_TEXTURE0_ARB, x, y+h); glMultiTexCoord2f_(GL_TEXTURE1_ARB, x2, y2+h2); glVertex2f(-1, 1);
     glEnd();
+=======
+    SCREENQUAD2(-1, -1, 1, 1, x, y, x+w, y+h, x2, y2, x2+w2, y2+h2);
+    gle::disable();
+}
+
+void hudquad(float x, float y, float w, float h, float tx, float ty, float tw, float th)
+{
+    SCREENQUAD1(x, y, x+w, y+h, tx, ty, tx+tw, ty+th);
+}
+
+void debugquad(float x, float y, float w, float h, float tx, float ty, float tw, float th)
+{
+    SCREENQUAD1(x, y, x+w, y+h, tx, ty+th, tx+tw, ty);
+    gle::disable();
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/rendergl.cpp
 }
 
 VARR(fog, 16, 4000, 1000024);
@@ -1725,6 +1923,7 @@ void drawfogoverlay(int fogmat, float fogbelow, float fogblend, int abovemat)
     blendfogoverlay(fogmat, fogbelow, fogblend, overlay);
     blendfogoverlay(abovemat, 0, 1-fogblend, overlay);
 
+<<<<<<< HEAD:engine/rendergl.cpp
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -1740,6 +1939,11 @@ void drawfogoverlay(int fogmat, float fogbelow, float fogblend, int abovemat)
     glVertex2f(-1, 1);
     glVertex2f(1, 1);
     glEnd();
+=======
+    gle::color(overlay);
+    screenquad();
+
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/engine/rendergl.cpp
     glDisable(GL_BLEND);
 
     glMatrixMode(GL_PROJECTION);
@@ -2062,7 +2266,6 @@ namespace modelpreview
         farplane = 1024;
         vieww = min(gw, w);
         viewh = min(gh, h);
-        aspect = 
         ldrscale = 1;
         ldrscaleb = ldrscale/255;
 
@@ -2301,10 +2504,9 @@ void drawdamagecompass(int w, int h)
         if(!dirs)
         {
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glColor4f(1, 0, 0, damagecompassalpha/100.0f);
-            varray::enable();
-            varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
-            varray::begin(GL_TRIANGLES);
+            gle::colorf(1, 0, 0, damagecompassalpha/100.0f);
+            gle::defvertex();
+            gle::begin(GL_TRIANGLES);
         }
         dirs++;
 
@@ -2318,9 +2520,9 @@ void drawdamagecompass(int w, int h)
         m.transformedtranslate(0, offset, 0);
         m.scale(size*scale);
         
-        varray::attrib(m.transform(vec2(1, 1)));
-        varray::attrib(m.transform(vec2(-1, 1)));
-        varray::attrib(m.transform(vec2(0, 0)));
+        gle::attrib(m.transform(vec2(1, 1)));
+        gle::attrib(m.transform(vec2(-1, 1)));
+        gle::attrib(m.transform(vec2(0, 0)));
 
         // fade in log space so short blips don't disappear too quickly
         scale -= float(curtime)/damagecompassfade;
@@ -2331,6 +2533,7 @@ void drawdamagecompass(int w, int h)
         varray::end();
         varray::disable();
     }
+    if(dirs) gle::end();
 }
 
 int damageblendmillis = 0;
@@ -2363,14 +2566,7 @@ void drawdamagescreen(int w, int h)
     float fade = damagescreenalpha/100.0f;
     if(damageblendmillis - lastmillis < damagescreenfade)
         fade *= float(damageblendmillis - lastmillis)/damagescreenfade;
-    glColor4f(fade, fade, fade, fade);
-
-    glBegin(GL_TRIANGLE_STRIP);
-    glTexCoord2f(0, 0); glVertex2f(0, 0);
-    glTexCoord2f(1, 0); glVertex2f(w, 0);
-    glTexCoord2f(0, 1); glVertex2f(0, h);
-    glTexCoord2f(1, 1); glVertex2f(w, h);
-    glEnd();
+    gle::colorf(fade, fade, fade, fade);
 
     notextureshader->set();
 }
@@ -2454,7 +2650,7 @@ void drawcrosshair(int w, int h)
     }
     if(crosshair->type&Texture::ALPHA) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     else glBlendFunc(GL_ONE, GL_ONE);
-    glColor3f(r, g, b);
+    gle::colorf(r, g, b);
     float x = cx*w - (windowhit ? 0 : chsize/2.0f);
     float y = cy*h - (windowhit ? 0 : chsize/2.0f);
     glBindTexture(GL_TEXTURE_2D, crosshair->id);
@@ -2491,7 +2687,8 @@ void gl_drawhud(int w, int h)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
-    glColor3f(1, 1, 1);
+    gle::colorf(1, 1, 1);
+
 
     debuglights();
 
@@ -2637,6 +2834,8 @@ void gl_drawhud(int w, int h)
 
     drawcrosshair(w, h);
 
+    gle::disable();
+
     glDisable(GL_BLEND);
 
     if(frametimer)
@@ -2651,5 +2850,6 @@ void cleanupgl()
 {
     clearminimap();
     cleanuptimers();
+    gle::cleanup();
 }
 

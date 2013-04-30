@@ -96,22 +96,6 @@ void mdlalphatest(float *cutoff)
 
 COMMAND(mdlalphatest, "f");
 
-void mdlalphablend(int *blend)
-{   
-    checkmdl;
-    loadingmodel->setalphablend(*blend!=0);
-}
-
-COMMAND(mdlalphablend, "i");
-
-void mdlalphadepth(int *depth)
-{
-    checkmdl;
-    loadingmodel->alphadepth = *depth!=0;
-}
-
-COMMAND(mdlalphadepth, "i");
-
 void mdldepthoffset(int *offset)
 {
     checkmdl;
@@ -332,11 +316,6 @@ void mmodel(char *name)
     mmi.m = NULL;
 }
 
-void mapmodelcompat(int *rad, int *h, int *tex, char *name, char *shadow)
-{
-    mmodel(name);
-}
-
 void mapmodelreset(int *n) 
 { 
     if(!(identflags&IDF_OVERRIDDEN) && !game::allowedittoggle()) return;
@@ -347,7 +326,6 @@ mapmodelinfo *getmminfo(int i) { return mapmodels.inrange(i) ? &mapmodels[i] : 0
 const char *mapmodelname(int i) { return mapmodels.inrange(i) ? mapmodels[i].name : NULL; }
 
 COMMAND(mmodel, "s");
-COMMANDN(mapmodel, mapmodelcompat, "iiiss");
 COMMAND(mapmodelreset, "i");
 ICOMMAND(mapmodelname, "i", (int *index), { result(mapmodels.inrange(*index) ? mapmodels[*index].name : ""); });
 ICOMMAND(nummapmodels, "", (), { intret(mapmodels.length()); });
@@ -476,8 +454,13 @@ bool modeloccluded(const vec &center, float radius)
 struct batchedmodel
 {
     vec pos, center;
-    float radius, yaw, pitch, sizescale;
-    int anim, basetime, basetime2, flags, visible, attached;
+    float radius, yaw, pitch, sizescale, transparent;
+    int anim, basetime, basetime2, flags, attached;
+    union
+    {
+        int visible;
+        int culled;
+    };
     dynent *d;
     occludequery *query;
     int next;
@@ -528,12 +511,20 @@ static inline void renderbatchedmodel(model *m, batchedmodel &b)
         if(b.flags&MDL_FULLBRIGHT) anim |= ANIM_FULLBRIGHT;
     }
 
-    m->render(anim, b.basetime, b.basetime2, b.pos, b.yaw, b.pitch, b.d, a, b.sizescale);
+    m->render(anim, b.basetime, b.basetime2, b.pos, b.yaw, b.pitch, b.d, a, b.sizescale, b.transparent);
 }
 
 VARP(maxmodelradiusdistance, 10, 200, 1000);
 
-static inline void rendermodelquery(model *m, dynent *d, const vec &center, float radius)
+static inline void enablecullmodelquery()
+{
+    nocolorshader->set();
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
+    gle::defvertex();
+}
+
+static inline void rendercullmodelquery(model *m, dynent *d, const vec &center, float radius)
 {
     if(fabs(camera1->o.x-center.x) < radius+1 &&
        fabs(camera1->o.y-center.y) < radius+1 &&
@@ -551,6 +542,11 @@ static inline void rendermodelquery(model *m, dynent *d, const vec &center, floa
     int br = int(radius*2)+1;
     drawbb(ivec(int(center.x-radius), int(center.y-radius), int(center.z-radius)), ivec(br, br, br));
     endquery(d->query);
+}
+
+static inline void disablecullmodelquery()
+{
+    gle::disable();
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthMask(GL_TRUE);
 }
@@ -607,7 +603,7 @@ void shadowmaskbatchedmodels(bool dynshadow)
     loopv(batchedmodels) 
     {
         batchedmodel &b = batchedmodels[i];
-        if(b.flags&MDL_MAPMODEL) break;
+        if(b.flags&MDL_MAPMODEL || b.transparent < 1) break;
         b.visible = dynshadow ? shadowmaskmodel(b.center, b.radius) : 0;
     }
 }
@@ -702,11 +698,44 @@ void rendermodelbatches(bool dynmodel)
             }
             renderbatchedmodel(b.m, bm);
         }
-        else for(int j = b.batched; j >= 0;)
+        if(query) endquery(query);
+        if(rendered) b.m->endrender();
+    }
+}
+
+float transmdlsx1 = -1, transmdlsy1 = -1, transmdlsx2 = 1, transmdlsy2 = 1;
+uint transmdltiles[LIGHTTILE_MAXH];
+    
+void rendermodelbatches()
+{
+    transmdlsx1 = transmdlsy1 = 1;
+    transmdlsx2 = transmdlsy2 = -1;
+    memset(transmdltiles, 0, sizeof(transmdltiles));
+
+    loopv(batches)
+    {
+        modelbatch &b = batches[i];
+        if(b.batched < 0 || b.flags&MDL_MAPMODEL) continue;
+        bool rendered = false;
+        for(int j = b.batched; j >= 0;)
         {
             batchedmodel &bm = batchedmodels[j];
             j = bm.next;
-            if(cullmodel(b.m, bm.center, bm.radius, bm.flags, bm.d)) continue;
+            bm.culled = cullmodel(b.m, bm.center, bm.radius, bm.flags, bm.d);
+            if(bm.culled) continue;
+            if(bm.transparent < 1)
+            {
+                float sx1, sy1, sx2, sy2;
+                if(calcbbscissor(vec(bm.center).sub(bm.radius), vec(bm.center).add(bm.radius+1), sx1, sy1, sx2, sy2))
+                {
+                    transmdlsx1 = min(transmdlsx1, sx1);
+                    transmdlsy1 = min(transmdlsy1, sy1);
+                    transmdlsx2 = max(transmdlsx2, sx2);
+                    transmdlsy2 = max(transmdlsy2, sy2);
+                    masktiles(transmdltiles, sx1, sy1, sx2, sy2);
+                }
+                continue;
+            }
             if(!rendered) 
             { 
                 b.m->startrender(); 
@@ -730,6 +759,42 @@ void rendermodelbatches(bool dynmodel)
         if(rendered) b.m->endrender();
     }
     setaamask(false);
+}
+
+void rendertransparentmodelbatches()
+{
+    loopv(batches)
+    {
+        modelbatch &b = batches[i];
+        if(b.batched < 0 || b.flags&MDL_MAPMODEL) continue;
+        bool rendered = false;
+        for(int j = b.batched; j >= 0;)
+        {
+            batchedmodel &bm = batchedmodels[j];
+            j = bm.next;
+            bm.culled = cullmodel(b.m, bm.center, bm.radius, bm.flags, bm.d);
+            if(bm.culled || bm.transparent >= 1) continue;
+            if(!rendered)
+            {
+                b.m->startrender();
+                rendered = true;
+                setaamask(true);
+            }
+            if(bm.flags&MDL_CULL_QUERY)
+            {
+                bm.d->query = newquery(bm.d);
+                if(bm.d->query)
+                {
+                    startquery(bm.d->query);
+                    renderbatchedmodel(b.m, bm);
+                    endquery(bm.d->query);
+                    continue;
+                }
+            }
+            renderbatchedmodel(b.m, bm);
+        }
+        if(rendered) b.m->endrender();
+    }
 }
 
 void startmodelquery(occludequery *query)
@@ -835,6 +900,7 @@ void rendermapmodel(int idx, int anim, const vec &o, float yaw, float pitch, int
     b.basetime = basetime;
     b.basetime2 = 0;
     b.sizescale = size;
+    b.transparent = 1;
     b.flags = flags | MDL_MAPMODEL;
     b.visible = visible;
     b.d = NULL;
@@ -842,7 +908,7 @@ void rendermapmodel(int idx, int anim, const vec &o, float yaw, float pitch, int
     addbatchedmodel(m, b, batchedmodels.length()-1);
 }
 
-void rendermodel(const char *mdl, int anim, const vec &o, float yaw, float pitch, int flags, dynent *d, modelattach *a, int basetime, int basetime2, float size)
+void rendermodel(const char *mdl, int anim, const vec &o, float yaw, float pitch, int flags, dynent *d, modelattach *a, int basetime, int basetime2, float size, float trans)
 {
     model *m = loadmodel(mdl); 
     if(!m) return;
@@ -905,6 +971,7 @@ void rendermodel(const char *mdl, int anim, const vec &o, float yaw, float pitch
     b.basetime = basetime;
     b.basetime2 = basetime2;
     b.sizescale = size;
+    b.transparent = trans;
     b.flags = flags;
     b.d = d;
     b.attached = a ? modelattached.length() : -1;
@@ -1004,7 +1071,7 @@ VAR(animoverride, -1, 0, NUMANIMS-1);
 VAR(testanims, 0, 0, 1);
 VAR(testpitch, -90, 0, 90);
 
-void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int hold, int attack, int attackdelay, int lastaction, int lastpain, float fade, bool ragdoll)
+void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int hold, int attack, int attackdelay, int lastaction, int lastpain, float scale, bool ragdoll, float trans)
 {
     int anim = hold ? hold : ANIM_IDLE|ANIM_LOOP;
     float yaw = testanims && d==player ? 0 : d->yaw+90,
@@ -1058,9 +1125,9 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
     if(d!=player && !(anim&ANIM_RAGDOLL)) flags |= MDL_CULL_VFC | MDL_CULL_OCCLUDED | MDL_CULL_QUERY;
     if(d->type==ENT_PLAYER) flags |= MDL_FULLBRIGHT;
     else flags |= MDL_CULL_DIST;
-    if(d->state==CS_LAGGED) fade = min(fade, 0.3f);
     if(drawtex == DRAWTEX_MODELPREVIEW) flags &= ~(MDL_FULLBRIGHT | MDL_CULL_VFC | MDL_CULL_OCCLUDED | MDL_CULL_QUERY | MDL_CULL_DIST);
-    rendermodel(mdlname, anim, o, yaw, pitch, flags, d, attachments, basetime, 0, fade);
+    if(d->state == CS_LAGGED) trans = min(trans, 0.3f);
+    rendermodel(mdlname, anim, o, yaw, pitch, flags, d, attachments, basetime, 0, scale, trans);
 }
 
 void setbbfrommodel(dynent *d, const char *mdl)

@@ -377,13 +377,12 @@ struct meterrenderer : listrenderer
     void startrender()
     {
          glDisable(GL_BLEND);
-         varray::enable();
-         varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
+         gle::defvertex();
     }
 
     void endrender()
     {
-         varray::disable();
+         gle::disable();
          glEnable(GL_BLEND);
     }
 
@@ -399,53 +398,53 @@ struct meterrenderer : listrenderer
 
         if(outlinemeters)
         {
-            glColor3f(0, 0.8f, 0);
-            varray::begin(GL_TRIANGLE_STRIP);
+            gle::colorf(0, 0.8f, 0);
+            gle::begin(GL_TRIANGLE_STRIP);
             loopk(10)
             {
                 const vec2 &sc = sincos360[k*(180/(10-1))];
                 float c = (0.5f + 0.1f)*sc.y, s = 0.5f - (0.5f + 0.1f)*sc.x;
-                varray::attrib(m.transform(vec2(-c, s)));
-                varray::attrib(m.transform(vec2(right + c, s)));
+                gle::attrib(m.transform(vec2(-c, s)));
+                gle::attrib(m.transform(vec2(right + c, s)));
             }
-            varray::end();
+            gle::end();
         }
 
-        if(basetype==PT_METERVS) glColor3ubv(p->color2);
-        else glColor3f(0, 0, 0);
-        varray::begin(GL_TRIANGLE_STRIP);
+        if(basetype==PT_METERVS) gle::colorub(p->color2[0], p->color2[1], p->color2[2]);
+        else gle::colorf(0, 0, 0);
+        gle::begin(GL_TRIANGLE_STRIP);
         loopk(10)
         {
             const vec2 &sc = sincos360[k*(180/(10-1))];
             float c = 0.5f*sc.y, s = 0.5f - 0.5f*sc.x;
-            varray::attrib(m.transform(vec2(left + c, s)));
-            varray::attrib(m.transform(vec2(right + c, s))); 
+            gle::attrib(m.transform(vec2(left + c, s)));
+            gle::attrib(m.transform(vec2(right + c, s))); 
         }
-        varray::end();
+        gle::end();
 
         if(outlinemeters)
         {
-            glColor3f(0, 0.8f, 0);
-            varray::begin(GL_TRIANGLE_FAN);
+            gle::colorf(0, 0.8f, 0);
+            gle::begin(GL_TRIANGLE_FAN);
             loopk(10)
             {
                 const vec2 &sc = sincos360[k*(180/(10-1))];
                 float c = (0.5f + 0.1f)*sc.y, s = 0.5f - (0.5f + 0.1f)*sc.x;
-                varray::attrib(m.transform(vec2(left + c, s)));
+                gle::attrib(m.transform(vec2(left + c, s)));
             }
-            varray::end();
+            gle::end();
         }
 
-        glColor3ubv(color);
-        varray::begin(GL_TRIANGLE_STRIP);
+        gle::color(p->color);
+        gle::begin(GL_TRIANGLE_STRIP);
         loopk(10)
         {
             const vec2 &sc = sincos360[k*(180/(10-1))];
             float c = 0.5f*sc.y, s = 0.5f - 0.5f*sc.x;
-            varray::attrib(m.transform(vec2(-c, s)));
-            varray::attrib(m.transform(vec2(left + c, s)));
+            gle::attrib(m.transform(vec2(-c, s)));
+            gle::attrib(m.transform(vec2(left + c, s)));
         }
-        varray::end();
+        gle::end();
     }
 };
 static meterrenderer meters(PT_METER|PT_LERP), metervs(PT_METERVS|PT_LERP);
@@ -771,10 +770,24 @@ struct varenderer : partrenderer
     {   
         if(!tex) tex = textureload(texname, texclamp);
         glBindTexture(GL_TEXTURE_2D, tex->id);
-        glVertexPointer(3, GL_FLOAT, sizeof(partvert), &verts->pos);
-        glTexCoordPointer(2, GL_FLOAT, sizeof(partvert), &verts->u);
-        glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(partvert), &verts->color);
-        glDrawArrays(GL_QUADS, 0, numparts*4);
+
+        glBindBuffer_(GL_ARRAY_BUFFER, vbo);
+        const partvert *ptr = 0;
+        gle::vertexpointer(sizeof(partvert), &ptr->pos);
+        gle::texcoord0pointer(sizeof(partvert), &ptr->u);
+        gle::colorpointer(sizeof(partvert), &ptr->color);
+        gle::enablevertex();
+        gle::enabletexcoord0();
+        gle::enablecolor();
+        gle::enablequads();
+
+        gle::drawquads(0, numparts);
+
+        gle::disablequads();
+        gle::disablevertex();
+        gle::disabletexcoord0();
+        gle::disablecolor();
+        glBindBuffer_(GL_ARRAY_BUFFER, 0);
     }
 };
 typedef varenderer<PT_PART> quadrenderer;

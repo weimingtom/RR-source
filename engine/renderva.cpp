@@ -324,7 +324,7 @@ bool checkquery(occludequery *query, bool nowait)
 
 void drawbb(const ivec &bo, const ivec &br, const vec &camera)
 {
-    glBegin(GL_QUADS);
+    gle::begin(GL_QUADS);
 
     #define GENFACEORIENT(orient, v0, v1, v2, v3) do { \
         int dim = dimension(orient); \
@@ -337,12 +337,12 @@ void drawbb(const ivec &bo, const ivec &br, const vec &camera)
         xtraverts += 4; \
     } while(0); 
     #define GENFACEVERT(orient, vert, ox,oy,oz, rx,ry,rz) \
-        glVertex3f(ox rx, oy ry, oz rz);
+        gle::attribf(ox rx, oy ry, oz rz);
     GENFACEVERTS(bo.x, bo.x + br.x, bo.y, bo.y + br.y, bo.z, bo.z + br.z, , , , , , )
     #undef GENFACEORIENT
     #undef GENFACEVERTS
 
-    glEnd();
+    xtraverts += gle::end();
 }
 
 extern int octaentsize;
@@ -455,7 +455,8 @@ void rendermapmodels()
             glDepthMask(GL_FALSE);
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
             nocolorshader->set();
-            colormask = false;
+            gle::defvertex();
+            queried = true;
         }
         startquery(oe->query);
         drawbb(oe->bbmin, ivec(oe->bbmax).sub(oe->bbmin));
@@ -463,6 +464,7 @@ void rendermapmodels()
     }
     if(!colormask)
     {
+        gle::disable();
         glDepthMask(GL_TRUE);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     }
@@ -525,11 +527,10 @@ void renderoutline()
 {
     notextureshader->set();
 
-    glEnableClientState(GL_VERTEX_ARRAY);
+    gle::enablevertex();
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    bvec color((outlinecolour>>16)&0xFF, (outlinecolour>>8)&0xFF, outlinecolour&0xFF);
-    glColor3f(color.x*ldrscaleb, color.y*ldrscaleb, color.z*ldrscaleb);
+    gle::color(vec::hexcolor(outlinecolour));
 
     enablepolygonoffset(GL_POLYGON_OFFSET_LINE);
 
@@ -543,9 +544,10 @@ void renderoutline()
 
         if(!prev || va->vbuf != prev->vbuf)
         {
-            glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
-            glVertexPointer(3, GL_FLOAT, sizeof(vertex), ((vertex *)0)->pos.v);
+            glBindBuffer_(GL_ARRAY_BUFFER, va->vbuf);
+            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, va->ebuf);
+            const vertex *ptr = 0;
+            gle::vertexpointer(sizeof(vertex), ptr->pos.v);
         }
 
         if(va->texs && va->occluded < OCCLUDE_GEOM)
@@ -568,11 +570,9 @@ void renderoutline()
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-    glDisableClientState(GL_VERTEX_ARRAY);
-
-    defaultshader->set();
+    glBindBuffer_(GL_ARRAY_BUFFER, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
+    gle::disablevertex();
 }
 
 HVAR(blendbrushcolor, 0, 0x0000C0, 0xFFFFFF);
@@ -581,7 +581,7 @@ void renderblendbrush(GLuint tex, float x, float y, float w, float h)
 {
     SETSHADER(blendbrush);
 
-    glEnableClientState(GL_VERTEX_ARRAY);
+    gle::enablevertex();
 
     glDepthFunc(GL_LEQUAL);
 
@@ -589,8 +589,7 @@ void renderblendbrush(GLuint tex, float x, float y, float w, float h)
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     glBindTexture(GL_TEXTURE_2D, tex);
-    bvec color((blendbrushcolor>>16)&0xFF, (blendbrushcolor>>8)&0xFF, blendbrushcolor&0xFF);
-    glColor4f(color.x*ldrscaleb, color.y*ldrscaleb, color.z*ldrscaleb, 0.25f);
+    gle::color(vec::hexcolor(blendbrushcolor), 0.25f);
 
     LOCALPARAMF(texgenS, (1.0f/w, 0, 0, -x/w));
     LOCALPARAMF(texgenT, (0, 1.0f/h, 0, -y/h));
@@ -603,9 +602,10 @@ void renderblendbrush(GLuint tex, float x, float y, float w, float h)
 
         if(!prev || va->vbuf != prev->vbuf)
         {
-            glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
-            glVertexPointer(3, GL_FLOAT, sizeof(vertex), ((vertex *)0)->pos.v);
+            glBindBuffer_(GL_ARRAY_BUFFER, va->vbuf);
+            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, va->ebuf);
+            const vertex *ptr = 0;
+            gle::vertexpointer(sizeof(vertex), ptr->pos.v);
         }
 
         drawvatris(va, 3*va->tris, 0);
@@ -618,11 +618,9 @@ void renderblendbrush(GLuint tex, float x, float y, float w, float h)
 
     glDepthFunc(GL_LESS);
 
-    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-    glDisableClientState(GL_VERTEX_ARRAY);
-
-    notextureshader->set();
+    glBindBuffer_(GL_ARRAY_BUFFER, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
+    gle::disablevertex();
 }
  
 int calcbbsidemask(const ivec &bbmin, const ivec &bbmax, const vec &lightpos, float lightradius, float bias)
@@ -919,7 +917,7 @@ void rendershadowmapworld()
 {
     SETSHADER(shadowmapworld);
 
-    glEnableClientState(GL_VERTEX_ARRAY);
+    gle::enablevertex();
 
     vtxarray *prev = NULL;
     for(vtxarray *va = shadowva; va; va = va->rnext)
@@ -928,9 +926,10 @@ void rendershadowmapworld()
 
         if(!prev || va->vbuf != prev->vbuf)
         {
-            glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
-            glVertexPointer(3, GL_FLOAT, sizeof(vertex), ((vertex *)0)->pos.v);
+            glBindBuffer_(GL_ARRAY_BUFFER, va->vbuf);
+            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, va->ebuf);
+            const vertex *ptr = 0;
+            gle::vertexpointer(sizeof(vertex), ptr->pos.v);
         }
 
         if(!smnodraw) drawvatris(va, 3*va->tris, 0);
@@ -948,9 +947,10 @@ void rendershadowmapworld()
 
             if(!prev || va->vbuf != prev->vbuf)
             {
-                glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->skybuf);
-                glVertexPointer(3, GL_FLOAT, sizeof(vertex), ((vertex *)0)->pos.v);
+                glBindBuffer_(GL_ARRAY_BUFFER, va->vbuf);
+                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, va->skybuf);
+                const vertex *ptr = 0;
+                gle::vertexpointer(sizeof(vertex), ptr->pos.v);
             }
 
             if(!smnodraw) drawvaskytris(va);
@@ -959,10 +959,9 @@ void rendershadowmapworld()
             prev = va;
         }
     }
-
-    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-    glDisableClientState(GL_VERTEX_ARRAY);
+    glBindBuffer_(GL_ARRAY_BUFFER, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
+    gle::disablevertex();
 }
 
 static octaentities *shadowmms = NULL;
@@ -1054,6 +1053,25 @@ struct renderstate
         loopk(8) textures[k] = 0;
     }
 };
+
+static inline void disablevbuf(renderstate &cur)
+{
+    glBindBuffer_(GL_ARRAY_BUFFER, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
+    cur.vbuf = 0;
+}
+
+static inline void enablevquery(renderstate &cur)
+{
+    gle::defvertex();
+    cur.vquery = true;
+}
+
+static inline void disablevquery(renderstate &cur)
+{
+    gle::disable();
+    cur.vquery = false;
+}
 
 void renderquery(renderstate &cur, occludequery *query, vtxarray *va, bool full = true)
 {
@@ -1205,6 +1223,30 @@ static void mergetexs(renderstate &cur, vtxarray *va, elementset *texs = NULL, i
     while(++curtex < numtexs);
 }
 
+static inline void enablevattribs(renderstate &cur, bool all = true)
+{
+    gle::enablevertex();
+    if(all)
+    {
+        gle::enabletexcoord0();
+        gle::enablenormal();
+        gle::enabletangent();
+    }
+    cur.vattribs = true;
+}
+
+static inline void disablevattribs(renderstate &cur, bool all = true)
+{
+    gle::disablevertex();
+    if(all)
+    {
+        gle::disabletexcoord0();
+        gle::disablenormal();
+        gle::disabletangent();
+    }
+    cur.vattribs = false;
+}
+
 static void changevbuf(renderstate &cur, int pass, vtxarray *va)
 {
     glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
@@ -1212,13 +1254,13 @@ static void changevbuf(renderstate &cur, int pass, vtxarray *va)
     cur.vbuf = va->vbuf;
 
     vertex *vdata = (vertex *)0;
-    glVertexPointer(3, GL_FLOAT, sizeof(vertex), vdata->pos.v);
+    gle::vertexpointer(sizeof(vertex), vdata->pos.v);
 
     if(pass==RENDERPASS_GBUFFER || pass==RENDERPASS_RSM)
     {
-        glTexCoordPointer(2, GL_FLOAT, sizeof(vertex), vdata->tc.v);
-        glNormalPointer(GL_BYTE, sizeof(vertex), vdata->norm.v);
-        glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertex), vdata->tangent.v);
+        gle::texcoord0pointer(sizeof(vertex), vdata->tc.v);
+        gle::normalpointer(sizeof(vertex), vdata->norm.v, GL_BYTE);
+        gle::tangentpointer(sizeof(vertex), vdata->tangent.v, GL_BYTE);
     }
 }
 
@@ -1707,9 +1749,10 @@ void renderrsmgeom(bool dyntex)
 
             if(!prev || va->vbuf != prev->vbuf)
             {
-                glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->skybuf);
-                glVertexPointer(3, GL_FLOAT, sizeof(vertex), ((vertex *)0)->pos.v);
+                glBindBuffer_(GL_ARRAY_BUFFER, va->vbuf);
+                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, va->skybuf);
+                const vertex *ptr = 0;
+                gle::vertexpointer(sizeof(vertex), ptr->pos.v);
             }
 
             drawvaskytris(va);
@@ -1815,7 +1858,7 @@ int findalphavas()
 
 void renderrefractmask()
 {
-    glEnableClientState(GL_VERTEX_ARRAY);
+    gle::enablevertex();
 
     vtxarray *prev = NULL;
     loopv(alphavas)
@@ -1825,18 +1868,19 @@ void renderrefractmask()
 
         if(!prev || va->vbuf != prev->vbuf)
         {
-            glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->ebuf);
-            glVertexPointer(3, GL_FLOAT, sizeof(vertex), ((vertex *)0)->pos.v);
+            glBindBuffer_(GL_ARRAY_BUFFER, va->vbuf);
+            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, va->ebuf);
+            const vertex *ptr = 0;
+            gle::vertexpointer(sizeof(vertex), ptr->pos.v);
         }
 
         drawvatris(va, 3*va->refracttris, 3*(va->tris + va->blendtris + va->alphabacktris + va->alphafronttris));
         xtravertsva += 3*va->refracttris;
     }
 
-    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-    glDisableClientState(GL_VERTEX_ARRAY);
+    glBindBuffer_(GL_ARRAY_BUFFER, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
+    gle::disablevertex();
 }
 
 void renderalphageom(int side)
@@ -1883,12 +1927,11 @@ bool renderexplicitsky(bool outline)
         {
             if(!prev) 
             {
-                glEnableClientState(GL_VERTEX_ARRAY);
+                gle::enablevertex();
                 if(outline)
                 {
-                    notextureshader->set();
-                    bvec color((explicitskycolour>>16)&0xFF, (explicitskycolour>>8)&0xFF, explicitskycolour&0xFF);
-                    glColor3f(color.x*ldrscaleb, color.y*ldrscaleb, color.z*ldrscaleb);
+                    ldrnotextureshader->set();
+                    gle::color(vec::hexcolor(explicitskycolour));
                     glDepthMask(GL_FALSE);
                     enablepolygonoffset(GL_POLYGON_OFFSET_LINE);
                     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -1899,9 +1942,10 @@ bool renderexplicitsky(bool outline)
                     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
                 }
             }
-            glBindBuffer_(GL_ARRAY_BUFFER_ARB, va->vbuf);
-            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, va->skybuf);
-            glVertexPointer(3, GL_FLOAT, sizeof(vertex), ((vertex *)0)->pos.v);
+            glBindBuffer_(GL_ARRAY_BUFFER, va->vbuf);
+            glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, va->skybuf);
+            const vertex *ptr = 0;
+            gle::vertexpointer(sizeof(vertex), ptr->pos.v);
         }
         drawvaskytris(va);
         xtraverts += va->sky/3;
@@ -1918,9 +1962,9 @@ bool renderexplicitsky(bool outline)
     {
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     }
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+    gle::disablevertex();
+    glBindBuffer_(GL_ARRAY_BUFFER, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
     return true;
 }
 
@@ -2140,21 +2184,21 @@ void rendershadowmesh(shadowmesh *m)
 
     SETSHADER(shadowmapworld);
 
-    glEnableClientState(GL_VERTEX_ARRAY);
+    gle::enablevertex();
 
     GLuint ebuf = 0, vbuf = 0;
     while(draw >= 0)
     {
         shadowdraw &d = shadowdraws[draw];
-        if(ebuf != d.ebuf) { glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, d.ebuf); ebuf = d.ebuf; }
-        if(vbuf != d.vbuf) { glBindBuffer_(GL_ARRAY_BUFFER_ARB, d.vbuf); vbuf = d.vbuf; glVertexPointer(3, GL_FLOAT, sizeof(vec), 0); }
+        if(ebuf != d.ebuf) { glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, d.ebuf); ebuf = d.ebuf; }
+        if(vbuf != d.vbuf) { glBindBuffer_(GL_ARRAY_BUFFER, d.vbuf); vbuf = d.vbuf; gle::vertexpointer(sizeof(vec), 0); }
         drawtris(3*d.tris, (ushort *)0 + d.offset, d.minvert, d.maxvert);
         xtravertsva += 3*d.tris;
         draw = d.next;
     }
 
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+    gle::disablevertex();
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer_(GL_ARRAY_BUFFER, 0);
 }
  

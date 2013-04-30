@@ -472,14 +472,14 @@ namespace server
 
     int findmaprotation(int mode, const char *map)
     {
-        for(int i = curmaprotation; i < maprotations.length(); i++)
+        for(int i = max(curmaprotation, 0); i < maprotations.length(); i++)
         {
             maprotation &rot = maprotations[i];
             if(!rot.modes) break;
             if(rot.match(mode, map)) return i;
         }
         int start;
-        for(start = curmaprotation - 1; start >= 0; start--) if(!maprotations[start].modes) break;
+        for(start = max(curmaprotation, 0) - 1; start >= 0; start--) if(!maprotations[start].modes) break;
         start++;
         for(int i = start; i < curmaprotation; i++)
         {
@@ -3522,11 +3522,10 @@ namespace server
         }
     }
 
-    int laninfoport() { return SAUERBRATEN_LANINFO_PORT; }
-    int serverinfoport(int servport) { return servport < 0 ? SAUERBRATEN_SERVINFO_PORT : servport+1; }
-    int serverport(int infoport) { return infoport < 0 ? SAUERBRATEN_SERVER_PORT : infoport-1; }
-    const char *defaultmaster() { return "sauerbraten.org"; }
-    int masterport() { return SAUERBRATEN_MASTER_PORT; }
+    int laninfoport() { return TESSERACT_LANINFO_PORT; }
+    int serverport() { return TESSERACT_SERVER_PORT; }
+    const char *defaultmaster() { return "tesseract.gg"; }
+    int masterport() { return TESSERACT_MASTER_PORT; }
     int numchannels() { return 3; }
 
     #include "extinfo.h"

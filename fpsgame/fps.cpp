@@ -566,6 +566,11 @@ namespace game
         return showmodeinfo && m_valid(gamemode) ? gamemodes[gamemode - STARTGAMEMODE].info : NULL;
     }
 
+    const char *getscreenshotinfo()
+    {
+        return server::modename(gamemode, NULL);
+    }
+
     void physicstrigger(physent *d, bool local, int floorlevel, int waterlevel, int material)
     {
         if     (waterlevel>0) { if(material!=MAT_LAVA) playsound(S_SPLASH1, d==player1 ? NULL : &d->o); }
@@ -665,6 +670,8 @@ namespace game
 
 	bool needminimap() { return true;}// m_ctf || m_capture; }
 
+//TODO: figure this out
+//<<<<<<< HEAD:fpsgame/fps.cpp
 
 	//RR Stuff---------------------------
 
@@ -683,6 +690,21 @@ namespace game
 	 }
 
 	//RR Stuff-------------------------------
+/*=======
+    void drawicon(int icon, float x, float y, float sz)
+    {
+        settexture("packages/hud/items.png");
+        float tsz = 0.25f, tx = tsz*(icon%4), ty = tsz*(icon/4);
+        gle::defvertex(2);
+        gle::deftexcoord0();
+        gle::begin(GL_TRIANGLE_STRIP);
+        gle::attribf(x,    y);    gle::attribf(tx,     ty);
+        gle::attribf(x+sz, y);    gle::attribf(tx+tsz, ty);
+        gle::attribf(x,    y+sz); gle::attribf(tx,     ty+tsz);
+        gle::attribf(x+sz, y+sz); gle::attribf(tx+tsz, ty+tsz);
+        gle::end();
+    }
+>>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/fpsgame/fps.cpp */
 
     float abovegameplayhud(int w, int h)
     {

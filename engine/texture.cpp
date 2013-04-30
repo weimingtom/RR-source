@@ -2101,14 +2101,11 @@ void forcecubemapload(GLuint tex)
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, tex);
     if(!blend) glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBegin(GL_TRIANGLES);
-    loopi(3)
-    {
-        glColor4f(1, 1, 1, 0);
-        glTexCoord3f(0, 0, 1);
-        glVertex2f(0, 0);
-    }
-    glEnd();
+    gle::defvertex();
+    gle::begin(GL_TRIANGLES);
+    loopi(3) gle::attribf(0, 0, 0);
+    gle::end();
+    gle::disable();
     if(!blend) glDisable(GL_BLEND);
     if(depthtest) glEnable(GL_DEPTH_TEST);
 
@@ -2958,8 +2955,25 @@ void screenshot(char *filename)
     }
     else
     {
-        defformatstring(name)("screenshot_%d", totalmillis);
-        concatstring(buf, name);
+        string sstime;
+        time_t t = time(NULL);
+        size_t len = strftime(sstime, sizeof(sstime), "%Y-%m-%d_%H.%M.%S", localtime(&t));
+        sstime[min(len, sizeof(sstime)-1)] = '\0';
+        concatstring(buf, sstime);
+
+        const char *map = game::getclientmap(), *ssinfo = game::getscreenshotinfo();
+        if(map && map[0])
+        {
+            concatstring(buf, "_");
+            concatstring(buf, map);
+        }
+        if(ssinfo && ssinfo[0])
+        {
+            concatstring(buf, "_");
+            concatstring(buf, ssinfo);
+        } 
+        
+        for(char *s = buf; *s; s++) if(iscubespace(*s)) *s = '-'; 
     }
     if(format < 0)
     {

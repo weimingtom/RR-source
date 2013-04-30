@@ -134,6 +134,16 @@ void restorebackground()
     renderbackground(backgroundcaption[0] ? backgroundcaption : NULL, backgroundmapshot, backgroundmapname[0] ? backgroundmapname : NULL, backgroundmapinfo, true);
 }
 
+void bgquad(float x, float y, float w, float h, float tx = 0, float ty = 0, float tw = 1, float th = 1)
+{
+    gle::begin(GL_TRIANGLE_STRIP);
+    gle::attribf(x,   y);   gle::attribf(tx,      ty);
+    gle::attribf(x+w, y);   gle::attribf(tx + tw, ty);
+    gle::attribf(x,   y+h); gle::attribf(tx,      ty + th);
+    gle::attribf(x+w, y+h); gle::attribf(tx + tw, ty + th);
+    gle::end();
+}
+
 void renderbackground(const char *caption, Texture *mapshot, const char *mapname, const char *mapinfo, bool restore, bool force)
 {
     if(!inbetweenframes && !force) return;
@@ -189,10 +199,10 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         resethudmatrix();
         hudshader->set();
 
-        varray::defvertex(2);
-        varray::deftexcoord0();
+        gle::defvertex(2);
+        gle::deftexcoord0();
 
-        varray::colorf(1, 1, 1);
+        gle::colorf(1, 1, 1);
         settexture("data/gui/background.png", 0);
         float bu = w*0.67f/256.0f + backgroundu, bv = h*0.67f/256.0f + backgroundv;
         bgquad(0, 0, w, h, 0, 0, bu, bv);
@@ -303,6 +313,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
             }
         }
         glDisable(GL_BLEND);
+        gle::disable();
         if(!restore) swapbuffers();
     }
 
@@ -347,8 +358,10 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
     glPushMatrix();
     glLoadIdentity();
 
-    defaultshader->set();
-    glColor3f(1, 1, 1);
+    gle::defvertex(2);
+    gle::deftexcoord0();
+
+    gle::colorf(1, 1, 1);
 
     float fh = 0.075f*min(w, h), fw = fh*10,
           fx = renderedframe ? w - fw - fh/4 : 0.5f*(w - fw), 
@@ -408,6 +421,8 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
         bgquad(x, y, sz, sz);
         glDisable(GL_BLEND);
     }
+
+    gle::disable();
 
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
@@ -793,10 +808,22 @@ void checkinput()
 
             case SDL_MOUSEBUTTONDOWN:
             case SDL_MOUSEBUTTONUP:
-                if(lasttype==event.type && lastbut==event.button.button) break; // why?? get event twice without it
-                keypress(-event.button.button, event.button.state!=0, 0);
-                lasttype = event.type;
-                lastbut = event.button.button;
+                //if(lasttype==event.type && lastbut==event.button.button) break; // why?? get event twice without it
+                switch(event.button.button)
+                {
+                    case SDL_BUTTON_LEFT: processkey(-1, event.button.state==SDL_PRESSED); break;
+                    case SDL_BUTTON_MIDDLE: processkey(-2, event.button.state==SDL_PRESSED); break;
+                    case SDL_BUTTON_RIGHT: processkey(-3, event.button.state==SDL_PRESSED); break;
+                    case SDL_BUTTON_X1: processkey(-6, event.button.state==SDL_PRESSED); break;
+                    case SDL_BUTTON_X2: processkey(-7, event.button.state==SDL_PRESSED); break;
+                }
+                //lasttype = event.type;
+                //lastbut = event.button.button;
+                break;
+    
+            case SDL_MOUSEWHEEL:
+                if(event.wheel.y > 0) { processkey(-4, true); processkey(-4, false); }
+                else if(event.wheel.y < 0) { processkey(-5, true); processkey(-5, false); }
                 break;
         }
     }

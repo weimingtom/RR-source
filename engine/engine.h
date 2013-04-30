@@ -129,9 +129,10 @@ extern bvec fogcolor;
 extern vec curfogcolor;
 extern int wireframe;
 
+extern int glerr;
 extern void glerror(const char *file, int line, GLenum error);
 
-#define GLERROR do { GLenum error = glGetError(); if(error != GL_NO_ERROR) glerror(__FILE__, __LINE__, error); } while(0)
+#define GLERROR do { if(glerr) { GLenum error = glGetError(); if(error != GL_NO_ERROR) glerror(__FILE__, __LINE__, error); } } while(0)
 
 extern void gl_checkextensions();
 extern void gl_init(int w, int h, int bpp);
@@ -195,7 +196,6 @@ extern void resetclipplanes();
 extern int getmippedtexture(const cube &p, int orient);
 extern void forcemip(cube &c, bool fixtex = true);
 extern bool subdividecube(cube &c, bool fullcheck=true, bool brighten=true);
-extern void edgespan2vectorcube(cube &c);
 extern int faceconvexity(const ivec v[4]);
 extern int faceconvexity(const ivec v[4], int &vis);
 extern int faceconvexity(const vertinfo *verts, int numverts, int size);
@@ -460,7 +460,7 @@ extern void renderliquidmaterials();
 extern void rendersolidmaterials();
 extern void rendereditmaterials();
 extern void renderminimapmaterials();
-extern int visiblematerial(const cube &c, int orient, int x, int y, int z, int size, uchar matmask = MATF_VOLUME);
+extern int visiblematerial(const cube &c, int orient, int x, int y, int z, int size, ushort matmask = MATF_VOLUME);
 
 // water
 extern int vertwater, waterreflect, caustics;
@@ -623,6 +623,9 @@ extern void startmap(const char *name);
 // rendermodel
 struct mapmodelinfo { string name; model *m; };
 
+extern float transmdlsx1, transmdlsy1, transmdlsx2, transmdlsy2;
+extern uint transmdltiles[LIGHTTILE_MAXH];
+
 extern void findanims(const char *pattern, vector<int> &anims);
 extern void loadskin(const char *dir, const char *altdir, Texture *&skin, Texture *&masks);
 extern mapmodelinfo *getmminfo(int i);
@@ -631,6 +634,9 @@ extern void startmodelquery(occludequery *query);
 extern void endmodelquery();
 extern void rendermodelbatches(bool dynmodel = true);
 extern void shadowmaskbatchedmodels(bool dynshadow = true);
+extern void rendermapmodelbatches();
+extern void rendermodelbatches();
+extern void rendertransparentmodelbatches();
 extern void rendermapmodel(int idx, int anim, const vec &o, float yaw = 0, float pitch = 0, int flags = MDL_CULL_VFC | MDL_CULL_DIST, int basetime = 0, float size = 1);
 extern void clearbatchedmapmodels();
 extern void preloadusedmapmodels(bool msg = false, bool bih = false);
