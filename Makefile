@@ -1,4 +1,4 @@
-CXXFLAGS= -O3 -fomit-frame-pointer
+CXXFLAGS= -O3 -fomit-frame-pointer #-g3 -D_DEBUG=1
 override CXXFLAGS+= -Wall -fsigned-char -fno-exceptions -fno-rtti
 
 PLATFORM= $(shell uname -s)
@@ -141,7 +141,7 @@ clean-enet: enet/Makefile
 	$(MAKE) -C enet/ clean
 
 clean:
-	-$(RM) $(CLIENT_PCH) $(CLIENT_OBJS) $(SERVER_OBJS) $(MASTER_OBJS) tess_client tess_server tess_master
+	-$(RM) $(CLIENT_PCH) $(CLIENT_OBJS) $(SERVER_OBJS) $(MASTER_OBJS) rr_client rr_server rr_master
 
 %.h.gch: %.h
 	$(CXX) $(CXXFLAGS) -o $(subst .h.gch,.tmp.h.gch,$@) $(subst .h.gch,.h,$@)
@@ -161,25 +161,25 @@ $(filter-out $(SERVER_OBJS),$(MASTER_OBJS)): CXXFLAGS += $(SERVER_INCLUDES)
 ifneq (,$(findstring MINGW,$(PLATFORM)))
 client: $(CLIENT_OBJS)
 	$(WINDRES) -I vcpp -i vcpp/mingw.rc -J rc -o vcpp/mingw.res -O coff 
-	$(CXX) $(CXXFLAGS) -o $(WINBIN)/tesseract.exe vcpp/mingw.res $(CLIENT_OBJS) $(CLIENT_LIBS)
+	$(CXX) $(CXXFLAGS) -o $(WINBIN)/revelade_revolution.exe vcpp/mingw.res $(CLIENT_OBJS) $(CLIENT_LIBS)
 
 server: $(SERVER_OBJS)
 	$(WINDRES) -I vcpp -i vcpp/mingw.rc -J rc -o vcpp/mingw.res -O coff
-	$(CXX) $(CXXFLAGS) -o $(WINBIN)/tess_server.exe vcpp/mingw.res $(SERVER_OBJS) $(SERVER_LIBS)
+	$(CXX) $(CXXFLAGS) -o $(WINBIN)/rr_server.exe vcpp/mingw.res $(SERVER_OBJS) $(SERVER_LIBS)
 
 master: $(MASTER_OBJS)
-	$(CXX) $(CXXFLAGS) -o $(WINBIN)/tess_master.exe $(MASTER_OBJS) $(MASTER_LIBS)
+	$(CXX) $(CXXFLAGS) -o $(WINBIN)/rr_master.exe $(MASTER_OBJS) $(MASTER_LIBS)
 
 install: all
 else
 client:	libenet $(CLIENT_OBJS)
-	$(CXX) $(CXXFLAGS) -o tess_client $(CLIENT_OBJS) $(CLIENT_LIBS)
+	$(CXX) $(CXXFLAGS) -o rr_client $(CLIENT_OBJS) $(CLIENT_LIBS)
 
 server:	libenet $(SERVER_OBJS)
-	$(CXX) $(CXXFLAGS) -o tess_server $(SERVER_OBJS) $(SERVER_LIBS)  
+	$(CXX) $(CXXFLAGS) -o rr_server $(SERVER_OBJS) $(SERVER_LIBS)  
 	
 master: libenet $(MASTER_OBJS)
-	$(CXX) $(CXXFLAGS) -o tess_master $(MASTER_OBJS) $(MASTER_LIBS)  
+	$(CXX) $(CXXFLAGS) -o rr_master $(MASTER_OBJS) $(MASTER_LIBS)  
 
 shared/cube2font.o: shared/cube2font.c
 	$(CXX) $(CXXFLAGS) -c -o $@ $< `freetype-config --cflags`
@@ -188,11 +188,11 @@ cube2font: shared/cube2font.o
 	$(CXX) $(CXXFLAGS) -o cube2font shared/cube2font.o `freetype-config --libs` -lz
 
 install: all
-	cp -f tess_client	../bin_unix/$(PLATFORM_PREFIX)_client
-	cp -f tess_server	../bin_unix/$(PLATFORM_PREFIX)_server
+	cp -f rr_client	../bin/$(PLATFORM_PREFIX)_client
+	cp -f rr_server	../bin/$(PLATFORM_PREFIX)_server
 ifneq (,$(STRIP))
-	$(STRIP) ../bin_unix/$(PLATFORM_PREFIX)_client
-	$(STRIP) ../bin_unix/$(PLATFORM_PREFIX)_server
+	$(STRIP) ../bin/$(PLATFORM_PREFIX)_client
+	$(STRIP) ../bin/$(PLATFORM_PREFIX)_server
 endif
 endif
 

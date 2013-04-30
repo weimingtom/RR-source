@@ -345,7 +345,7 @@ struct gui : g3d_gui
                     defaultshader->set();
                 }
                 if(!overlaytex) overlaytex = textureload("data/gui/guioverlay.png", 3);
-                glColor3f(1, 1, 1);
+                varray::colorf(1, 1, 1);
                 glBindTexture(GL_TEXTURE_2D, overlaytex->id);
                 rect_(xi, yi, xs, ys, 0);
             }
@@ -402,7 +402,7 @@ struct gui : g3d_gui
                     defaultshader->set();
                 }
                 if(!overlaytex) overlaytex = textureload("data/gui/guioverlay.png", 3);
-                glColor3f(1, 1, 1);
+                varray::colorf(1, 1, 1);
                 glBindTexture(GL_TEXTURE_2D, overlaytex->id);
                 rect_(xi, yi, xs, ys, 0);
             }
@@ -760,7 +760,7 @@ struct gui : g3d_gui
                 if(icon[0] != ' ')
                 {
                     const char *ext = strrchr(icon, '.');
-                    defformatstring(tname)("data/icons/%s%s", icon, ext ? "" : ".png");
+                    defformatstring(tname)("packages/icons/%s%s", icon, ext ? "" : ".png");
                     icon_(textureload(tname, 3), false, x, cury, ICON_SIZE, clickable && hit);
                 }
                 x += ICON_SIZE;
