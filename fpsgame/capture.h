@@ -260,7 +260,7 @@ struct captureclientmode : clientmode
 
     void replenishammo()
     {
-        if(!m_capture || m_regencapture) return;
+        if(!m_capture) return;
         loopv(bases)
         {
             baseinfo &b = bases[i];
@@ -280,7 +280,7 @@ struct captureclientmode : clientmode
 
     void checkitems(fpsent *d)
     {
-        if(m_regencapture || !autorepammo || d!=player1 || d->state!=CS_ALIVE) return;
+        if(!autorepammo || d!=player1 || d->state!=CS_ALIVE) return;
         vec o = d->feetpos();
         loopv(bases)
         {
@@ -357,16 +357,8 @@ struct captureclientmode : clientmode
 
 //            particle_fireball(b.ammopos, 4.8f, PART_EXPLOSION, 0, b.owner[0] ? (strcmp(b.owner, player1->team) ? 0x802020 : 0x2020FF) : 0x208020, 4.8f);
 
-            const char *ammoname = entities::entmdlname(I_SHELLS+b.ammotype-1);
-            if(m_regencapture)
-            {
-                vec height(0, 0, 0);
-                abovemodel(height, ammoname);
-                vec ammopos(b.ammopos);
-                ammopos.z -= height.z/2 + sinf(lastmillis/100.0f)/20;
-                rendermodel(ammoname, ANIM_MAPMODEL|ANIM_LOOP, ammopos, lastmillis/10.0f, 0, MDL_CULL_VFC | MDL_CULL_OCCLUDED);
-            }
-            else loopj(b.ammo)
+            //const char *ammoname = entities::entmdlname(I_SHELLS+b.ammotype-1);
+			loopj(b.ammo)
             {
                 float angle = 2*M_PI*(lastmillis/4000.0f + j/float(MAXAMMO));
                 vec ammopos(b.o);
@@ -440,26 +432,20 @@ struct captureclientmode : clientmode
             }
             else
             {
-                if(!blips) 
-                {
-                    varray::defvertex(2);
-                    varray::deftexcoord0();
-                    varray::begin(GL_QUADS);
-                }
+                if(!blips) glBegin(GL_QUADS);
                 float x = 0.5f*(dir.x*fw/blipsize - fw), y = 0.5f*(dir.y*fh/blipsize - fh);
-                varray::attribf(x,    y);    varray::attribf(0, 0);
-                varray::attribf(x+fw, y);    varray::attribf(1, 0);
-                varray::attribf(x+fw, y+fh); varray::attribf(1, 1);
-                varray::attribf(x,    y+fh); varray::attribf(0, 1);
+                glTexCoord2f(0.0f, 0.0f); glVertex2f(x,    y);
+                glTexCoord2f(1.0f, 0.0f); glVertex2f(x+fw, y);
+                glTexCoord2f(1.0f, 1.0f); glVertex2f(x+fw, y+fh);
+                glTexCoord2f(0.0f, 1.0f); glVertex2f(x,    y+fh);
             }
             blips++;
         }
-        if(blips && !basenumbers) varray::end();
+        if(blips && !basenumbers) glEnd();
     }
 
     int respawnwait(fpsent *d)
     {
-        if(m_regencapture) return -1;
         return max(0, RESPAWNSECS-(lastmillis-d->lastpain)/1000);
     }
 
@@ -472,23 +458,22 @@ struct captureclientmode : clientmode
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         int s = 1800/4, x = 1800*w/h - s - s/10, y = s/10;
-        varray::colorf(1, 1, 1, minimapalpha);
+        glColor4f(1, 1, 1, minimapalpha);
         if(minimapalpha >= 1) glDisable(GL_BLEND);
         bindminimap();
         drawminimap(d, x, y, s);
         if(minimapalpha >= 1) glEnable(GL_BLEND);
-        varray::colorf(1, 1, 1);
+        glColor3f(1, 1, 1);
         float margin = 0.04f, roffset = s*margin, rsize = s + 2*roffset;
         settexture("packages/hud/radar.png", 3);
         drawradar(x - roffset, y - roffset, rsize);
         #if 0
         settexture("packages/hud/compass.png", 3);
-        pushhudmatrix();
-        hudmatrix.translate(x - roffset + 0.5f*rsize, y - roffset + 0.5f*rsize, 0);
-        hudmatrix.rotate_around_z((camera1->yaw + 180)*-RAD);
-        flushhudmatrix();
+        glPushMatrix();
+        glTranslatef(x - roffset + 0.5f*rsize, y - roffset + 0.5f*rsize, 0);
+        glRotatef(camera1->yaw + 180, 0, 0, -1);
         drawradar(-0.5f*rsize, -0.5f*rsize, rsize);
-        pophudmatrix();
+        glPopMatrix();
         #endif
         bool showenemies = lastmillis%1000 >= 500;
         int fw = 1, fh = 1;
@@ -499,11 +484,10 @@ struct captureclientmode : clientmode
             text_bounds(" ", fw, fh);
         }
         else settexture("packages/hud/blip_blue.png", 3);
-        pushhudmatrix();
-        hudmatrix.translate(x + 0.5f*s, y + 0.5f*s, 0);
+        glPushMatrix();
+        glTranslatef(x + 0.5f*s, y + 0.5f*s, 0);
         float blipsize = basenumbers ? 0.1f : 0.05f;
-        hudmatrix.scale((s*blipsize)/fw, (s*blipsize)/fh, 1.0f);
-        flushhudmatrix();
+        glScalef((s*blipsize)/fw, (s*blipsize)/fh, 1.0f);
         drawblips(d, blipsize, fw, fh, 1, showenemies);
         if(basenumbers) setfont("digit_grey");
         else settexture("packages/hud/blip_grey.png", 3);
@@ -512,7 +496,7 @@ struct captureclientmode : clientmode
         else settexture("packages/hud/blip_red.png", 3);
         drawblips(d, blipsize, fw, fh, -1, showenemies);
         if(showenemies) drawblips(d, blipsize, fw, fh, -2);
-        pophudmatrix();
+        glPopMatrix();
         if(basenumbers) popfont();
         drawteammates(d, x, y, s);
         if(d->state == CS_DEAD)
@@ -520,12 +504,11 @@ struct captureclientmode : clientmode
             int wait = respawnwait(d);
             if(wait>=0)
             {
-                pushhudmatrix();
-                hudmatrix.scale(2, 2, 1);
-                flushhudmatrix();
+                glPushMatrix();
+                glScalef(2, 2, 1);
                 bool flash = wait>0 && d==player1 && lastspawnattempt>=d->lastpain && lastmillis < lastspawnattempt+100;
                 draw_textf("%s%d", (x+s/2)/2-(wait>=10 ? 28 : 16), (y+s/2)/2-32, flash ? "\f3" : "", wait);
-                pophudmatrix();
+                glPopMatrix();
             }
         }
     }
@@ -642,8 +625,8 @@ struct captureclientmode : clientmode
 
     int pickteamspawn(const char *team)
     {
-        int closest = closesttoenemy(team, true, m_regencapture);
-        if(!m_regencapture && closest < 0) closest = closesttoenemy(team, false);
+        int closest = closesttoenemy(team, true);
+        if(closest < 0) closest = closesttoenemy(team, false);
         if(closest < 0) return -1;
         baseinfo &b = bases[closest];
 
@@ -691,13 +674,7 @@ struct captureclientmode : clientmode
 			targets.setsize(0);
 			ai::checkothers(targets, d, ai::AI_S_DEFEND, ai::AI_T_AFFINITY, j, true);
 			fpsent *e = NULL;
-			int regen = !m_regencapture || d->health >= 100 ? 0 : 1;
-			if(m_regencapture)
-			{
-				int gun = f.ammotype-1+I_SHELLS;
-				if(f.ammo > 0 && !d->hasmaxammo(gun))
-					regen = gun != d->ai->weappref ? 2 : 4;
-			}
+			int regen = d->health >= 100 ? 0 : 1;
 			loopi(numdynents()) if((e = (fpsent *)iterdynents(i)) && !e->ai && e->state == CS_ALIVE && isteam(d->team, e->team))
 			{ // try to guess what non ai are doing
 				vec ep = e->feetpos();
@@ -721,8 +698,8 @@ struct captureclientmode : clientmode
         if(!bases.inrange(b.target)) return false;
         baseinfo &f = bases[b.target];
         if(!f.valid()) return false;
-		bool regen = !m_regencapture || d->health >= 100 ? false : true;
-		if(!regen && m_regencapture)
+		bool regen = d->health >= 100 ? false : true;
+		if(!regen)
 		{
 			int gun = f.ammotype-1+I_SHELLS;
 			if(f.ammo > 0 && !d->hasmaxammo(gun))
@@ -893,14 +870,14 @@ ICOMMAND(insidebases, "", (),
                     ci->state.health = min(ci->state.health + ticks*REGENHEALTH, ci->state.maxhealth);
                     notify = true;
                 }
-                if(ci->state.armourtype != A_GREEN || ci->state.armour < itemstats[I_GREENARMOUR-I_SHELLS].max)
+                if(ci->state.armourtype = 0)
                 {
-                    if(ci->state.armourtype != A_GREEN)
+                    if(ci->state.armourtype != -1)
                     {
-                        ci->state.armourtype = A_GREEN;
+                        ci->state.armourtype = -1;
                         ci->state.armour = 0;
                     }
-                    ci->state.armour = min(ci->state.armour + ticks*REGENARMOUR, itemstats[I_GREENARMOUR-I_SHELLS].max);
+                    //ci->state.armour = min(ci->state.armour + ticks*REGENARMOUR, itemstats[I_GREENARMOUR-I_SHELLS].max);
                     notify = true;
                 }
                 if(b.valid())
@@ -1128,7 +1105,7 @@ case N_BASEREGEN:
     if(regen && m_capture)
     {
         regen->health = health;
-        regen->armourtype = A_GREEN;
+        //regen->armourtype = A_GREEN;
         regen->armour = armour;
         if(ammotype>=GUN_SG && ammotype<=GUN_PISTOL) regen->ammo[ammotype] = ammo;
     }

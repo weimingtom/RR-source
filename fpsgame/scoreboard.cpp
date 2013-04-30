@@ -33,7 +33,7 @@ namespace game
             else return false;
         }
         else if(b->state==CS_SPECTATOR) return true;
-        if(m_ctf || m_collect)
+        if(m_ctf)
         {
             if(a->flags > b->flags) return true;
             if(a->flags < b->flags) return false;
@@ -107,7 +107,7 @@ namespace game
             fpsent *o = players[i];
             if(!showconnecting && !o->name[0]) continue;
             if(o->state==CS_SPECTATOR) { spectators.add(o); continue; }
-            const char *team = m_teammode && o->team[0] ? o->team : NULL;
+            const char *team = o->team[0] ? o->team : NULL;
             bool found = false;
             loopj(numgroups)
             {
@@ -179,7 +179,7 @@ namespace game
             if((k%2)==0) g.pushlist(); // horizontal
             
             scoregroup &sg = *groups[k];
-            int bgcolor = sg.team && m_teammode ? (isteam(player1->team, sg.team) ? 0x3030C0 : 0xC03030) : 0,
+            int bgcolor = sg.team  ? (isteam(player1->team, sg.team) ? 0x3030C0 : 0xC03030) : 0,
                 fgcolor = 0xFFFF80;
 
             g.pushlist(); // vertical
@@ -193,7 +193,7 @@ namespace game
                 }    
 
             g.pushlist();
-            if(sg.team && m_teammode)
+            if(sg.team)
             {
                 g.pushlist();
                 g.background(bgcolor, numgroups>1 ? 3 : 5);
@@ -209,13 +209,13 @@ namespace game
                     g.background(0x808080, numgroups>1 ? 3 : 5);
                 }
                 const playermodelinfo &mdl = getplayermodelinfo(o);
-                const char *icon = sg.team && m_teammode ? (isteam(player1->team, sg.team) ? mdl.blueicon : mdl.redicon) : mdl.ffaicon;
+                const char *icon = sg.team ? (isteam(player1->team, sg.team) ? mdl.blueicon : mdl.redicon) : mdl.ffaicon;
                 g.text("", 0, icon);
                 if(o==player1 && highlightscore && (multiplayer(false) || demoplayback || players.length() > 1)) g.poplist();
             });
             g.poplist();
 
-            if(sg.team && m_teammode)
+            if(sg.team)
             {
                 g.pushlist(); // vertical
 
@@ -289,7 +289,7 @@ namespace game
                 g.poplist();
             }
             
-            if(sg.team && m_teammode)
+            if(sg.team)
             {
                 g.poplist(); // horizontal
                 g.poplist(); // vertical

@@ -452,12 +452,15 @@ static void calcsurfaces(cube &c, const ivec &co, int size, int usefacemask, int
             for(int k = 3; k < numverts; k++) findnormal(pos[k], planes[1], n[k]);
         }
 
-        loopk(numverts) curlitverts[k].norm = encodenormal(n[k]);
-        if(!(surf.numverts&MAXFACEVERTS))
+        if(shadertype&(SHADER_NORMALSLMS | SHADER_ENVMAP))
         {
-            surf.verts = numlitverts;
-            surf.numverts |= numverts;
-            numlitverts += numverts;
+            loopk(numverts) curlitverts[k].norm = encodenormal(n[k]);
+            if(!(surf.numverts&MAXFACEVERTS))
+            {
+                surf.verts = numlitverts;
+                surf.numverts |= numverts;
+                numlitverts += numverts;
+            }
         }
 
         if(preview) { surf.numverts |= preview; continue; }

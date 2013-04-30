@@ -109,12 +109,11 @@ namespace game
             const playermodelinfo *mdl = getplayermodelinfo(i);
             if(!mdl) break;
             if(i != playermodel && (!multiplayer(false) || forceplayermodels)) continue;
-            if(m_teammode)
             {
                 preloadmodel(mdl->blueteam);
                 preloadmodel(mdl->redteam);
             }
-            else preloadmodel(mdl->ffa);
+            //else preloadmodel(mdl->ffa);
             if(mdl->vwep) preloadmodel(mdl->vwep);
             if(mdl->quad) preloadmodel(mdl->quad);
             loopj(3) if(mdl->armour[j]) preloadmodel(mdl->armour[j]);
@@ -133,7 +132,7 @@ namespace game
             lastaction = 0;
             hold = attack = ANIM_LOSE|ANIM_LOOP;
             delay = 0;
-            if(m_teammode ? bestteams.htfind(d->team)>=0 : bestplayers.find(d)>=0) hold = attack = ANIM_WIN|ANIM_LOOP;
+            if(true ? bestteams.htfind(d->team)>=0 : bestplayers.find(d)>=0) hold = attack = ANIM_WIN|ANIM_LOOP;
         }
         else if(d->state==CS_ALIVE && d->lasttaunt && lastmillis-d->lasttaunt<1000 && lastmillis-d->lastaction>delay)
         {
@@ -160,7 +159,7 @@ namespace game
                 a[ai++] = modelattach("tag_powerup", mdl.quad, ANIM_POWERUP|ANIM_LOOP, 0);
             if(testarmour || d->armour)
             {
-                int type = clamp(d->armourtype, (int)A_BLUE, (int)A_YELLOW);
+                int type = 0;
                 if(mdl.armour[type])
                     a[ai++] = modelattach("tag_shield", mdl.armour[type], ANIM_SHIELD|ANIM_LOOP, 0);
             }
@@ -185,7 +184,7 @@ namespace game
 #endif
     }
 
-    VARP(teamskins, 0, 0, 1);
+    VARP(teamskins, 1, 1, 1);
 
     void rendergame()
     {
@@ -195,7 +194,7 @@ namespace game
         {
             bestteams.shrink(0);
             bestplayers.shrink(0);
-            if(m_teammode) getbestteams(bestteams);
+            if(!M_SURV)getbestteams(bestteams);
             else getbestplayers(bestplayers);
         }
 
@@ -205,7 +204,7 @@ namespace game
             fpsent *d = players[i];
             if(d == player1 || d->state==CS_SPECTATOR || d->state==CS_SPAWNING || d->lifesequence < 0 || d == exclude || (d->state==CS_DEAD && hidedead)) continue;
             int team = 0;
-            if(teamskins || m_teammode) team = isteam(player1->team, d->team) ? 1 : 2;
+            if(teamskins) team = isteam(player1->team, d->team) ? 1 : 2;
             renderplayer(d, getplayermodelinfo(d), team, 1);
             copystring(d->info, colorname(d));
             if(d->maxhealth>100) { defformatstring(sn)(" +%d", d->maxhealth-100); concatstring(d->info, sn); }
@@ -215,13 +214,13 @@ namespace game
         {
             fpsent *d = ragdolls[i];
             int team = 0;
-            if(teamskins || m_teammode) team = isteam(player1->team, d->team) ? 1 : 2;
+            if(teamskins) team = isteam(player1->team, d->team) ? 1 : 2;
             float fade = 1.0f;
             if(ragdollmillis && ragdollfade) 
                 fade -= clamp(float(lastmillis - (d->lastupdate + max(ragdollmillis - ragdollfade, 0)))/min(ragdollmillis, ragdollfade), 0.0f, 1.0f);
             renderplayer(d, getplayermodelinfo(d), team, fade);
         } 
-        if(isthirdperson() && !followingplayer() && (player1->state!=CS_DEAD || !hidedead)) renderplayer(player1, getplayermodelinfo(player1), teamskins || m_teammode ? 1 : 0, 1);
+        if(isthirdperson() && !followingplayer() && (player1->state!=CS_DEAD || !hidedead)) renderplayer(player1, getplayermodelinfo(player1), teamskins || true ? 1 : 0, 1);
         entities::renderentities();
         renderbouncers();
         renderprojectiles();
@@ -296,7 +295,7 @@ namespace game
 #endif
         const playermodelinfo &mdl = getplayermodelinfo(d);
         defformatstring(gunname)("%s/%s", hudgunsdir[0] ? hudgunsdir : mdl.hudguns, guns[d->gunselect].file);
-        if((m_teammode || teamskins) && teamhudguns)
+        if((teamskins) && teamhudguns)
             concatstring(gunname, d==player1 || isteam(d->team, player1->team) ? "/blue" : "/red");
         else if(testteam > 1)
             concatstring(gunname, testteam==2 ? "/blue" : "/red");
@@ -388,7 +387,7 @@ namespace game
             const char *file = guns[i].file;
             if(!file) continue;
             string fname;
-            if((m_teammode || teamskins) && teamhudguns)
+            if((teamskins) && teamhudguns)
             {
                 formatstring(fname)("%s/%s/blue", hudgunsdir[0] ? hudgunsdir : mdl.hudguns, file);
                 preloadmodel(fname);

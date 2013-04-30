@@ -2,7 +2,7 @@
 
 #include "engine.h"
 
-Shader *particleshader = NULL, *particlenotextureshader = NULL, *particlesoftshader = NULL, *particletextshader = NULL;
+Shader *particleshader = NULL, *particlenotextureshader = NULL, *particlesoftshader = NULL;
 
 FVARP(particlebright, 0, 2, 100);
 VARP(particlesize, 20, 100, 500);
@@ -102,23 +102,21 @@ enum
     PT_LIGHTNING,
     PT_FLARE,
 
-    PT_MOD       = 1<<8,
-    PT_RND4      = 1<<9,
-    PT_LERP      = 1<<10, // use very sparingly - order of blending issues
-    PT_TRACK     = 1<<11,
-    PT_BRIGHT    = 1<<12,
-    PT_SOFT      = 1<<13,
-    PT_HFLIP     = 1<<14,
-    PT_VFLIP     = 1<<15,
-    PT_ROT       = 1<<16,
-    PT_CULL      = 1<<17,
-    PT_FEW       = 1<<18,
-    PT_ICON      = 1<<19,
-    PT_NOTEX     = 1<<20,
-    PT_SHADER    = 1<<21,
-    PT_GREY      = 1<<22,
-    PT_GREYALPHA = 1<<23,
-    PT_FLIP      = PT_HFLIP | PT_VFLIP | PT_ROT
+    PT_MOD    = 1<<8,
+    PT_RND4   = 1<<9,
+    PT_LERP   = 1<<10, // use very sparingly - order of blending issues
+    PT_TRACK  = 1<<11,
+    PT_BRIGHT = 1<<12,
+    PT_SOFT   = 1<<13,
+    PT_HFLIP  = 1<<14,
+    PT_VFLIP  = 1<<15,
+    PT_ROT    = 1<<16,
+    PT_CULL   = 1<<17,
+    PT_FEW    = 1<<18,
+    PT_ICON   = 1<<19,
+    PT_NOTEX  = 1<<20,
+    PT_SHADER = 1<<21,
+    PT_FLIP   = PT_HFLIP | PT_VFLIP | PT_ROT
 };
 
 const char *partnames[] = { "part", "tape", "trail", "text", "textup", "meter", "metervs", "fireball", "lightning", "flare" };
@@ -182,6 +180,7 @@ struct partrenderer
     virtual void render() = 0;
     virtual bool haswork() = 0;
     virtual int count() = 0; //for debug
+    virtual bool usesvertexarray() { return false; } 
     virtual void cleanup() {}
 
     virtual void seedemitter(particleemitter &pe, const vec &o, const vec &d, int fade, float size, int gravity)
@@ -330,7 +329,7 @@ struct listrenderer : partrenderer
     
     virtual void startrender() = 0;
     virtual void endrender() = 0;
-    virtual void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts) = 0;
+    virtual void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color) = 0;
 
     void render() 
     {
@@ -348,7 +347,7 @@ struct listrenderer : partrenderer
             calc(p, blend, ts, o, d);
             if(blend > 0) 
             {
-                renderpart(p, o, d, blend, ts);
+                renderpart(p, o, d, blend, ts, p->color.v);
 
                 if(p->fade > 5)
                 {
@@ -372,13 +371,14 @@ listparticle *listrenderer::parempty = NULL;
 struct meterrenderer : listrenderer
 {
     meterrenderer(int type)
-        : listrenderer(type|PT_NOTEX|PT_LERP)
+        : listrenderer(type|PT_NOTEX)
     {}
 
     void startrender()
     {
          glDisable(GL_BLEND);
-         varray::defvertex();
+         varray::enable();
+         varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
     }
 
     void endrender()
@@ -387,7 +387,7 @@ struct meterrenderer : listrenderer
          glEnable(GL_BLEND);
     }
 
-    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts)
+    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color)
     {
         int basetype = type&0xFF;
         float scale = FONTH*p->size/80.0f, right = 8, left = p->progress/100.0f*right;
@@ -395,11 +395,11 @@ struct meterrenderer : listrenderer
                     vec4(camright.y, -camup.y, -camdir.y, o.y),
                     vec4(camright.z, -camup.z, -camdir.z, o.z));
         m.scale(scale);
-        m.translate(-right/2.0f, 0, 0);
+        m.transformedtranslate(-right/2.0f, 0, 0);
 
         if(outlinemeters)
         {
-            varray::colorf(0, 0.8f, 0);
+            glColor3f(0, 0.8f, 0);
             varray::begin(GL_TRIANGLE_STRIP);
             loopk(10)
             {
@@ -411,8 +411,8 @@ struct meterrenderer : listrenderer
             varray::end();
         }
 
-        if(basetype==PT_METERVS) varray::colorub(p->color2[0], p->color2[1], p->color2[2]);
-        else varray::colorf(0, 0, 0);
+        if(basetype==PT_METERVS) glColor3ubv(p->color2);
+        else glColor3f(0, 0, 0);
         varray::begin(GL_TRIANGLE_STRIP);
         loopk(10)
         {
@@ -425,7 +425,7 @@ struct meterrenderer : listrenderer
 
         if(outlinemeters)
         {
-            varray::colorf(0, 0.8f, 0);
+            glColor3f(0, 0.8f, 0);
             varray::begin(GL_TRIANGLE_FAN);
             loopk(10)
             {
@@ -436,7 +436,7 @@ struct meterrenderer : listrenderer
             varray::end();
         }
 
-        varray::color(p->color);
+        glColor3ubv(color);
         varray::begin(GL_TRIANGLE_STRIP);
         loopk(10)
         {
@@ -448,22 +448,20 @@ struct meterrenderer : listrenderer
         varray::end();
     }
 };
-static meterrenderer meters(PT_METER), metervs(PT_METERVS);
+static meterrenderer meters(PT_METER|PT_LERP), metervs(PT_METERVS|PT_LERP);
 
 struct textrenderer : listrenderer
 {
-    textrenderer(int type = 0)
-        : listrenderer(type|PT_TEXT|PT_LERP|PT_SHADER)
+    textrenderer(int type)
+        : listrenderer(type)
     {}
 
     void startrender()
     {
-        textshader = particletextshader;
     }
 
     void endrender()
     {
-        textshader = NULL;
     }
 
     void killpart(listparticle *p)
@@ -471,7 +469,7 @@ struct textrenderer : listrenderer
         if(p->text && p->flags&1) delete[] p->text;
     }
 
-    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts)
+    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color)
     {
         float scale = p->size/80.0f, xoff = -text_width(p->text)/2, yoff = 0;
         if((type&0xFF)==PT_TEXTUP) { xoff += detrnd((size_t)p, 100)-50; yoff -= detrnd((size_t)p, 101); }
@@ -480,14 +478,14 @@ struct textrenderer : listrenderer
                     vec4(camright.y, -camup.y, -camdir.y, o.y),
                     vec4(camright.z, -camup.z, -camdir.z, o.z));
         m.scale(scale);
-        m.translate(xoff, yoff, 50);
+        m.transformedtranslate(xoff, yoff, 50);
 
         textmatrix = &m;
-        draw_text(p->text, 0, 0, p->color.r, p->color.g, p->color.b, blend);
+        draw_text(p->text, 0, 0, color[0], color[1], color[2], blend);
         textmatrix = NULL;
     } 
 };
-static textrenderer texts;
+static textrenderer texts(PT_TEXT|PT_LERP);
 
 template<int T>
 static inline void modifyblend(const vec &o, int &blend)
@@ -600,11 +598,10 @@ struct varenderer : partrenderer
     partvert *verts;
     particle *parts;
     int maxparts, numparts, lastupdate, rndmask;
-    GLuint vbo;
 
     varenderer(const char *texname, int type, int collide = 0) 
         : partrenderer(texname, 3, type, collide),
-          verts(NULL), parts(NULL), maxparts(0), numparts(0), lastupdate(-1), rndmask(0), vbo(0)
+          verts(NULL), parts(NULL), maxparts(0), numparts(0), lastupdate(-1), rndmask(0)
     {
         if(type & PT_HFLIP) rndmask |= 0x01;
         if(type & PT_VFLIP) rndmask |= 0x02;
@@ -612,11 +609,6 @@ struct varenderer : partrenderer
         if(type & PT_RND4) rndmask |= 0x03<<5;
     }
     
-    void cleanup()
-    {
-        if(vbo) { glDeleteBuffers_(1, &vbo); vbo = 0; }
-    }
-
     void init(int n)
     {
         DELETEA(parts);
@@ -627,7 +619,7 @@ struct varenderer : partrenderer
         numparts = 0;
         lastupdate = -1;
     }
-    
+        
     void reset() 
     {
         numparts = 0;
@@ -654,6 +646,8 @@ struct varenderer : partrenderer
     {
         return (numparts > 0);
     }
+
+    bool usesvertexarray() { return true; }
 
     particle *addpart(const vec &o, const vec &d, int fade, int color, float size, int gravity) 
     {
@@ -749,17 +743,20 @@ struct varenderer : partrenderer
         else genpos<T>(o, d, p->size, ts, p->gravity, vs);
     }
 
-    void genverts()
+    void update()
     {
+        if(lastmillis == lastupdate) return;
+        lastupdate = lastmillis;
+      
         loopi(numparts)
         {
             particle *p = &parts[i];
             partvert *vs = &verts[i*4];
             if(p->fade < 0)
             {
-                do
+                do 
                 {
-                    --numparts;
+                    --numparts; 
                     if(numparts <= i) return;
                 }
                 while(parts[numparts].fade < 0);
@@ -769,43 +766,15 @@ struct varenderer : partrenderer
             else genverts(p, vs, (p->flags&0x80)!=0);
         }
     }
-
-    void update()
-    {
-        if(lastmillis == lastupdate && vbo) return;
-        lastupdate = lastmillis;
-      
-        genverts();
-
-        if(!vbo) glGenBuffers_(1, &vbo);
-        glBindBuffer_(GL_ARRAY_BUFFER, vbo);
-        glBufferData_(GL_ARRAY_BUFFER, maxparts*4*sizeof(partvert), NULL, GL_STREAM_DRAW);
-        glBufferSubData_(GL_ARRAY_BUFFER, 0, numparts*4*sizeof(partvert), verts);
-        glBindBuffer_(GL_ARRAY_BUFFER, 0);
-    }
     
     void render()
     {   
         if(!tex) tex = textureload(texname, texclamp);
         glBindTexture(GL_TEXTURE_2D, tex->id);
-
-        glBindBuffer_(GL_ARRAY_BUFFER, vbo);
-        const partvert *ptr = 0;
-        varray::vertexpointer(sizeof(partvert), &ptr->pos);
-        varray::texcoord0pointer(sizeof(partvert), &ptr->u);
-        varray::colorpointer(sizeof(partvert), &ptr->color);
-        varray::enablevertex();
-        varray::enabletexcoord0();
-        varray::enablecolor();
-        varray::enablequads();
-
-        varray::drawquads(0, numparts);
-
-        varray::disablequads();
-        varray::disablevertex();
-        varray::disabletexcoord0();
-        varray::disablecolor();
-        glBindBuffer_(GL_ARRAY_BUFFER, 0);
+        glVertexPointer(3, GL_FLOAT, sizeof(partvert), &verts->pos);
+        glTexCoordPointer(2, GL_FLOAT, sizeof(partvert), &verts->u);
+        glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(partvert), &verts->color);
+        glDrawArrays(GL_QUADS, 0, numparts*4);
     }
 };
 typedef varenderer<PT_PART> quadrenderer;
@@ -826,34 +795,34 @@ struct softquadrenderer : quadrenderer
 
 static partrenderer *parts[] = 
 {
-    new quadrenderer("<grey>packages/particles/blood.png", PT_GREY|PT_PART|PT_FLIP|PT_MOD|PT_RND4, DECAL_BLOOD), // blood spats (note: rgb is inverted) 
-    new trailrenderer("packages/particles/base.png", PT_TRAIL|PT_LERP),                            // water, entity
-    new quadrenderer("<grey>packages/particles/smoke.png", PT_GREYALPHA|PT_PART|PT_FLIP|PT_LERP),  // smoke
-    new quadrenderer("<grey>packages/particles/steam.png", PT_GREY|PT_PART|PT_FLIP),               // steam
-    new quadrenderer("<grey>packages/particles/flames.png", PT_GREY|PT_PART|PT_HFLIP|PT_RND4|PT_BRIGHT),   // flame on - no flipping please, they have orientation
-    new quadrenderer("packages/particles/ball1.png", PT_PART|PT_FEW|PT_BRIGHT),                    // fireball1
-    new quadrenderer("packages/particles/ball2.png", PT_PART|PT_FEW|PT_BRIGHT),                    // fireball2
-    new quadrenderer("packages/particles/ball3.png", PT_PART|PT_FEW|PT_BRIGHT),                    // fireball3
-    new taperenderer("packages/particles/flare.jpg", PT_TAPE|PT_BRIGHT),                           // streak
+    new quadrenderer("<grey>data/particles/blood1.png", PT_PART|PT_FLIP|PT_MOD|PT_RND4, DECAL_BLOOD), // blood spats (note: rgb is inverted) 
+    new trailrenderer("data/particles/base.png", PT_TRAIL|PT_LERP),                            // water, entity
+    new quadrenderer("<grey>data/particles/smoke.png", PT_PART|PT_FLIP|PT_LERP),               // smoke
+    new quadrenderer("<grey>data/particles/steam.png", PT_PART|PT_FLIP),                       // steam
+    new quadrenderer("<grey>data/particles/flames.png", PT_PART|PT_HFLIP|PT_RND4|PT_BRIGHT),   // flame on - no flipping please, they have orientation
+    new quadrenderer("data/particles/ball1.png", PT_PART|PT_FEW|PT_BRIGHT),                    // fireball1
+    new quadrenderer("data/particles/ball2.png", PT_PART|PT_FEW|PT_BRIGHT),                    // fireball2
+    new quadrenderer("data/particles/ball3.png", PT_PART|PT_FEW|PT_BRIGHT),                    // fireball3
+    new taperenderer("data/particles/flare.jpg", PT_TAPE|PT_BRIGHT),                           // streak
     &lightnings,                                                                                   // lightning
     &fireballs,                                                                                    // explosion fireball
     &bluefireballs,                                                                                // bluish explosion fireball
-    new quadrenderer("packages/particles/spark.png", PT_PART|PT_FLIP|PT_BRIGHT),                   // sparks
-    new quadrenderer("packages/particles/base.png",  PT_PART|PT_FLIP|PT_BRIGHT),                   // edit mode entities
-    new quadrenderer("packages/particles/snow.png", PT_PART|PT_FLIP|PT_RND4, -1),                  // colliding snow
-    new quadrenderer("packages/particles/muzzleflash1.jpg", PT_PART|PT_FEW|PT_FLIP|PT_BRIGHT|PT_TRACK), // muzzle flash
-    new quadrenderer("packages/particles/muzzleflash2.jpg", PT_PART|PT_FEW|PT_FLIP|PT_BRIGHT|PT_TRACK), // muzzle flash
-    new quadrenderer("packages/particles/muzzleflash3.jpg", PT_PART|PT_FEW|PT_FLIP|PT_BRIGHT|PT_TRACK), // muzzle flash
-    new quadrenderer("packages/hud/items.png", PT_PART|PT_FEW|PT_ICON),                            // hud icon
-    new quadrenderer("<colorify:1/1/1>packages/hud/items.png", PT_GREY|PT_PART|PT_FEW|PT_ICON),    // grey hud icon
+    new quadrenderer("data/particles/spark.png", PT_PART|PT_FLIP|PT_BRIGHT),                   // sparks
+    new quadrenderer("data/particles/base.png",  PT_PART|PT_FLIP|PT_BRIGHT),                   // edit mode entities
+    new quadrenderer("<grey>data/particles/snow.png", PT_PART|PT_FLIP|PT_RND4, -1),            // colliding snow
+    new quadrenderer("data/particles/muzzleflash1.jpg", PT_PART|PT_FEW|PT_FLIP|PT_BRIGHT|PT_TRACK), // muzzle flash
+    new quadrenderer("data/particles/muzzleflash2.jpg", PT_PART|PT_FEW|PT_FLIP|PT_BRIGHT|PT_TRACK), // muzzle flash
+    new quadrenderer("data/particles/muzzleflash3.jpg", PT_PART|PT_FEW|PT_FLIP|PT_BRIGHT|PT_TRACK), // muzzle flash
+    new quadrenderer("data/hud/items.png", PT_PART|PT_FEW|PT_ICON),                            // hud icon
+    new quadrenderer("<colorify:1/1/1>data/hud/items.png", PT_PART|PT_FEW|PT_ICON),            // grey hud icon
     &texts,                                                                                        // text
     &meters,                                                                                       // meter
     &metervs,                                                                                      // meter vs.
     &flares                                                                                        // lens flares - must be done last
 };
 
-VARFP(maxparticles, 10, 4000, 10000, particleinit());
-VARFP(fewparticles, 10, 100, 10000, particleinit());
+VARFP(maxparticles, 10, 4000, 40000, particleinit());
+VARFP(fewparticles, 10, 100, 40000, particleinit());
 
 void particleinit() 
 {
@@ -861,7 +830,6 @@ void particleinit()
     if(!particleshader) particleshader = lookupshaderbyname("particle");
     if(!particlenotextureshader) particlenotextureshader = lookupshaderbyname("particlenotexture");
     if(!particlesoftshader) particlesoftshader = lookupshaderbyname("particlesoft");
-    if(!particletextshader) particletextshader = lookupshaderbyname("particletext");
     loopi(sizeof(parts)/sizeof(parts[0])) parts[i]->init(parts[i]->type&PT_FEW ? min(fewparticles, maxparticles) : maxparticles);
 }
 
@@ -889,12 +857,16 @@ void renderparticles()
     if(debugparticles)
     {
         int n = sizeof(parts)/sizeof(parts[0]);
-        hudmatrix.ortho(0, FONTH*n*2*vieww/float(viewh), FONTH*n*2, 0, -1, 1); // squeeze into top-left corner
-        resethudmatrix();
-        hudshader->set();
-
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glLoadIdentity();
+        glOrtho(0, FONTH*n*2*vieww/float(viewh), FONTH*n*2, 0, -1, 1); //squeeze into top-left corner        
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
+        defaultshader->set();
         loopi(n) 
         {
             int type = parts[i]->type;
@@ -912,6 +884,10 @@ void renderparticles()
         }
         glDisable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
+        glPopMatrix();
     }
 
     loopi(sizeof(parts)/sizeof(parts[0])) 
@@ -920,8 +896,7 @@ void renderparticles()
     }
     
     bool rendered = false;
-    uint lastflags = PT_LERP|PT_SHADER, flagmask = PT_LERP|PT_MOD|PT_BRIGHT|PT_NOTEX|PT_SOFT|PT_SHADER;
-    if(hasTRG) flagmask |= PT_GREY|PT_GREYALPHA;
+    uint lastflags = PT_LERP, flagmask = PT_LERP|PT_MOD|PT_BRIGHT|PT_NOTEX|PT_SOFT|PT_SHADER;
    
     loopi(sizeof(parts)/sizeof(parts[0]))
     {
@@ -935,15 +910,35 @@ void renderparticles()
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);             
 
-            glActiveTexture_(GL_TEXTURE2);
+            glActiveTexture_(GL_TEXTURE2_ARB);
             if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msdepthtex);
-            else glBindTexture(GL_TEXTURE_RECTANGLE, gdepthtex);
-            glActiveTexture_(GL_TEXTURE0);
+            else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gdepthtex);
+            glActiveTexture_(GL_TEXTURE0_ARB);
+
+            particleshader->set();
+            LOCALPARAMF(colorscale, (ldrscale, ldrscale, ldrscale, 1));
         }
         
-        uint flags = p->type & flagmask, changedbits = (flags ^ lastflags);
-        if(changedbits)
+        uint flags = p->type & flagmask;
+        if(p->usesvertexarray()) flags |= 0x01; //0x01 = VA marker
+        uint changedbits = (flags ^ lastflags);
+        if(changedbits != 0x0000)
         {
+            if(changedbits&0x01)
+            {
+                if(flags&0x01)
+                {
+                    glEnableClientState(GL_VERTEX_ARRAY);
+                    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+                    glEnableClientState(GL_COLOR_ARRAY);
+                } 
+                else
+                {
+                    glDisableClientState(GL_VERTEX_ARRAY);
+                    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+                    glDisableClientState(GL_COLOR_ARRAY);
+                }
+            }
             if(changedbits&PT_LERP) { if(flags&PT_LERP) resetfogcolor(); else zerofogcolor(); }
             if(changedbits&(PT_LERP|PT_MOD))
             {
@@ -953,17 +948,16 @@ void renderparticles()
             }
             if(!(flags&PT_SHADER))
             {
-                if(changedbits&(PT_SOFT|PT_NOTEX|PT_SHADER|PT_GREY|PT_GREYALPHA))
+                if(changedbits&(PT_SOFT|PT_NOTEX|PT_SHADER))
                 {
                     if(flags&PT_SOFT && softparticles)
                     {
-                        particlesoftshader->setvariant(hasTRG ? (flags&PT_GREY ? 0 : (flags&PT_GREYALPHA ? 1 : -1)) : -1, 0);
+                        particlesoftshader->set();
                         LOCALPARAMF(softparams, (-1.0f/softparticleblend, 0, 0));
                     }
-                    else if(flags&PT_NOTEX) particlenotextureshader->set();
-                    else particleshader->setvariant(hasTRG ? (flags&PT_GREY ? 0 : (flags&PT_GREYALPHA ? 1 : -1)) : -1 ? 0 : -1, 0);
+                    else (flags&PT_NOTEX ? particlenotextureshader : particleshader)->set();
                 }
-                if(changedbits&(PT_BRIGHT|PT_SOFT|PT_NOTEX|PT_SHADER|PT_GREY|PT_GREYALPHA))
+                if(changedbits&(PT_BRIGHT|PT_SOFT|PT_NOTEX|PT_SHADER))
                 {
                     float colorscale = ldrscale;
                     if(flags&PT_BRIGHT) colorscale *= particlebright;
@@ -979,6 +973,12 @@ void renderparticles()
     {
         if(lastflags&(PT_LERP|PT_MOD)) glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         if(!(lastflags&PT_LERP)) resetfogcolor();
+        if(lastflags&0x01)
+        {
+            glDisableClientState(GL_VERTEX_ARRAY);
+            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+            glDisableClientState(GL_COLOR_ARRAY);
+        }
         glDisable(GL_BLEND);
         glDepthMask(GL_TRUE);
     }
@@ -1269,8 +1269,8 @@ static void makeparticles(entity &e)
             //regularsplash(PART_SMOKE, 0x897661, 50, 1, 200,  vec(e.o.x, e.o.y, e.o.z+3.0f), 2.4f, -20, 3);
             float radius = e.attr2 ? float(e.attr2)/100.0f : 1.5f,
                   height = e.attr3 ? float(e.attr3)/100.0f : radius/3;
-            regularflame(PART_FLAME, e.o, radius, height, e.attr4 ? colorfromattr(e.attr4) : 0x903020, 3, 2.0f);
-            regularflame(PART_SMOKE, vec(e.o.x, e.o.y, e.o.z + 4.0f*min(radius, height)), radius, height, 0x303020, 1, 4.0f, 100.0f, 2000.0f, -20);
+            regularflame(PART_FLAME, e.o, radius, height, e.attr4 ? colorfromattr(e.attr4) : 0x903020, 3, 2.0f, 100.f, 500.f, -10);
+            regularflame(PART_SMOKE, vec(e.o.x, e.o.y, e.o.z + 4.0f*min(radius, height)), radius+(radius/8), height/2, 0x303020, 1, 4.0f, 50.0f, 1500.0f, -15);
             break;
         }
         case 1: //steam vent - <dir>

@@ -582,13 +582,17 @@ struct BlendBrush
     void gentex()
     {
         if(!tex) glGenTextures(1, &tex);
-        uchar *buf = new uchar[w*h];
+        uchar *buf = new uchar[2*w*h];
         uchar *dst = buf, *src = data;
         loopi(h)
         {
-            loopj(w) *dst++ = 255 - *src++;
+            loopj(w)
+            {
+                *dst++ = 255 - *src;
+                *dst++ = 255 - *src++;
+            }
         }
-        createtexture(tex, w, h, buf, 3, 1, hasTRG ? GL_R8 : GL_LUMINANCE8);
+        createtexture(tex, w, h, buf, 3, 1, GL_LUMINANCE_ALPHA);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         GLfloat border[4] = { 0, 0, 0, 0 };
@@ -631,10 +635,9 @@ struct BlendTexture
     int x, y, size;
     uchar *data;
     GLuint tex;
-    GLenum format;
     bool valid;
 
-    BlendTexture() : x(0), y(0), size(0), data(NULL), tex(0), format(GL_FALSE), valid(false)
+    BlendTexture() : x(0), y(0), size(0), data(NULL), tex(0), valid(false)
     {}
 
     ~BlendTexture()
@@ -650,8 +653,7 @@ struct BlendTexture
         size = sz;
         if(data) delete[] data;
         data = new uchar[size*size];
-        format = hasTRG ? GL_RED : GL_LUMINANCE;
-        createtexture(tex, size, size, NULL, 3, 1, hasTRG ? GL_R8 : GL_LUMINANCE8);
+        createtexture(tex, size, size, NULL, 3, 1, GL_LUMINANCE);
         valid = false;
         return true;
     }
@@ -839,7 +841,7 @@ static void updateblendtextures(uchar &type, BlendMapNode &node, int bmx, int bm
         renderblendtexture(type, node, bmx, bmy, bmsize, data, bt->size, ux1, uy1, ux2-ux1, uy2-uy1);
         glPixelStorei(GL_UNPACK_ROW_LENGTH, bt->size);
         glBindTexture(GL_TEXTURE_2D, bt->tex);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, (ux1-tx)/step, (uy1-ty)/step, (ux2-ux1)/step, (uy2-uy1)/step, bt->format, GL_UNSIGNED_BYTE, data); 
+        glTexSubImage2D(GL_TEXTURE_2D, 0, (ux1-tx)/step, (uy1-ty)/step, (ux2-ux1)/step, (uy2-uy1)/step, GL_LUMINANCE, GL_UNSIGNED_BYTE, data); 
     }
 
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);

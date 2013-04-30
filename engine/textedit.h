@@ -428,7 +428,7 @@ struct editor
         }
     }
 
-    void key(int code)
+    void key(int code, int cooked)
     {
         switch(code) 
         {
@@ -507,14 +507,12 @@ struct editor
             case SDLK_RSHIFT:
                 break;
             case SDLK_RETURN:    
-                insert('\n');
+                cooked = '\n';
+                // fall through
+            default:
+                insert(cooked);
                 break;
         }
-    }
-
-    void input(const char *str, int len)
-    {
-        loopi(len) insert(str[i]);
     }
 
     void hit(int hitx, int hity, bool dragged)
@@ -599,36 +597,35 @@ struct editor
                 if(sy < scrolly) { sy = scrolly; psy = 0; psx = 0; }
                 if(ey > maxy) { ey = maxy; pey = pixelheight - FONTH; pex = pixelwidth; }
 
-                hudnotextureshader->set();
-                varray::colorub(0xA0, 0x80, 0x80);
-                varray::defvertex(2);
-                varray::begin(GL_QUADS);
+                notextureshader->set();
+                glColor3ub(0xA0, 0x80, 0x80);
+                glBegin(GL_QUADS);
                 if(psy == pey) 
                 {
-                    varray::attribf(x+psx, y+psy);
-                    varray::attribf(x+pex, y+psy);
-                    varray::attribf(x+pex, y+pey+FONTH);
-                    varray::attribf(x+psx, y+pey+FONTH);
+                    glVertex2f(x+psx, y+psy);
+                    glVertex2f(x+pex, y+psy);
+                    glVertex2f(x+pex, y+pey+FONTH);
+                    glVertex2f(x+psx, y+pey+FONTH);
                 } 
                 else 
-                {   varray::attribf(x+psx,        y+psy);
-                    varray::attribf(x+psx,        y+psy+FONTH);
-                    varray::attribf(x+pixelwidth, y+psy+FONTH);
-                    varray::attribf(x+pixelwidth, y+psy);
+                {   glVertex2f(x+psx,        y+psy);
+                    glVertex2f(x+psx,        y+psy+FONTH);
+                    glVertex2f(x+pixelwidth, y+psy+FONTH);
+                    glVertex2f(x+pixelwidth, y+psy);
                     if(pey-psy > FONTH) 
                     {
-                        varray::attribf(x,            y+psy+FONTH);
-                        varray::attribf(x+pixelwidth, y+psy+FONTH);
-                        varray::attribf(x+pixelwidth, y+pey);
-                        varray::attribf(x,            y+pey);
+                        glVertex2f(x,            y+psy+FONTH);
+                        glVertex2f(x+pixelwidth, y+psy+FONTH);
+                        glVertex2f(x+pixelwidth, y+pey);
+                        glVertex2f(x,            y+pey);
                     }
-                    varray::attribf(x,     y+pey);
-                    varray::attribf(x,     y+pey+FONTH);
-                    varray::attribf(x+pex, y+pey+FONTH);
-                    varray::attribf(x+pex, y+pey);
+                    glVertex2f(x,     y+pey);
+                    glVertex2f(x,     y+pey+FONTH);
+                    glVertex2f(x+pex, y+pey+FONTH);
+                    glVertex2f(x+pex, y+pey);
                 }
-                varray::end();
-                hudshader->set();
+                glEnd();
+                defaultshader->set();
             }
         }
     
@@ -642,21 +639,18 @@ struct editor
             draw_text(lines[i].text, x, y+h, color>>16, (color>>8)&0xFF, color&0xFF, 0xFF, hit&&(cy==i)?cx:-1, maxwidth);
             if(linewrap && height > FONTH) // line wrap indicator
             {   
-                hudnotextureshader->set();
-                varray::colorub(0x80, 0xA0, 0x80);
-                varray::defvertex(2);
-                varray::begin(GL_TRIANGLE_STRIP);
-                varray::attribf(x,         y+h+FONTH);
-                varray::attribf(x,         y+h+height);
-                varray::attribf(x-FONTW/2, y+h+FONTH);
-                varray::attribf(x-FONTW/2, y+h+height);
-                varray::end();
-                hudshader->set();
+                notextureshader->set();
+                glColor3ub(0x80, 0xA0, 0x80);
+                glBegin(GL_TRIANGLE_STRIP);
+                glVertex2f(x,         y+h+FONTH);
+                glVertex2f(x,         y+h+height);
+                glVertex2f(x-FONTW/2, y+h+FONTH);
+                glVertex2f(x-FONTW/2, y+h+height);
+                glEnd();
+                defaultshader->set();
             }
             h+=height;
         }
-
-        varray::disable();
     }
 };
 

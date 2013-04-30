@@ -80,10 +80,10 @@ namespace game
         d->spawnstate(gamemode);
         return d;
     }
-
     void respawnself()
     {
         if(ispaused()) return;
+		if(player1->pclass <0){showgui("playerclass");return;}
         if(m_mp(gamemode))
         {
             int seq = (player1->lifesequence<<16)|((lastmillis/1000)&0xFFFF);
@@ -246,23 +246,9 @@ namespace game
         }
         if(player1->clientnum>=0) c2sinfo();   // do this last, to reduce the effective frame lag
     }
-
-    void spawnplayer(fpsent *d)   // place at random spawn
-    {
-        if(cmode) cmode->pickspawn(d);
-        else findplayerspawn(d, d==player1 && respawnent>=0 ? respawnent : -1);
-        spawnstate(d);
-        if(d==player1)
-        {
-            if(editmode) d->state = CS_EDITING;
-            else if(d->state != CS_SPECTATOR) d->state = CS_ALIVE;
-        }
-        else d->state = CS_ALIVE;
-    }
-
+	
     VARP(spawnwait, 0, 0, 1000);
-
-    void respawn()
+	 void respawn()
     {
         if(player1->state==CS_DEAD)
         {
@@ -278,6 +264,24 @@ namespace game
             respawnself();
         }
     }
+	void switchplayerclass(int playerclass){player1->pclass = playerclass;};
+
+	VARFP(playerclass, 0, 0, NUMPCS-1, if(player1->pclass != playerclass) switchplayerclass(playerclass) );
+
+    void spawnplayer(fpsent *d)   // place at random spawn
+    {
+        if(cmode) cmode->pickspawn(d);
+        else findplayerspawn(d, d==player1 && respawnent>=0 ? respawnent : -1);
+        spawnstate(d);
+        if(d==player1)
+        {
+            if(editmode) d->state = CS_EDITING;
+            else if(d->state != CS_SPECTATOR) d->state = CS_ALIVE;
+			//else if(playerclass == -1){showgui("playerclass");}
+        }
+        else d->state = CS_ALIVE;
+    }
+
 
     // inputs
 
@@ -372,7 +376,7 @@ namespace game
         if(!h) h = player1;
         int contype = d==h || actor==h ? CON_FRAG_SELF : CON_FRAG_OTHER;
         const char *dname = "", *aname = "";
-        if(m_teammode && teamcolorfrags)
+        if(teamcolorfrags)
         {
             dname = teamcolorname(d, "you");
             aname = teamcolorname(actor, "you");
@@ -414,14 +418,13 @@ namespace game
             conoutf(CON_GAMEINFO, "\f2intermission:");
             conoutf(CON_GAMEINFO, "\f2game has ended!");
             if(m_ctf) conoutf(CON_GAMEINFO, "\f2player frags: %d, flags: %d, deaths: %d", player1->frags, player1->flags, player1->deaths);
-            else if(m_collect) conoutf(CON_GAMEINFO, "\f2player frags: %d, skulls: %d, deaths: %d", player1->frags, player1->flags, player1->deaths);
             else conoutf(CON_GAMEINFO, "\f2player frags: %d, deaths: %d", player1->frags, player1->deaths);
             int accuracy = (player1->totaldamage*100)/max(player1->totalshots, 1);
             conoutf(CON_GAMEINFO, "\f2player total damage dealt: %d, damage wasted: %d, accuracy(%%): %d", player1->totaldamage, player1->totalshots-player1->totaldamage, accuracy);
 
             showscores(true);
             disablezoom();
-            
+
             if(identexists("intermission")) execute("intermission");
         }
     }
@@ -496,6 +499,7 @@ namespace game
 
     VARP(showmodeinfo, 0, 1, 1);
 
+
     void startgame()
     {
         clearprojectiles();
@@ -553,7 +557,7 @@ namespace game
         else findplayerspawn(player1, -1);
         entities::resetspawns();
         copystring(clientmap, name ? name : "");
-        
+
         sendmapinfo();
     }
 
@@ -610,7 +614,7 @@ namespace game
 
     const char *colorname(fpsent *d, const char *name, const char *prefix, const char *suffix, const char *alt)
     {
-        if(!name) name = alt && d == player1 ? alt : d->name; 
+        if(!name) name = alt && d == player1 ? alt : d->name;
         bool dup = !name[0] || duplicatename(d, name, alt) || d->aitype != AI_NONE;
         if(dup || prefix[0] || suffix[0])
         {
@@ -626,18 +630,18 @@ namespace game
 
     const char *teamcolorname(fpsent *d, const char *alt)
     {
-        if(!teamcolortext || !m_teammode) return colorname(d, NULL, "", "", alt);
-        return colorname(d, NULL, isteam(d->team, player1->team) ? "\fs\f1" : "\fs\f3", "\fr", alt); 
+        if(!teamcolortext) return colorname(d, NULL, "", "", alt);
+        return colorname(d, NULL, isteam(d->team, player1->team) ? "\fs\f1" : "\fs\f3", "\fr", alt);
     }
 
     const char *teamcolor(const char *name, bool sameteam, const char *alt)
     {
-        if(!teamcolortext || !m_teammode) return sameteam || !alt ? name : alt;
+        if(!teamcolortext) return sameteam || !alt ? name : alt;
         cidx = (cidx+1)%3;
         formatstring(cname[cidx])(sameteam ? "\fs\f1%s\fr" : "\fs\f3%s\fr", sameteam || !alt ? name : alt);
         return cname[cidx];
-    }    
-    
+    }
+
     const char *teamcolor(const char *name, const char *team, const char *alt)
     {
         return teamcolor(name, team && isteam(team, player1->team), alt);
@@ -650,7 +654,7 @@ namespace game
             if(d->state!=CS_ALIVE) return;
             fpsent *pl = (fpsent *)d;
             if(!m_mp(gamemode)) killed(pl, pl);
-            else 
+            else
             {
                 int seq = (pl->lifesequence<<16)|((lastmillis/1000)&0xFFFF);
                 if(pl->suicided!=seq) { addmsg(N_SUICIDE, "rc", pl); pl->suicided = seq; }
@@ -659,21 +663,26 @@ namespace game
     }
     ICOMMAND(kill, "", (), suicide(player1));
 
-    bool needminimap() { return m_ctf || m_protect || m_hold || m_capture || m_collect; }
+	bool needminimap() { return true;}// m_ctf || m_capture; }
 
-    void drawicon(int icon, float x, float y, float sz)
-    {
-        settexture("packages/hud/items.png");
-        float tsz = 0.25f, tx = tsz*(icon%4), ty = tsz*(icon/4);
-        varray::defvertex(2);
-        varray::deftexcoord0();
-        varray::begin(GL_TRIANGLE_STRIP);
-        varray::attribf(x,    y);    varray::attribf(tx,     ty);
-        varray::attribf(x+sz, y);    varray::attribf(tx+tsz, ty);
-        varray::attribf(x,    y+sz); varray::attribf(tx,     ty+tsz);
-        varray::attribf(x+sz, y+sz); varray::attribf(tx+tsz, ty+tsz);
-        varray::end();
-    }
+
+	//RR Stuff---------------------------
+
+	  void drawicon(int icon, float x, float y, float sz)
+
+     {
+       settexture("data/hud/items.png");
+       glBegin(GL_TRIANGLE_STRIP);
+        float tsz = 0.125f, tx = tsz*(icon%8), ty = tsz*(icon/8);
+		glBegin(GL_TRIANGLE_STRIP);
+        glTexCoord2f(tx,     ty);     glVertex2f(x,    y);
+        glTexCoord2f(tx+tsz, ty);     glVertex2f(x+sz, y);
+        glTexCoord2f(tx,     ty+tsz); glVertex2f(x,    y+sz);
+        glTexCoord2f(tx+tsz, ty+tsz); glVertex2f(x+sz, y+sz);
+		glEnd();
+	 }
+
+	//RR Stuff-------------------------------
 
     float abovegameplayhud(int w, int h)
     {
@@ -711,9 +720,8 @@ namespace game
     void drawammohud(fpsent *d)
     {
         float x = HICON_X + 2*HICON_STEP, y = HICON_Y, sz = HICON_SIZE;
-        pushhudmatrix();
-        hudmatrix.scale(1/3.2f, 1/3.2f, 1);
-        flushhudmatrix();
+        glPushMatrix();
+        glScalef(1/3.2f, 1/3.2f, 1);
         float xup = (x+sz)*3.2f, yup = y*3.2f + 0.1f*sz;
         loopi(3)
         {
@@ -746,14 +754,14 @@ namespace game
             xcycle -= sz;
             drawicon(HICON_FIST+gun, xcycle, ycycle, sz);
         }
-        pophudmatrix();
+        glPopMatrix();
     }
+
 
     void drawhudicons(fpsent *d)
     {
-        pushhudmatrix();
-        hudmatrix.scale(2, 2, 1);
-        flushhudmatrix();
+        glPushMatrix();
+        glScalef(2, 2, 1);
 
         draw_textf("%d", (HICON_X + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, d->state==CS_DEAD ? 0 : d->health);
         if(d->state!=CS_DEAD)
@@ -762,7 +770,7 @@ namespace game
             draw_textf("%d", (HICON_X + 2*HICON_STEP + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, d->ammo[d->gunselect]);
         }
 
-        pophudmatrix();
+        glPopMatrix();
 
         drawicon(HICON_HEALTH, HICON_X, HICON_Y);
         if(d->state!=CS_DEAD)
@@ -776,9 +784,8 @@ namespace game
 
     void gameplayhud(int w, int h)
     {
-        pushhudmatrix();
-        hudmatrix.scale(h/1800.0f, h/1800.0f, 1);
-        flushhudmatrix();
+        glPushMatrix();
+        glScalef(h/1800.0f, h/1800.0f, 1);
 
         if(player1->state==CS_SPECTATOR)
         {
@@ -790,7 +797,7 @@ namespace game
             text_bounds(f ? colorname(f) : " ", fw, fh);
             fh = max(fh, ph);
             draw_text("SPECTATOR", w*1800/h - tw - pw, 1650 - th - fh);
-            if(f) 
+            if(f)
             {
                 int color = f->state!=CS_DEAD ? 0xFFFFFF : 0x606060;
                 if(f->privilege)
@@ -809,7 +816,7 @@ namespace game
             if(cmode) cmode->drawhud(d, w, h);
         }
 
-        pophudmatrix();
+        glPopMatrix();
     }
 
     int clipconsole(int w, int h)
@@ -825,9 +832,9 @@ namespace game
     {
         switch(index)
         {
-            case 2: return "data/hit.png";
-            case 1: return "data/teammate.png";
-            default: return "data/crosshair.png";
+            case 2: return "data/crosshairs/hit.png";
+            case 1: return "data/crosshairs/teammate.png";
+            default: return "data/crosshairs/crosshair.png";
         }
     }
 
@@ -850,7 +857,7 @@ namespace game
             }
         }
 
-        if(crosshair!=1 && !editmode && !m_insta)
+        if(crosshair!=1 && !editmode)
         {
             if(d->health<=25) { r = 1.0f; g = b = 0; }
             else if(d->health<=50) { r = 1.0f; g = 0.5f; b = 0; }

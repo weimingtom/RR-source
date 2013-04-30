@@ -147,13 +147,6 @@ struct vec
     {
         return x*(x < 0 ? max.x : min.x) + y*(y < 0 ? max.y : min.y) + z*(z < 0 ? max.z : min.z);
     }
-
-    static vec hexcolor(int color)
-    {
-        return vec(((color>>16)&0xFF)*(1.0f/255.0f), ((color>>8)&0xFF)*(1.0f/255.0f), (color&0xFF)*(1.0f/255.0f));
-    }
-
-    int tohexcolor() { return ((int(r*255)>>16)&0xFF)|((int(g*255)>>8)&0xFF)|(int(b*255)&0xFF); }
 };
 
 #define VEC_OP(OP)                                                    \
@@ -759,19 +752,24 @@ struct matrix3x4
         c.mul3(k);
     }
     
-    void settranslation(float x, float y, float z) { a.w = x; b.w = y; c.w = z; }
-    void settranslation(const vec &p) { settranslation(p.x, p.y, p.z); }
+    void translate(float x, float y, float z)
+    {
+        a.w += x;
+        b.w += y;
+        c.w += z;
+    }
+    void translate(const vec &p) { translate(p.x, p.y, p.z); }
 
-    void translate(const vec &p, float scale = 1)
+    void transformedtranslate(const vec &p, float scale = 1)
     {
         a.w += a.dot3(p)*scale;
         b.w += b.dot3(p)*scale;
         c.w += c.dot3(p)*scale;
     }
 
-    void translate(float x, float y, float z, float scale = 1)
+    void transformedtranslate(float x, float y, float z, float scale = 1)
     {
-        translate(vec(x, y, z), scale);
+        transformedtranslate(vec(x, y, z), scale);
     }
 
     void accumulate(const matrix3x4 &m, float k)
@@ -1270,41 +1268,41 @@ struct glmatrix
     void rotate_around_x(float angle)
     {
         float ck = cosf(angle), sk = sinf(angle);
-        vec4 rb = vec4(b).mul(ck).add(vec4(c).mul(sk)),
-             rc = vec4(c).mul(ck).sub(vec4(b).mul(sk));
-        b = rb;
-        c = rc;
+        vec rb = vec(b).mul(ck).add(vec(c).mul(sk)),
+            rc = vec(c).mul(ck).sub(vec(b).mul(sk));
+        b.setxyz(rb);
+        c.setxyz(rc);
     }
 
     void rotate_around_y(float angle)
     {
         float ck = cosf(angle), sk = sinf(angle);
-        vec4 rc = vec4(c).mul(ck).add(vec4(a).mul(sk)),
-             ra = vec4(a).mul(ck).sub(vec4(c).mul(sk));
-        c = rc;
-        a = ra;
+        vec rc = vec(c).mul(ck).add(vec(a).mul(sk)),
+            ra = vec(a).mul(ck).sub(vec(c).mul(sk));
+        c.setxyz(rc);
+        a.setxyz(ra);
     }
 
     void rotate_around_z(float angle)
     {
         float ck = cosf(angle), sk = sinf(angle);
-        vec4 ra = vec4(a).mul(ck).add(vec4(b).mul(sk)),
-             rb = vec4(b).mul(ck).sub(vec4(a).mul(sk));
-        a = ra;
-        b = rb;
+        vec ra = vec(a).mul(ck).add(vec(b).mul(sk)),
+            rb = vec(b).mul(ck).sub(vec(a).mul(sk));
+        a.setxyz(ra);
+        b.setxyz(rb);
     }
 
     void rotate(float ck, float sk, const vec &dir)
     {
         vec c1(dir.x*dir.x*(1-ck)+ck, dir.y*dir.x*(1-ck)+dir.z*sk, dir.x*dir.z*(1-ck)-dir.y*sk),
             c2(dir.x*dir.y*(1-ck)-dir.z*sk, dir.y*dir.y*(1-ck)+ck, dir.y*dir.z*(1-ck)+dir.x*sk),
-            c3(dir.x*dir.z*(1-ck)+dir.y*sk, dir.y*dir.z*(1-ck)-dir.x*sk, dir.z*dir.z*(1-ck)+ck);
-        vec4 ra = vec4(a).mul(c1.x).add(vec4(b).mul(c1.y)).add(vec4(c).mul(c1.z)),
-             rb = vec4(a).mul(c2.x).add(vec4(b).mul(c2.y)).add(vec4(c).mul(c2.z)),
-             rc = vec4(a).mul(c3.x).add(vec4(b).mul(c3.y)).add(vec4(c).mul(c3.z));
-        a = ra;
-        b = rb;
-        c = rc;
+            c3(dir.x*dir.z*(1-ck)+dir.y*sk, dir.y*dir.z*(1-ck)-dir.x*sk, dir.z*dir.z*(1-ck)+ck),
+            ra = vec(a).mul(c1.x).add(vec(b).mul(c1.y)).add(vec(c).mul(c1.z)),
+            rb = vec(a).mul(c2.x).add(vec(b).mul(c2.y)).add(vec(c).mul(c2.z)),
+            rc = vec(a).mul(c3.x).add(vec(b).mul(c3.y)).add(vec(c).mul(c3.z));
+        a.setxyz(ra);
+        b.setxyz(rb);
+        c.setxyz(rc);
     }
 
     void rotate(float angle, const vec &dir)
@@ -1330,29 +1328,28 @@ struct glmatrix
         d = vec4(0, 0, 0, 1);
     }
 
-    void settranslation(const vec &v) { d.setxyz(v); }
-    void settranslation(float x, float y, float z) { d.x = x; d.y = y; d.z = z; }
-        
-    void translate(float x, float y, float z, float scale = 1)
+    void translate(float x, float y, float z) { d.add(vec(x, y, z)); }
+    void translate(const vec &o) { d.add(o); }
+
+    void transformedtranslate(float x, float y, float z, float scale = 1)
     {
-        d.add(vec4(a).mul(x).add(vec4(b).mul(y)).add(vec4(c).mul(z)).mul3(scale));
-    }
-    void translate(const vec &p, float scale = 1)
-    {
-        translate(p.x, p.y, p.z, scale);
+        d.add(vec(a).mul(x).add(vec(b).mul(y)).add(vec(c).mul(z)).mul(scale));
     }
 
-    void setscale(float x, float y, float z) { a.x = x; b.y = y; c.z = z; }
-    void setscale(const vec &v) { setscale(v.x, v.y, v.z); }
-    void setscale(float n) { setscale(n, n, n); }
+    void transformedtranslate(const vec &p, float scale = 1)
+    {
+        transformedtranslate(p.x, p.y, p.z, scale);
+    }
 
     void scale(float x, float y, float z)
     {
-        a.mul(x);
-        b.mul(y);
-        c.mul(z);
+        vec v(x, y, z);
+        a.mul(v);
+        b.mul(v);
+        c.mul(v);
     }
-    void scale(const vec &v) { scale(v.x, v.y, v.z); }
+
+    void scale(const vec &v) { a.mul(v); b.mul(v); c.mul(v); }
     void scale(float n) { scale(n, n, n); }
 
     void scalez(float k)
@@ -1452,13 +1449,6 @@ struct glmatrix
         out = vec4(a).mul(in.x).add(vec4(b).mul(in.y)).add(vec4(c).mul(in.z)).add(vec4(d).mul(in.w));
     }
 
-    template<class T, class U> T transform(const U &in) const
-    {
-        T v;
-        transform(in, v);
-        return v;
-    }
-
     template<class T> vec perspectivetransform(const T &in) const
     {
         vec4 v;
@@ -1469,18 +1459,6 @@ struct glmatrix
     void transformnormal(const vec &in, vec &out) const
     {
         out = vec(a).mul(in.x).add(vec(b).mul(in.y)).add(vec(c).mul(in.z));
-    }
-
-    void transformnormal(const vec &in, vec4 &out) const
-    {
-        out = vec4(a).mul(in.x).add(vec4(b).mul(in.y)).add(vec4(c).mul(in.z));
-    }
-
-    template<class T, class U> T transformnormal(const U &in) const
-    {
-        T v;
-        transform(in, v);
-        return v;
     }
 
     void transposedtransform(const vec &in, vec &out) const
@@ -1519,11 +1497,6 @@ struct glmatrix
     vec4 getrow(int i) const { return vec4(a.v[i], b.v[i], c.v[i], d.v[i]); }
 
     bool invert(const glmatrix &m, double mindet = 1.0e-10);
-
-    vec2 lineardepthscale() const
-    {
-        return vec2(d.w, -d.z).div(c.z*d.w - d.z*c.w);
-    }
 };
 
 inline matrix3x3::matrix3x3(const glmatrix &m)

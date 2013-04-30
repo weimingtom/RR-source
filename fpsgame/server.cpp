@@ -248,7 +248,7 @@ namespace server
 
         enum
         {
-            PUSHMILLIS = 3000
+            PUSHMILLIS = 2500
         };
 
         int calcpushrange()
@@ -530,7 +530,7 @@ namespace server
             {
                 case '*':
                     modemask |= 1<<NUMGAMEMODES;
-                    loopk(NUMGAMEMODES) if(m_checknot(k+STARTGAMEMODE, M_DEMO|M_EDIT|M_LOCAL)) modemask |= 1<<k;
+                    loopk(NUMGAMEMODES) if(m_checknot(k+STARTGAMEMODE, M_EDIT|M_LOCAL)) modemask |= 1<<k;
                     continue;
                 case '!':
                     mode++;

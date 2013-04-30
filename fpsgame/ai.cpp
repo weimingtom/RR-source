@@ -416,9 +416,6 @@ namespace ai
             case I_BOOST: score = 1e2f; break;
             case I_GREENARMOUR: case I_YELLOWARMOUR:
             {
-                int atype = A_GREEN + e.type - I_GREENARMOUR;
-                if(atype > d->armourtype) score = atype == A_YELLOW ? 1e2f : 1e1f;
-                else if(d->armour < 50) score = 1e1f;
                 break;
             }
             default:
@@ -487,9 +484,8 @@ namespace ai
     {
         static vector<interest> interests;
         interests.setsize(0);
-        if(!m_noitems)
         {
-            if((!m_noammo && !hasgoodammo(d)) || d->health < min(d->skill - 15, 75))
+            if((!hasgoodammo(d)) || d->health < min(d->skill - 15, 75))
                 items(d, b, interests);
             else
             {
@@ -505,7 +501,7 @@ namespace ai
             }
         }
         if(cmode) cmode->aifind(d, b, interests);
-        if(m_teammode) assist(d, b, interests);
+		assist(d, b, interests);
         return parseinterests(d, b, interests, override);
     }
 
@@ -571,13 +567,8 @@ namespace ai
         d->ai->clearsetup();
         d->ai->reset(true);
         d->ai->lastrun = lastmillis;
-        if(m_insta) d->ai->weappref = GUN_RIFLE;
-        else
-        {
         	if(forcegun >= 0 && forcegun < NUMGUNS) d->ai->weappref = forcegun;
-        	else if(m_noammo) d->ai->weappref = -1;
 			else d->ai->weappref = rnd(GUN_GL-GUN_SG+1)+GUN_SG;
-        }
         vec dp = d->headpos();
         findorientation(dp, d->yaw, d->pitch, d->ai->target);
     }

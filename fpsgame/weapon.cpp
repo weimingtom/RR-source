@@ -216,6 +216,7 @@ namespace game
             }
             vec old(bnc.o);
             bool stopped = false;
+			bool roll = false;
             if(bnc.bouncetype==BNC_GRENADE) stopped = bounce(&bnc, 0.6f, 0.5f, 0.8f) || (bnc.lifetime -= time)<0;
             else
             {
@@ -224,7 +225,10 @@ namespace game
                 {
                     int qtime = min(30, rtime);
                     rtime -= qtime;
-                    if((bnc.lifetime -= qtime)<0 || bounce(&bnc, qtime/1000.0f, 0.6f, 0.5f, 1)) { stopped = true; break; }
+					if((bnc.lifetime -= qtime)<0){ stopped = true; break; }
+                    if(roll)break;
+					roll = bounce(&bnc, qtime/1000.0f, 0.6f, 0.5f, 0.8);
+					roll = bnc.vel.x < 0.1;
                 }
             }
             if(stopped)
@@ -241,10 +245,10 @@ namespace game
                 }
                 delete bouncers.remove(i--);
             }
-            else
-            {
-                bnc.roll += old.sub(bnc.o).magnitude()/(4*RAD);
-                bnc.offsetmillis = max(bnc.offsetmillis-time, 0);
+            else if(!roll) 
+			{
+			bnc.roll += old.sub(bnc.o).magnitude()/(4*RAD);
+			bnc.offsetmillis = max(bnc.offsetmillis-time, 0);
             }
         }
     }
@@ -313,7 +317,7 @@ namespace game
         if(to.iszero()) to.z += 1;
         to.normalize();
         to.add(p);
-        newbouncer(p, to, true, 0, d, type, rnd(1000)+1000, rnd(100)+20);
+        newbouncer(p, to, true, 0, d, type, rnd(1000)+20000, rnd(100)+20);
     }
 
     void gibeffect(int damage, const vec &vel, fpsent *d)

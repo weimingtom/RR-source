@@ -46,7 +46,7 @@ static void renderlightning(Texture *tex, const vec &o, const vec &d, float sz)
           scrollscale = lnscrollscale*(LIGHTNINGSTEP*tex->ys)/(sz*tex->xs),
           blend = pow(clamp(float(lastmillis - lastlnjitter)/lnjittermillis, 0.0f, 1.0f), lnblendpower),
           jitter0 = (1-blend)*lnjitterscale*sz/lnjitterradius, jitter1 = blend*lnjitterscale*sz/lnjitterradius; 
-    varray::begin(GL_TRIANGLE_STRIP);
+    glBegin(GL_TRIANGLE_STRIP);
     loopj(numsteps)
     {
         vec next(cur);
@@ -62,21 +62,17 @@ static void renderlightning(Texture *tex, const vec &o, const vec &d, float sz)
         dir1.sub(cur);
         dir2.sub(camera1->o);
         across.cross(dir2, dir1).normalize().mul(sz);
-        varray::attribf(cur.x-across.x, cur.y-across.y, cur.z-across.z);
-            varray::attribf(scroll, 1);
-        varray::attribf(cur.x+across.x, cur.y+across.y, cur.z+across.z);
-            varray::attribf(scroll, 0);
+        glTexCoord2f(scroll, 1); glVertex3f(cur.x-across.x, cur.y-across.y, cur.z-across.z);
+        glTexCoord2f(scroll, 0); glVertex3f(cur.x+across.x, cur.y+across.y, cur.z+across.z);
         scroll += scrollscale;
         if(j+1==numsteps)
         {
-            varray::attribf(next.x-across.x, next.y-across.y, next.z-across.z);
-                varray::attribf(scroll, 1);
-            varray::attribf(next.x+across.x, next.y+across.y, next.z+across.z);
-                varray::attribf(scroll, 0);
+            glTexCoord2f(scroll, 1); glVertex3f(next.x-across.x, next.y-across.y, next.z-across.z);
+            glTexCoord2f(scroll, 0); glVertex3f(next.x+across.x, next.y+across.y, next.z+across.z);
         }
         cur = next;
     }
-    varray::end();
+    glEnd();
 }
 
 struct lightningrenderer : listrenderer
@@ -88,13 +84,10 @@ struct lightningrenderer : listrenderer
     void startrender()
     {
         glDisable(GL_CULL_FACE);
-        varray::defattrib(varray::ATTRIB_VERTEX, 3, GL_FLOAT);
-        varray::defattrib(varray::ATTRIB_TEXCOORD0, 2, GL_FLOAT);
     }
 
     void endrender()
     {
-        varray::disable();
         glEnable(GL_CULL_FACE);
     }
 
@@ -110,13 +103,13 @@ struct lightningrenderer : listrenderer
         pe.extendbb(d, size);
     }
 
-    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts)
+    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color)
     {
         blend = min(blend<<2, 255);
         if(type&PT_MOD) //multiply alpha into color
-            varray::colorub((p->color.r*blend)>>8, (p->color.g*blend)>>8, (p->color.b*blend)>>8);
+            glColor3ub((color[0]*blend)>>8, (color[1]*blend)>>8, (color[2]*blend)>>8);
         else
-            varray::color(p->color, blend);
+            glColor4ub(color[0], color[1], color[2], blend);
         renderlightning(tex, o, d, p->size);
     }
 };

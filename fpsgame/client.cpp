@@ -2,6 +2,31 @@
 
 namespace game
 {
+const char *getclassinfo(int c)
+{
+	if (!classinfo[c])
+	{
+		classinfo[c] = new char[500];
+		strcpy(classinfo[c], "Weapons: ");
+		loopi(WEAPONS_PER_CLASS)
+		{
+			strcat(classinfo[c], guns[PClasses[c].guns[i]].name);
+			if (i<(WEAPONS_PER_CLASS-1))
+			{
+				strcat(classinfo[c], ", ");
+				if (i%2) strcat(classinfo[c], "\n\t\t");
+			}
+		}
+		char *tm = strchr(classinfo[c], '\0');
+		formatstring(tm)("\n\nMax Health:\t\fs\f%c%d\fr\nMax Speed:\t\fs\f%c%d\fr", (PClasses[c].maxhealth<100)?'e': (PClasses[c].maxhealth==100)?'b': 'g', PClasses[c].maxhealth, (PClasses[c].speed<100)?'e': (PClasses[c].speed==100)?'b': 'g', PClasses[c].speed);
+	}
+	return classinfo[c];
+}
+
+ICOMMAND(getplayerclassnum, "", (), intret(NUMPCS));
+ICOMMAND(getplayerclassname, "i", (int *i), string a; formatstring(a)("%s", *i > -1 ? *i<NUMPCS ? PClasses[*i].name: "" : ""); result(a)); //(*i<NUMPCS)?PClasses[*i].name:"ERROR NUMBER TO LARGE");
+ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
+
     VARP(minradarscale, 0, 384, 10000);
     VARP(maxradarscale, 1, 1024, 10000);
     VARP(radarteammates, 0, 1, 1);
@@ -17,29 +42,25 @@ namespace game
         vec pos = vec(d->o).sub(minimapcenter).mul(minimapscale).add(0.5f), dir;
         vecfromyawpitch(camera1->yaw, 0, 1, 0, dir);
         float scale = calcradarscale();
-        varray::defvertex(2);
-        varray::deftexcoord0();
-        varray::begin(GL_TRIANGLE_FAN);
+        glBegin(GL_TRIANGLE_FAN);
         loopi(16)
         {
-            vec v = vec(0, -1, 0).rotate_around_z(i/16.0f*2*M_PI);
-            varray::attribf(x + 0.5f*s*(1.0f + v.x), y + 0.5f*s*(1.0f + v.y));
             vec tc = vec(dir).rotate_around_z(i/16.0f*2*M_PI);
-            varray::attribf(1.0f - (pos.x + tc.x*scale*minimapscale.x), pos.y + tc.y*scale*minimapscale.y);
+            glTexCoord2f(1.0f - (pos.x + tc.x*scale*minimapscale.x), pos.y + tc.y*scale*minimapscale.y);
+            vec v = vec(0, -1, 0).rotate_around_z(i/16.0f*2*M_PI);
+            glVertex2f(x + 0.5f*s*(1.0f + v.x), y + 0.5f*s*(1.0f + v.y));
         }
-        varray::end();
+        glEnd();
     }
 
     void drawradar(float x, float y, float s)
     {
-        varray::defvertex(2);
-        varray::deftexcoord0();
-        varray::begin(GL_TRIANGLE_STRIP);
-        varray::attribf(x,   y);   varray::attribf(0, 0);
-        varray::attribf(x+s, y);   varray::attribf(1, 0);
-        varray::attribf(x,   y+s); varray::attribf(0, 1);
-        varray::attribf(x+s, y+s); varray::attribf(1, 1);
-        varray::end();
+        glBegin(GL_TRIANGLE_STRIP);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(x+s, y);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+s);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(x+s, y+s);
+        glEnd();
     }
 
     void drawteammate(fpsent *d, float x, float y, float s, fpsent *o, float scale)
@@ -54,10 +75,10 @@ namespace game
               by = y + s*0.5f*(1.0f + dir.y);
         vec v(-0.5f, -0.5f, 0);
         v.rotate_around_z((90+o->yaw-camera1->yaw)*RAD);
-        varray::attribf(bx + bs*v.x, by + bs*v.y); varray::attribf(0, 0);
-        varray::attribf(bx + bs*v.y, by - bs*v.x); varray::attribf(1, 0);
-        varray::attribf(bx - bs*v.x, by - bs*v.y); varray::attribf(1, 1);
-        varray::attribf(bx - bs*v.y, by + bs*v.x); varray::attribf(0, 1);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(bx + bs*v.x, by + bs*v.y);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(bx + bs*v.y, by - bs*v.x);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(bx - bs*v.x, by - bs*v.y);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(bx - bs*v.y, by + bs*v.x);
     }
 
     void drawteammates(fpsent *d, float x, float y, float s)
@@ -73,14 +94,12 @@ namespace game
                 if(!alive++) 
                 {
                     settexture(isteam(d->team, player1->team) ? "packages/hud/blip_blue_alive.png" : "packages/hud/blip_red_alive.png");
-                    varray::defvertex(2);
-                    varray::deftexcoord0();
-                    varray::begin(GL_QUADS);
+                    glBegin(GL_QUADS);
                 }
                 drawteammate(d, x, y, s, o, scale);
             }
         }
-        if(alive) varray::end();
+        if(alive) glEnd();
         loopv(players) 
         {
             fpsent *o = players[i];
@@ -89,14 +108,12 @@ namespace game
                 if(!dead++) 
                 {
                     settexture(isteam(d->team, player1->team) ? "packages/hud/blip_blue_dead.png" : "packages/hud/blip_red_dead.png");
-                    varray::defvertex(2);
-                    varray::deftexcoord0();
-                    varray::begin(GL_QUADS);
+                    glBegin(GL_QUADS);
                 }
                 drawteammate(d, x, y, s, o, scale);
             }
         }
-        if(dead) varray::end();
+        if(dead) glEnd();
     }
         
     #include "capture.h"
@@ -530,7 +547,7 @@ namespace game
         }
         else intret(val);
     });
-    ICOMMANDS("m_noitems", "i", (int *mode), { int gamemode = *mode; intret(m_noitems); });
+   /* ICOMMANDS("m_noitems", "i", (int *mode), { int gamemode = *mode; intret(m_noitems); });
     ICOMMANDS("m_noammo", "i", (int *mode), { int gamemode = *mode; intret(m_noammo); });
     ICOMMANDS("m_insta", "i", (int *mode), { int gamemode = *mode; intret(m_insta); });
     ICOMMANDS("m_tactics", "i", (int *mode), { int gamemode = *mode; intret(m_tactics); });
@@ -542,9 +559,9 @@ namespace game
     ICOMMANDS("m_hold", "i", (int *mode), { int gamemode = *mode; intret(m_hold); });
     ICOMMANDS("m_collect", "i", (int *mode), { int gamemode = *mode; intret(m_collect); });
     ICOMMANDS("m_teammode", "i", (int *mode), { int gamemode = *mode; intret(m_teammode); });
-    ICOMMANDS("m_demo", "i", (int *mode), { int gamemode = *mode; intret(m_demo); });
+    ICOMMANDS("m_demo", "i", (int *mode), { int gamemode = *mode; intret(m_demo); });*/
     ICOMMANDS("m_edit", "i", (int *mode), { int gamemode = *mode; intret(m_edit); });
-    ICOMMANDS("m_lobby", "i", (int *mode), { int gamemode = *mode; intret(m_lobby); });
+    /*ICOMMANDS("m_lobby", "i", (int *mode), { int gamemode = *mode; intret(m_lobby); });*/
 
     void changemap(const char *name, int mode) // request map change, server may ignore
     {
@@ -1376,7 +1393,7 @@ namespace game
 
             case N_SPAWNSTATE:
             {
-                int scn = getint(p);
+               int scn = getint(p);
                 fpsent *s = getclient(scn);
                 if(!s) { parsestate(NULL, p); break; }
                 if(s->state==CS_DEAD && s->lastpain) saveragdoll(s);
@@ -1397,7 +1414,7 @@ namespace game
                 }
                 if(cmode) cmode->respawned(s);
 				ai::spawned(s);
-                addmsg(N_SPAWN, "rcii", s, s->lifesequence, s->gunselect);
+				addmsg(N_SPAWN, "rcii", s, s->lifesequence, s->gunselect);
                 break;
             }
 

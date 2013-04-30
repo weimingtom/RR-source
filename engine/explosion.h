@@ -46,13 +46,13 @@ static void inithemisphere(int hres, int depth)
     loopi(hres) genface(depth, 0, i+1, 1+(i+1)%hres);
 
     if(!hemivbuf) glGenBuffers_(1, &hemivbuf);
-    glBindBuffer_(GL_ARRAY_BUFFER, hemivbuf);
-    glBufferData_(GL_ARRAY_BUFFER, heminumverts*sizeof(vec), hemiverts, GL_STATIC_DRAW);
+    glBindBuffer_(GL_ARRAY_BUFFER_ARB, hemivbuf);
+    glBufferData_(GL_ARRAY_BUFFER_ARB, heminumverts*sizeof(vec), hemiverts, GL_STATIC_DRAW_ARB);
     DELETEA(hemiverts);
 
     if(!hemiebuf) glGenBuffers_(1, &hemiebuf);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, hemiebuf);
-    glBufferData_(GL_ELEMENT_ARRAY_BUFFER, heminumindices*sizeof(GLushort), hemiindices, GL_STATIC_DRAW);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, hemiebuf);
+    glBufferData_(GL_ELEMENT_ARRAY_BUFFER_ARB, heminumindices*sizeof(GLushort), hemiindices, GL_STATIC_DRAW_ARB);
     DELETEA(hemiindices);
 }
 
@@ -72,7 +72,7 @@ static GLuint createexpmodtex(int size, float minval)
     }
     GLuint tex = 0;
     glGenTextures(1, &tex);
-    createtexture(tex, size, size, data, 3, 2, hasTRG ? GL_R8 : GL_LUMINANCE8);
+    createtexture(tex, size, size, data, 3, 2, GL_ALPHA);
     delete[] data;
     return tex;
 }
@@ -126,13 +126,13 @@ static void initsphere(int slices, int stacks)
     }
 
     if(!spherevbuf) glGenBuffers_(1, &spherevbuf);
-    glBindBuffer_(GL_ARRAY_BUFFER, spherevbuf);
-    glBufferData_(GL_ARRAY_BUFFER, spherenumverts*sizeof(spherevert), sphereverts, GL_STATIC_DRAW);
+    glBindBuffer_(GL_ARRAY_BUFFER_ARB, spherevbuf);
+    glBufferData_(GL_ARRAY_BUFFER_ARB, spherenumverts*sizeof(spherevert), sphereverts, GL_STATIC_DRAW_ARB);
     DELETEA(sphereverts);
 
     if(!sphereebuf) glGenBuffers_(1, &sphereebuf);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, sphereebuf);
-    glBufferData_(GL_ELEMENT_ARRAY_BUFFER, spherenumindices*sizeof(GLushort), sphereindices, GL_STATIC_DRAW);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, sphereebuf);
+    glBufferData_(GL_ELEMENT_ARRAY_BUFFER_ARB, spherenumindices*sizeof(GLushort), sphereindices, GL_STATIC_DRAW_ARB);
     DELETEA(sphereindices);
 }
 
@@ -153,29 +153,30 @@ static void setupexplosion()
     if(explosion2d)
     {
         if(!hemivbuf) inithemisphere(5, 2);
-        glBindBuffer_(GL_ARRAY_BUFFER, hemivbuf);
-        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, hemiebuf);
+        glBindBuffer_(GL_ARRAY_BUFFER_ARB, hemivbuf);
+        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, hemiebuf);
 
-        varray::vertexpointer(sizeof(vec), hemiverts);
-        varray::enablevertex();
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(3, GL_FLOAT, sizeof(vec), hemiverts);
     }
     else
     {
         if(!spherevbuf) initsphere(12, 6);
 
-        glBindBuffer_(GL_ARRAY_BUFFER, spherevbuf);
-        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, sphereebuf);
+        glBindBuffer_(GL_ARRAY_BUFFER_ARB, spherevbuf);
+        glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, sphereebuf);
 
-        varray::vertexpointer(sizeof(spherevert), &sphereverts->pos);
-        varray::texcoord0pointer(sizeof(spherevert), &sphereverts->s);
-        varray::enablevertex();
-        varray::enabletexcoord0();
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glVertexPointer(3, GL_FLOAT, sizeof(spherevert), &sphereverts->pos);
+        glTexCoordPointer(2, GL_FLOAT, sizeof(spherevert), &sphereverts->s);
     }
 }
 
 static void drawexpverts(int numverts, int numindices, GLushort *indices)
 {
-    glDrawRangeElements_(GL_TRIANGLES, 0, numverts-1, numindices, GL_UNSIGNED_SHORT, indices);
+    if(hasDRE) glDrawRangeElements_(GL_TRIANGLES, 0, numverts-1, numindices, GL_UNSIGNED_SHORT, indices);
+    else glDrawElements(GL_TRIANGLES, numindices, GL_UNSIGNED_SHORT, indices);
     xtraverts += numindices;
     glde++;
 }
@@ -184,34 +185,41 @@ static void drawexplosion(bool inside, float r, float g, float b, float a)
 {
     if(lastexpmodtex != expmodtex[inside ? 1 : 0])
     {
-        glActiveTexture_(GL_TEXTURE1);
+        glActiveTexture_(GL_TEXTURE1_ARB);
         lastexpmodtex = expmodtex[inside ? 1 :0];
         glBindTexture(GL_TEXTURE_2D, lastexpmodtex);
-        glActiveTexture_(GL_TEXTURE0);
+        glActiveTexture_(GL_TEXTURE0_ARB);
     }
+    int passes = inside ? 2 : 1;
     if(!explosion2d)
     {
-        LOCALPARAMF(side, (inside ? -1 : 1));
-        loopi(inside ? 2 : 1)
+        if(inside) glScalef(1, 1, -1);
+        loopi(passes)
         {
-            varray::colorf(r, g, b, i ? a/2 : a);
+            glColor4f(r, g, b, i ? a/2 : a);
             if(i) glDepthFunc(GL_GEQUAL);
             drawexpverts(spherenumverts, spherenumindices, sphereindices);
             if(i) glDepthFunc(GL_LESS);
         }
         return;
     }
-    loopi(inside ? 2 : 1)
+    loopi(passes)
     {
-        varray::colorf(r, g, b, i ? a/2 : a);
-        LOCALPARAMF(side, (1));
-        if(i) glDepthFunc(GL_GEQUAL);
+        glColor4f(r, g, b, i ? a/2 : a);
+        if(i)
+        {
+            glScalef(1, 1, -1);
+            glDepthFunc(GL_GEQUAL);
+        }
         if(inside)
         {
-            glCullFace(GL_FRONT);
-            drawexpverts(heminumverts, heminumindices, hemiindices);
-            glCullFace(GL_BACK);
-            LOCALPARAMF(side, (-1));
+            if(passes >= 2)
+            {
+                glCullFace(GL_FRONT);
+                drawexpverts(heminumverts, heminumindices, hemiindices);
+                glCullFace(GL_BACK);
+            }
+            glScalef(1, 1, -1);
         }
         drawexpverts(heminumverts, heminumindices, hemiindices);
         if(i) glDepthFunc(GL_LESS);
@@ -220,11 +228,11 @@ static void drawexplosion(bool inside, float r, float g, float b, float a)
 
 static void cleanupexplosion()
 {
-    varray::disablevertex();
-    if(!explosion2d) varray::disabletexcoord0();
+    glDisableClientState(GL_VERTEX_ARRAY);
+    if(!explosion2d) glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    glBindBuffer_(GL_ARRAY_BUFFER, 0);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 }
 
 static void deleteexplosions()
@@ -265,7 +273,7 @@ struct fireballrenderer : listrenderer
         pe.extendbb(o, (size+1+pe.ent->attr2)*WOBBLE); 
     }
 
-    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts)
+    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color)
     {
         float pmax = p->val,
               size = p->fade ? float(ts)/p->fade : 1,
@@ -273,9 +281,8 @@ struct fireballrenderer : listrenderer
 
         if(isfoggedsphere(psize*WOBBLE, p->o)) return;
 
-        glmatrix m;
-        m.identity();
-        m.translate(o);
+        glPushMatrix();
+        glTranslatef(o.x, o.y, o.z);
 
         bool inside = o.dist(camera1->o) <= psize*WOBBLE;
         vec oc(o);
@@ -287,8 +294,8 @@ struct fireballrenderer : listrenderer
         float rotangle = lastmillis/1000.0f*143;
         if(explosion2d)
         {
-            m.rotate_around_z(yaw*RAD);
-            m.rotate_around_x(pitch*RAD);
+            glRotatef(yaw, 0, 0, 1);
+            glRotatef(pitch, 1, 0, 0);
             rotdir = vec(0, 0, 1);
         }
         else
@@ -307,11 +314,6 @@ struct fireballrenderer : listrenderer
             LOCALPARAMF(texgenT, (0.5f*t.x, 0.5f*t.y, 0.5f*t.z, 0.5f));
         }
 
-        m.rotate(rotangle*RAD, vec(-rotdir.x, rotdir.y, -rotdir.z));
-        m.scale(-psize, psize, -psize);
-        m.mul(camprojmatrix, glmatrix(m));
-        LOCALPARAM(explosionmatrix, m);
-
         LOCALPARAM(center, o);
         LOCALPARAMF(animstate, (size, psize, pmax, lastmillis/1000.0f));
         if(2*(p->size + pmax)*WOBBLE >= softexplosionblend)
@@ -323,8 +325,12 @@ struct fireballrenderer : listrenderer
             LOCALPARAMF(softparams, (0, -1, inside ? blend/(2*255.0f) : 0));
         }
 
-        drawexplosion(inside, p->color.r*ldrscaleb, p->color.g*ldrscaleb, p->color.b*ldrscaleb, blend/255.0f);
+        glRotatef(rotangle, -rotdir.x, rotdir.y, -rotdir.z);
+        glScalef(-psize, psize, -psize);
+        drawexplosion(inside, color[0]*ldrscaleb, color[1]*ldrscaleb, color[2]*ldrscaleb, blend/255.0f);
+
+        glPopMatrix();
     }
 };
-static fireballrenderer fireballs("packages/particles/explosion.png"), bluefireballs("packages/particles/plasma.png");
+static fireballrenderer fireballs("data/particles/explosion.png"), bluefireballs("data/particles/plasma.png");
 
