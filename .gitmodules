@@ -1,0 +1,6 @@
+[submodule "libraries/luajit"]
+	path = libraries/luajit
+	url = git://github.com/OctaForge/OF-luajit.git
+[submodule "libraries/enet"]
+	path = libraries/enet
+	url = git://github.com/OctaForge/OF-enet.git
