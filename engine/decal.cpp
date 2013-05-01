@@ -22,7 +22,9 @@ enum
     DF_INVMOD     = 1<<2,
     DF_OVERBRIGHT = 1<<3,
     DF_ADD        = 1<<4,
-    DF_SATURATE   = 1<<5
+    DF_SATURATE   = 1<<5,
+    DF_GREY       = 1<<6,
+    DF_GREYALPHA  = 1<<7
 };
 
 VARFP(maxdecaltris, 1, 1024, 16384, initdecals());
@@ -38,6 +40,7 @@ struct decalrenderer
     int maxdecals, startdecal, enddecal;
     decalvert *verts;
     int maxverts, startvert, endvert, availverts;
+    GLuint vbo;
 
     decalrenderer(const char *texname, int flags = 0, int fadeintime = 0, int fadeouttime = 1000, int timetolive = -1)
         : texname(texname), flags(flags),
@@ -45,6 +48,7 @@ struct decalrenderer
           tex(NULL),
           decals(NULL), maxdecals(0), startdecal(0), enddecal(0),
           verts(NULL), maxverts(0), startvert(0), endvert(0), availverts(0),
+          vbo(0), 
           decalu(0), decalv(0)
     {
     }
@@ -227,6 +231,11 @@ struct decalrenderer
         disablepolygonoffset(GL_POLYGON_OFFSET_FILL);
     }
 
+    void cleanup()
+    {
+        if(vbo) { glDeleteBuffers_(1, &vbo); vbo = 0; }
+    }
+
     void render()
     {
         if(startvert==endvert) return;
@@ -234,7 +243,7 @@ struct decalrenderer
         if(flags&DF_OVERBRIGHT) 
         {
             glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR); 
-            SETSHADER(overbrightdecal);
+            SETVARIANT(overbrightdecal, hasTRG ? (flags&DF_GREY ? 0 : (flags&DF_GREYALPHA ? 1 : -1)) : -1, 0);
         }
         else 
         {
@@ -242,11 +251,9 @@ struct decalrenderer
             else if(flags&DF_ADD) glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
             else glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            if(flags&DF_SATURATE)
-            {
-                SETSHADER(saturatedecal);
-            }
-            else SETSHADER(decal);
+            SETVARIANT(decal, hasTRG ? (flags&DF_GREY ? 0 : (flags&DF_GREYALPHA ? 1 : -1)) : -1, 0);
+            float colorscale = flags&DF_SATURATE ? 2 : 1; 
+            LOCALPARAMF(colorscale, (colorscale, colorscale, colorscale, 1));
         }
 
         glBindTexture(GL_TEXTURE_2D, tex->id);
@@ -265,7 +272,6 @@ struct decalrenderer
         gle::texcoord0pointer(sizeof(decalvert), &ptr->u);
         gle::colorpointer(sizeof(decalvert), &ptr->color);
 
-        int count = endvert < startvert ? maxverts - startvert : endvert - startvert;
         glDrawArrays(GL_TRIANGLES, startvert, count);
         if(endvert < startvert) 
         {
@@ -274,8 +280,7 @@ struct decalrenderer
         }
         xtravertsva += count;
 
-        extern int intel_vertexarray_bug;
-        if(intel_vertexarray_bug) glFlush();
+        glBindBuffer_(GL_ARRAY_BUFFER, 0);
     }
 
     decalinfo &newdecal()
@@ -568,9 +573,9 @@ struct decalrenderer
 
 decalrenderer decals[] =
 {
-    decalrenderer("<grey>data/particles/scorch.png", DF_ROTATE, 500),
-    decalrenderer("<grey>data/particles/blood.png", DF_RND4|DF_ROTATE|DF_INVMOD),
-    decalrenderer("<grey>data/particles/bullet.png", DF_OVERBRIGHT)
+    decalrenderer("<grey>packages/particles/scorch.png", DF_GREYALPHA|DF_ROTATE, 500),
+    decalrenderer("<grey>packages/particles/blood.png", DF_GREY|DF_RND4|DF_ROTATE|DF_INVMOD),
+    decalrenderer("<grey>packages/particles/bullet.png", DF_GREY|DF_OVERBRIGHT)
 };
 
 void initdecals()
@@ -605,6 +610,11 @@ void renderdecals()
     }
     if(!rendered) return;
     decalrenderer::cleanuprenderstate();
+}
+
+void cleanupdecals()
+{
+    loopi(sizeof(decals)/sizeof(decals[0])) decals[i].cleanup();
 }
 
 VARP(maxdecaldistance, 1, 512, 10000);

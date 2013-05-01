@@ -744,7 +744,7 @@ struct survivalclientmode : clientmode
 
     void drawblips(fpsent *d, int w, int h, int x, int y, int s, float rscale)
     {
-		settexture("data/hud/blip_green.png");
+		settexture("packages/hud/blip_green.png");
 		zombie *zom;
 		loopv(zombies)
 		{

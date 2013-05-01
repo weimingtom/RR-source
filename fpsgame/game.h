@@ -135,14 +135,44 @@ static const char * const mastermodeicons[] =  { "server", "server", "serverlock
 // hardcoded sounds, defined in sounds.cfg
 enum
 {
-    S_JUMP = 0, S_LAND, S_RIFLE, S_PUNCH1, S_SG, S_CG,
-    S_RLFIRE, S_RLHIT, S_WEAPLOAD, S_ITEMAMMO, S_ITEMHEALTH,
-    S_ITEMARMOUR, S_ITEMPUP, S_ITEMSPAWN, S_TELEPORT, S_NOAMMO, S_PUPOUT,
-    S_PAIN1, S_PAIN2, S_PAIN3, S_PAIN4, S_PAIN5, S_PAIN6,
+	// player
+    S_JUMP = 0, S_LAND,
+    S_PAIN1, S_PAIN2, S_PAIN3,
+	S_PAIN4, S_PAIN5, S_PAIN6,
     S_DIE1, S_DIE2,
-    S_FLAUNCH, S_FEXPLODE,
     S_SPLASH1, S_SPLASH2,
-    S_GRUNT1, S_GRUNT2, S_RUMBLE,
+    S_GRUNT1, S_GRUNT2,
+
+	// weapon
+	S_SG,
+	S_CG,
+    S_RLFIRE,
+	S_RIFLE,
+	S_FLAUNCH,
+	S_FLAME,
+	S_CBOW,
+	S_PISTOL,
+	S_PUNCH1,
+	
+    S_CHAINSAW_ATTACK,
+    S_CHAINSAW_IDLE,
+
+	S_NOAMMO,
+	S_RLHIT,
+    S_FEXPLODE,
+	S_WEAPLOAD,
+
+	S_ICEBALL,
+	S_SLIMEBALL,
+
+	// fx
+	S_ITEMAMMO, S_ITEMHEALTH, S_ITEMARMOUR,
+	S_ITEMPUP, S_ITEMSPAWN, S_TELEPORT,
+	S_PUPOUT, S_RUMBLE, S_JUMPPAD,
+    S_HIT, S_BURN,
+	S_SPLOSH, S_SPLOSH2, S_SPLOSH3,
+
+	// monster
     S_PAINO,
     S_PAINR, S_DEATHR,
     S_PAINE, S_DEATHE,
@@ -151,28 +181,26 @@ enum
     S_PAINP, S_PIGGR2,
     S_PAINH, S_DEATHH,
     S_PAIND, S_DEATHD,
-    S_PIGR1, S_ICEBALL, S_SLIMEBALL,
-    S_JUMPPAD, S_PISTOL,
+    S_PIGR1,
 
+	// voice
     S_V_BASECAP, S_V_BASELOST,
     S_V_FIGHT,
     S_V_BOOST, S_V_BOOST10,
     S_V_QUAD, S_V_QUAD10,
     S_V_RESPAWNPOINT,
+	S_V_ROUNDOVER, S_V_ROUNDDRAW,
 
+	// ctf
     S_FLAGPICKUP,
     S_FLAGDROP,
     S_FLAGRETURN,
     S_FLAGSCORE,
     S_FLAGRESET,
+    S_FLAGFAIL, //from tesseract
 
-    S_BURN,
-    S_CHAINSAW_ATTACK,
-    S_CHAINSAW_IDLE,
-
-    S_HIT,
-    
-    S_FLAGFAIL
+	// extra
+    S_MENU_CLICK
 };
 
 // network messages codes, c2s, c2c, s2c
@@ -239,13 +267,12 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
     -1
 };
 
-#define SAUERBRATEN_LANINFO_PORT 28784
-#define SAUERBRATEN_SERVER_PORT 28785
-#define SAUERBRATEN_SERVINFO_PORT 28786
-#define SAUERBRATEN_MASTER_PORT 28787
+#define RR_SERVER_PORT 28785
+#define RR_LANINFO_PORT 28784
+#define RR_MASTER_PORT 28787
 #define PROTOCOL_VERSION 259            // bump when protocol changes
 #define DEMO_VERSION 1                  // bump when demo format changes
-#define DEMO_MAGIC "SAUERBRATEN_DEMO"
+#define DEMO_MAGIC "TESSERACT_DEMO\0\0" //keep it compatible
 
 struct demoheader
 {

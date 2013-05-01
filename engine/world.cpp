@@ -565,7 +565,6 @@ void renderentattachment(const extentity &e)
     gle::attrib(e.o);
     gle::attrib(e.attached->o);
     gle::end();
-
 }
 
 void renderentarrow(const extentity &e, const vec &dir, float radius)
@@ -644,7 +643,6 @@ void renderentradius(extentity &e, bool color)
         {
             extern int envmapradius;
             if(color) gle::colorf(0, 1, 1);
-
             renderentsphere(e, e.attr1 ? max(0, min(10000, int(e.attr1))) : envmapradius);
             break;
         }
@@ -695,7 +693,6 @@ void renderentselection(const vec &o, const vec &ray, bool entmoving)
         }
         gle::colorub(200,0,0);
         boxs(entorient, eo, es);
-        glLineWidth(1);
     }
 
     if(showentradius && (entgroup.length() || enthover >= 0))

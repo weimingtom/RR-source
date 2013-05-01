@@ -418,6 +418,7 @@ namespace game
             conoutf(CON_GAMEINFO, "\f2intermission:");
             conoutf(CON_GAMEINFO, "\f2game has ended!");
             if(m_ctf) conoutf(CON_GAMEINFO, "\f2player frags: %d, flags: %d, deaths: %d", player1->frags, player1->flags, player1->deaths);
+            else if(m_collect) conoutf(CON_GAMEINFO, "\f2player frags: %d, skulls: %d, deaths: %d", player1->frags, player1->flags, player1->deaths);
             else conoutf(CON_GAMEINFO, "\f2player frags: %d, deaths: %d", player1->frags, player1->deaths);
             int accuracy = (player1->totaldamage*100)/max(player1->totalshots, 1);
             conoutf(CON_GAMEINFO, "\f2player total damage dealt: %d, damage wasted: %d, accuracy(%%): %d", player1->totaldamage, player1->totalshots-player1->totaldamage, accuracy);
@@ -670,27 +671,7 @@ namespace game
 
 	bool needminimap() { return true;}// m_ctf || m_capture; }
 
-//TODO: figure this out
-//<<<<<<< HEAD:fpsgame/fps.cpp
 
-	//RR Stuff---------------------------
-
-	  void drawicon(int icon, float x, float y, float sz)
-
-     {
-       settexture("data/hud/items.png");
-       glBegin(GL_TRIANGLE_STRIP);
-        float tsz = 0.125f, tx = tsz*(icon%8), ty = tsz*(icon/8);
-		glBegin(GL_TRIANGLE_STRIP);
-        glTexCoord2f(tx,     ty);     glVertex2f(x,    y);
-        glTexCoord2f(tx+tsz, ty);     glVertex2f(x+sz, y);
-        glTexCoord2f(tx,     ty+tsz); glVertex2f(x,    y+sz);
-        glTexCoord2f(tx+tsz, ty+tsz); glVertex2f(x+sz, y+sz);
-		glEnd();
-	 }
-
-	//RR Stuff-------------------------------
-/*=======
     void drawicon(int icon, float x, float y, float sz)
     {
         settexture("packages/hud/items.png");
@@ -704,7 +685,7 @@ namespace game
         gle::attribf(x+sz, y+sz); gle::attribf(tx+tsz, ty+tsz);
         gle::end();
     }
->>>>>>> 53dc27c77b194484a7674452b8046e7b6b7647e0:src/fpsgame/fps.cpp */
+
 
     float abovegameplayhud(int w, int h)
     {
@@ -742,8 +723,9 @@ namespace game
     void drawammohud(fpsent *d)
     {
         float x = HICON_X + 2*HICON_STEP, y = HICON_Y, sz = HICON_SIZE;
-        glPushMatrix();
-        glScalef(1/3.2f, 1/3.2f, 1);
+        pushhudmatrix();
+        hudmatrix.scale(1/3.2f, 1/3.2f, 1);
+        flushhudmatrix();
         float xup = (x+sz)*3.2f, yup = y*3.2f + 0.1f*sz;
         loopi(3)
         {
@@ -776,14 +758,15 @@ namespace game
             xcycle -= sz;
             drawicon(HICON_FIST+gun, xcycle, ycycle, sz);
         }
-        glPopMatrix();
+        pophudmatrix();
     }
 
 
     void drawhudicons(fpsent *d)
     {
-        glPushMatrix();
-        glScalef(2, 2, 1);
+        pushhudmatrix();
+        hudmatrix.scale(2, 2, 1);
+        flushhudmatrix();
 
         draw_textf("%d", (HICON_X + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, d->state==CS_DEAD ? 0 : d->health);
         if(d->state!=CS_DEAD)
@@ -792,7 +775,7 @@ namespace game
             draw_textf("%d", (HICON_X + 2*HICON_STEP + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, d->ammo[d->gunselect]);
         }
 
-        glPopMatrix();
+        pophudmatrix();
 
         drawicon(HICON_HEALTH, HICON_X, HICON_Y);
         if(d->state!=CS_DEAD)
@@ -806,8 +789,9 @@ namespace game
 
     void gameplayhud(int w, int h)
     {
-        glPushMatrix();
-        glScalef(h/1800.0f, h/1800.0f, 1);
+        pushhudmatrix();
+        hudmatrix.scale(h/1800.0f, h/1800.0f, 1);
+        flushhudmatrix();
 
         if(player1->state==CS_SPECTATOR)
         {
@@ -838,7 +822,7 @@ namespace game
             if(cmode) cmode->drawhud(d, w, h);
         }
 
-        glPopMatrix();
+        pophudmatrix();
     }
 
     int clipconsole(int w, int h)
@@ -856,7 +840,7 @@ namespace game
         {
             case 2: return "data/crosshairs/hit.png";
             case 1: return "data/crosshairs/teammate.png";
-            default: return "data/crosshairs/crosshair.png";
+            default: return "data/crosshairs/circle.png";
         }
     }
 

@@ -289,13 +289,13 @@ static void initdome(const bvec &color, float minalpha = 0.0f, float maxalpha = 
     }
 
     if(!domevbuf) glGenBuffers_(1, &domevbuf);
-    glBindBuffer_(GL_ARRAY_BUFFER_ARB, domevbuf);
-    glBufferData_(GL_ARRAY_BUFFER_ARB, domenumverts*sizeof(domevert), domeverts, GL_STATIC_DRAW_ARB);
+    glBindBuffer_(GL_ARRAY_BUFFER, domevbuf);
+    glBufferData_(GL_ARRAY_BUFFER, domenumverts*sizeof(domevert), domeverts, GL_STATIC_DRAW);
     DELETEA(domeverts);
 
     if(!domeebuf) glGenBuffers_(1, &domeebuf);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, domeebuf);
-    glBufferData_(GL_ELEMENT_ARRAY_BUFFER_ARB, (domenumindices + domecapindices)*sizeof(GLushort), domeindices, GL_STATIC_DRAW_ARB);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, domeebuf);
+    glBufferData_(GL_ELEMENT_ARRAY_BUFFER, (domenumindices + domecapindices)*sizeof(GLushort), domeindices, GL_STATIC_DRAW);
     DELETEA(domeindices);
 }
 
@@ -331,24 +331,23 @@ static void drawdome()
         domeclipz = fogdomeclip;
     }
 
-    glBindBuffer_(GL_ARRAY_BUFFER_ARB, domevbuf);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, domeebuf);
+    glBindBuffer_(GL_ARRAY_BUFFER, domevbuf);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, domeebuf);
 
     gle::vertexpointer(sizeof(domevert), &domeverts->pos);
     gle::colorpointer(sizeof(domevert), &domeverts->color);
     gle::enablevertex();
     gle::enablecolor();
 
-    if(hasDRE) glDrawRangeElements_(GL_TRIANGLES, 0, domenumverts-1, domenumindices + fogdomecap*domecapindices, GL_UNSIGNED_SHORT, domeindices);
-    else glDrawElements(GL_TRIANGLES, domenumindices + fogdomecap*domecapindices, GL_UNSIGNED_SHORT, domeindices);
+    glDrawRangeElements_(GL_TRIANGLES, 0, domenumverts-1, domenumindices + fogdomecap*domecapindices, GL_UNSIGNED_SHORT, domeindices);
     xtraverts += domenumverts;
     glde++;
 
     gle::disablevertex();
     gle::disablecolor();
 
-    glBindBuffer_(GL_ARRAY_BUFFER_ARB, 0);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+    glBindBuffer_(GL_ARRAY_BUFFER, 0);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void cleanupsky()
@@ -363,19 +362,19 @@ VARR(fogdomeclouds, 0, 1, 1);
 
 static void drawfogdome(int farplane)
 {
-    ldrnotextureshader->set();
+    SETSHADER(skyfog);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glPushMatrix();
-    glmatrix fogdomematrix = cammatrix;
-    fogdomematrix.d = vec4(0, 0, 0, 1);
-    fogdomematrix.transformedtranslate(0, 0, farplane*fogdomeheight*0.5f);
-    fogdomematrix.scale(farplane/2, farplane/2, farplane*(0.5f - fogdomeheight*0.5f)); 
-    glLoadMatrixf(fogdomematrix.a.v);
+    glmatrix skymatrix = cammatrix, skyprojmatrix;
+    skymatrix.d = vec4(0, 0, 0, 1);
+    skymatrix.translate(0, 0, farplane*fogdomeheight*0.5f);
+    skymatrix.scale(farplane/2, farplane/2, farplane*(0.5f - fogdomeheight*0.5f)); 
+    skyprojmatrix.mul(projmatrix, skymatrix);
+    LOCALPARAM(skymatrix, skyprojmatrix);
+
     drawdome();
-    glPopMatrix();
 
     glDisable(GL_BLEND);
 }
@@ -410,26 +409,26 @@ void drawskybox(int farplane)
         SETSHADER(skyboxoverbright);
         LOCALPARAMF(overbrightparams, (skyboxoverbrightmin, max(skyboxoverbright, skyboxoverbrightmin), skyboxoverbrightthreshold));
     }
-    else defaultshader->set();
+    else SETSHADER(skybox);
 
     if(clampsky) glDepthRange(1, 1);
 
     gle::color(vec::hexcolor(skyboxcolour));
 
-    glPushMatrix();
-    glmatrix skymatrix = cammatrix;
+    glmatrix skymatrix = cammatrix, skyprojmatrix;
     skymatrix.d = vec4(0, 0, 0, 1);
     skymatrix.rotate_around_z((spinsky*lastmillis/1000.0f+yawsky)*-RAD);
-    glLoadMatrixf(skymatrix.a.v);
+    skyprojmatrix.mul(projmatrix, skymatrix);
+    LOCALPARAM(skymatrix, skyprojmatrix);
+
     draw_envbox(farplane/2, skyclip, topclip, 0x3F, sky);
-    glPopMatrix();
 
     if(fogdomemax && !fogdomeclouds) 
     {
         drawfogdome(farplane);
     }
-    
-    defaultshader->set();
+   
+    SETSHADER(skybox); 
 
     if(cloudbox[0])
     {
@@ -444,13 +443,7 @@ void drawskybox(int farplane)
         skyprojmatrix.mul(projmatrix, skymatrix);
         LOCALPARAM(skymatrix, skyprojmatrix);
 
-        glPushMatrix();
-        glmatrix cloudsmatrix = cammatrix;
-        cloudsmatrix.d = vec4(0, 0, 0, 1);
-        cloudsmatrix.rotate_around_z((spinclouds*lastmillis/1000.0f+yawclouds)*-RAD);
-        glLoadMatrixf(cloudsmatrix.a.v);
         draw_envbox(farplane/2, skyclip ? skyclip : cloudclip, topclip, 0x3F, clouds);
-        glPopMatrix();
 
         glDisable(GL_BLEND);
     }
@@ -462,13 +455,13 @@ void drawskybox(int farplane)
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glPushMatrix();
-        glmatrix cloudlayermatrix = cammatrix;
-        cloudlayermatrix.d = vec4(0, 0, 0, 1);
-        cloudlayermatrix.rotate_around_z((spincloudlayer*lastmillis/1000.0f+yawcloudlayer)*-RAD);
-        glLoadMatrixf(cloudlayermatrix.a.v);
+        skymatrix = cammatrix;
+        skymatrix.d = vec4(0, 0, 0, 1);
+        skymatrix.rotate_around_z((spincloudlayer*lastmillis/1000.0f+yawcloudlayer)*-RAD);
+        skyprojmatrix.mul(projmatrix, skymatrix);
+        LOCALPARAM(skymatrix, skyprojmatrix);
+
         draw_env_overlay(farplane/2, cloudoverlay, cloudoffsetx + cloudscrollx * lastmillis/1000.0f, cloudoffsety + cloudscrolly * lastmillis/1000.0f);
-        glPopMatrix();
 
         glDisable(GL_BLEND);
 

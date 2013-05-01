@@ -19,8 +19,8 @@ extern int ati_pf_bug;
 
 int gethdrformat(int prec, int fallback = GL_RGB)
 {
-    if(prec >= 3 && hasTF) return GL_RGB16F_ARB;
-    if(prec >= 2 && hasPF && !ati_pf_bug) return GL_R11F_G11F_B10F_EXT;
+    if(prec >= 3 && hasTF) return GL_RGB16F;
+    if(prec >= 2 && hasPF && !ati_pf_bug) return GL_R11F_G11F_B10F;
     if(prec >= 1) return GL_RGB10;
     return fallback;
 }
@@ -44,31 +44,31 @@ void setupbloom(int w, int h)
     loopi(5) if(!bloomfbo[i]) glGenFramebuffers_(1, &bloomfbo[i]);
 
     bloomformat = gethdrformat(bloomprec);
-    createtexture(bloomtex[0], max(gw/2, bloomw), max(gh/2, bloomh), NULL, 3, 1, bloomformat, GL_TEXTURE_RECTANGLE_ARB);
-    createtexture(bloomtex[1], max(gw/4, bloomw), max(gh/4, bloomh), NULL, 3, 1, bloomformat, GL_TEXTURE_RECTANGLE_ARB);
-    createtexture(bloomtex[2], bloomw, bloomh, NULL, 3, 1, GL_RGB, GL_TEXTURE_RECTANGLE_ARB);
-    createtexture(bloomtex[3], bloomw, bloomh, NULL, 3, 1, GL_RGB, GL_TEXTURE_RECTANGLE_ARB);
+    createtexture(bloomtex[0], max(gw/2, bloomw), max(gh/2, bloomh), NULL, 3, 1, bloomformat, GL_TEXTURE_RECTANGLE);
+    createtexture(bloomtex[1], max(gw/4, bloomw), max(gh/4, bloomh), NULL, 3, 1, bloomformat, GL_TEXTURE_RECTANGLE);
+    createtexture(bloomtex[2], bloomw, bloomh, NULL, 3, 1, GL_RGB, GL_TEXTURE_RECTANGLE);
+    createtexture(bloomtex[3], bloomw, bloomh, NULL, 3, 1, GL_RGB, GL_TEXTURE_RECTANGLE);
     if(bloomformat != GL_RGB)
     {
         if(!bloomtex[5]) glGenTextures(1, &bloomtex[5]);
         if(!bloomfbo[5]) glGenFramebuffers_(1, &bloomfbo[5]);
-        createtexture(bloomtex[5], bloomw, bloomh, NULL, 3, 1, bloomformat, GL_TEXTURE_RECTANGLE_ARB);
+        createtexture(bloomtex[5], bloomw, bloomh, NULL, 3, 1, bloomformat, GL_TEXTURE_RECTANGLE);
     }
 
     static uchar gray[3] = { 32, 32, 32 };
     static float grayf[3] = { 0.125f, 0.125f, 0.125f };
-    createtexture(bloomtex[4], 1, 1, hasTF ? (void *)grayf : (void *)gray, 3, 1, hasTF ? GL_RGB16F_ARB : GL_RGB16, GL_TEXTURE_RECTANGLE_ARB);
+    createtexture(bloomtex[4], 1, 1, hasTF ? (void *)grayf : (void *)gray, 3, 1, hasTF ? GL_RGB16F : GL_RGB16);
 
     loopi(5 + (bloomformat != GL_RGB ? 1 : 0))
     {
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, bloomfbo[i]);
-        glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, bloomtex[i], 0);
+        glBindFramebuffer_(GL_FRAMEBUFFER, bloomfbo[i]);
+        glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, i==4 ? GL_TEXTURE_2D : GL_TEXTURE_RECTANGLE, bloomtex[i], 0);
 
-        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             fatal("failed allocating bloom buffer!");
     }
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+    glBindFramebuffer_(GL_FRAMEBUFFER, 0);
 }
 
 void cleanupbloom()
@@ -169,10 +169,10 @@ void setupao(int w, int h)
     {
         if(!aotex[i]) glGenTextures(1, &aotex[i]);
         if(!aofbo[i]) glGenFramebuffers_(1, &aofbo[i]);
-        createtexture(aotex[i], upscale && i ? w : aow, upscale && i >= 2 ? h : aoh, NULL, 3, i < 2 ? packfilter : 1, i < 2 ? packformat : format, GL_TEXTURE_RECTANGLE_ARB);
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, aofbo[i]);
-        glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, aotex[i], 0);
-        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+        createtexture(aotex[i], upscale && i ? w : aow, upscale && i >= 2 ? h : aoh, NULL, 3, i < 2 ? packfilter : 1, i < 2 ? packformat : format, GL_TEXTURE_RECTANGLE);
+        glBindFramebuffer_(GL_FRAMEBUFFER, aofbo[i]);
+        glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, aotex[i], 0);
+        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             fatal("failed allocating AO buffer!");
     }
 
@@ -180,14 +180,14 @@ void setupao(int w, int h)
     {
         if(!aotex[3]) glGenTextures(1, &aotex[3]);
         if(!aofbo[3]) glGenFramebuffers_(1, &aofbo[3]);
-        createtexture(aotex[3], aow, aoh, NULL, 3, 0, aodepthformat > 1 ? GL_R32F : (aodepthformat ? GL_R16F : GL_RGBA8), GL_TEXTURE_RECTANGLE_ARB);
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, aofbo[3]);
-        glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, aotex[3], 0);
-        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+        createtexture(aotex[3], aow, aoh, NULL, 3, 0, aodepthformat > 1 ? GL_R32F : (aodepthformat ? GL_R16F : GL_RGBA8), GL_TEXTURE_RECTANGLE);
+        glBindFramebuffer_(GL_FRAMEBUFFER, aofbo[3]);
+        glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, aotex[3], 0);
+        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             fatal("failed allocating AO buffer!");
     }
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+    glBindFramebuffer_(GL_FRAMEBUFFER, 0);
 
     loadaoshaders();
     loadbilateralshaders();
@@ -244,13 +244,7 @@ void viewao()
     gle::colorf(1, 1, 1);
     glBindTexture(GL_TEXTURE_RECTANGLE, aotex[2] ? aotex[2] : aotex[0]);
     int tw = aotex[2] ? gw : aow, th = aotex[2] ? gh : aoh;
-    glBegin(GL_TRIANGLE_STRIP);
-    glTexCoord2f(0, th); glVertex2f(0, 0);
-    glTexCoord2f(tw, th); glVertex2f(w, 0);
-    glTexCoord2f(0, 0); glVertex2f(0, h);
-    glTexCoord2f(tw, 0); glVertex2f(w, h);
-    glEnd();
-    notextureshader->set();
+    debugquad(0, 0, w, h, 0, 0, tw, th);
 }
 
 void renderao()
@@ -260,13 +254,13 @@ void renderao()
     timer *aotimer = begintimer("ambient obscurance");
 
     if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msdepthtex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gdepthtex);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, gdepthtex);
 
     bool linear = aoreducedepth && (aoreduce || aoreducedepth > 1);
     float xscale = eyematrix.a.x, yscale = eyematrix.b.y;
     if(linear)
     {
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, aofbo[3]);
+        glBindFramebuffer_(GL_FRAMEBUFFER, aofbo[3]);
         glViewport(0, 0, aow, aoh);
         SETSHADER(linearizedepth);
         screenquad(vieww, viewh);
@@ -274,24 +268,28 @@ void renderao()
         xscale *= float(vieww)/aow;
         yscale *= float(viewh)/aoh;
 
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, aotex[3]);
+        glBindTexture(GL_TEXTURE_RECTANGLE, aotex[3]);
     }
 
     ambientobscuranceshader->set();
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, aofbo[0]);
+    glBindFramebuffer_(GL_FRAMEBUFFER, aofbo[0]);
     glViewport(0, 0, aow, aoh);
-    glActiveTexture_(GL_TEXTURE1_ARB);
+    glActiveTexture_(GL_TEXTURE1);
     if(aoderivnormal)
     {
         if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msdepthtex);
-        else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gdepthtex);
+        else glBindTexture(GL_TEXTURE_RECTANGLE, gdepthtex);
     }
-    else if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msnormaltex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gnormaltex);
-    glActiveTexture_(GL_TEXTURE2_ARB);
+    else 
+    {
+        if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msnormaltex);
+        else glBindTexture(GL_TEXTURE_RECTANGLE, gnormaltex);
+        LOCALPARAM(normalmatrix, glmatrix3x3(cammatrix));
+    }
+    glActiveTexture_(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, aonoisetex);
-    glActiveTexture_(GL_TEXTURE0_ARB);
+    glActiveTexture_(GL_TEXTURE0);
 
     LOCALPARAMF(tapparams, (aoradius*eyematrix.d.z/xscale, aoradius*eyematrix.d.z/yscale, aoradius*aoradius*aocutoff*aocutoff));
     LOCALPARAMF(contrastparams, ((2.0f*aodark)/aotaps, aosharp));
@@ -304,26 +302,26 @@ void renderao()
         if(aoreduce && aobilateralupscale) loopi(2)
         {
             setbilateralshader(aobilateral, i, aobilateralsigma, aobilateraldepth);
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, aofbo[i+1]);
+            glBindFramebuffer_(GL_FRAMEBUFFER, aofbo[i+1]);
             glViewport(0, 0, vieww, i ? viewh : aoh);
-            glBindTexture(GL_TEXTURE_RECTANGLE_ARB, aotex[i]);
-            glActiveTexture_(GL_TEXTURE1_ARB);
+            glBindTexture(GL_TEXTURE_RECTANGLE, aotex[i]);
+            glActiveTexture_(GL_TEXTURE1);
             if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msdepthtex);
-            else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gdepthtex);
-            glActiveTexture_(GL_TEXTURE0_ARB);
+            else glBindTexture(GL_TEXTURE_RECTANGLE, gdepthtex);
+            glActiveTexture_(GL_TEXTURE0);
             screenquad(vieww, viewh, i ? vieww : aow, aoh);
         }
         else loopi(2 + 2*aoiter)
         {
             setbilateralshader(aobilateral, i%2, aobilateralsigma, aobilateraldepth);
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, aofbo[(i+1)%2]);
+            glBindFramebuffer_(GL_FRAMEBUFFER, aofbo[(i+1)%2]);
             glViewport(0, 0, aow, aoh);
-            glBindTexture(GL_TEXTURE_RECTANGLE_ARB, aotex[i%2]);
-            glActiveTexture_(GL_TEXTURE1_ARB);
-            if(linear) glBindTexture(GL_TEXTURE_RECTANGLE_ARB, aotex[3]);
+            glBindTexture(GL_TEXTURE_RECTANGLE, aotex[i%2]);
+            glActiveTexture_(GL_TEXTURE1);
+            if(linear) glBindTexture(GL_TEXTURE_RECTANGLE, aotex[3]);
             else if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msdepthtex);
-            else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gdepthtex);
-            glActiveTexture_(GL_TEXTURE0_ARB);
+            else glBindTexture(GL_TEXTURE_RECTANGLE, gdepthtex);
+            glActiveTexture_(GL_TEXTURE0);
             screenquad(vieww, viewh);
         }
     }
@@ -333,15 +331,15 @@ void renderao()
         setupblurkernel(aoblur, aosigma, blurweights, bluroffsets);
         loopi(2 + 2*aoiter)
         {
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, aofbo[(i+1)%2]);
+            glBindFramebuffer_(GL_FRAMEBUFFER, aofbo[(i+1)%2]);
             glViewport(0, 0, aow, aoh);
-            setblurshader(i%2, 1, aoblur, blurweights, bluroffsets, GL_TEXTURE_RECTANGLE_ARB);
-            glBindTexture(GL_TEXTURE_RECTANGLE_ARB, aotex[i%2]);
+            setblurshader(i%2, 1, aoblur, blurweights, bluroffsets, GL_TEXTURE_RECTANGLE);
+            glBindTexture(GL_TEXTURE_RECTANGLE, aotex[i%2]);
             screenquad(aow, aoh);
         }
     }
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, msaasamples ? msfbo : gfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, msaasamples ? msfbo : gfbo);
     glViewport(0, 0, vieww, viewh);
 
     endtimer(aotimer);
@@ -366,18 +364,18 @@ void setupscale(int sw, int sh, int w, int h)
         if(!scaletex[i]) glGenTextures(1, &scaletex[i]);
         if(!scalefbo[i]) glGenFramebuffers_(1, &scalefbo[i]);
 
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, scalefbo[i]);
+        glBindFramebuffer_(GL_FRAMEBUFFER, scalefbo[i]);
 
-        createtexture(scaletex[i], sw, i ? h : sh, NULL, 3, gscalecubic || !gscalenearest ? 1 : 0, GL_RGB, GL_TEXTURE_RECTANGLE_ARB);
+        createtexture(scaletex[i], sw, i ? h : sh, NULL, 3, gscalecubic || !gscalenearest ? 1 : 0, GL_RGB, GL_TEXTURE_RECTANGLE);
 
-        glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, scaletex[i], 0);
+        glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, scaletex[i], 0);
         if(!i) bindgdepth();
 
-        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             fatal("failed allocating scale buffer!");
     }
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+    glBindFramebuffer_(GL_FRAMEBUFFER, 0);
 
     useshaderbyname("scalelinear");
     if(gscalecubic) 
@@ -400,22 +398,22 @@ void doscale(int w, int h)
 
     if(gscalecubic)
     {
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, scalefbo[1]);
+        glBindFramebuffer_(GL_FRAMEBUFFER, scalefbo[1]);
         glViewport(0, 0, gw, h);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, scaletex[0]);
+        glBindTexture(GL_TEXTURE_RECTANGLE, scaletex[0]);
         SETSHADER(scalecubicy);
         screenquad(gw, gh);
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+        glBindFramebuffer_(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, w, h);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, scaletex[1]);
+        glBindTexture(GL_TEXTURE_RECTANGLE, scaletex[1]);
         SETSHADER(scalecubicx);
         screenquad(gw, h);
     }
     else
     {
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+        glBindFramebuffer_(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, w, h);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, scaletex[0]);
+        glBindTexture(GL_TEXTURE_RECTANGLE, scaletex[0]);
         SETSHADER(scalelinear);
         screenquad(gw, gh);
     }
@@ -447,7 +445,7 @@ void initgbuffer()
     if(hasFBMS && hasFBB && hasTMS)
     {
         GLint val;
-        glGetIntegerv(GL_MAX_SAMPLES_EXT, &val);
+        glGetIntegerv(GL_MAX_SAMPLES, &val);
         msaamaxsamples = val;
         glGetIntegerv(GL_MAX_DEPTH_TEXTURE_SAMPLES, &val);
         msaamaxdepthtexsamples = val;
@@ -495,10 +493,10 @@ void maskgbuffer(const char *mask)
     int numbufs = 0;
     while(*mask) switch(*mask++)
     {
-        case 'c': drawbufs[numbufs++] =  GL_COLOR_ATTACHMENT0_EXT; break;
-        case 'n': drawbufs[numbufs++] =  GL_COLOR_ATTACHMENT1_EXT; break;
-        case 'g': drawbufs[numbufs++] =  GL_COLOR_ATTACHMENT2_EXT; break;
-        case 'd': if(gdepthformat) drawbufs[numbufs++] =  GL_COLOR_ATTACHMENT3_EXT; break;
+        case 'c': drawbufs[numbufs++] =  GL_COLOR_ATTACHMENT0; break;
+        case 'n': drawbufs[numbufs++] =  GL_COLOR_ATTACHMENT1; break;
+        case 'g': drawbufs[numbufs++] =  GL_COLOR_ATTACHMENT2; break;
+        case 'd': if(gdepthformat) drawbufs[numbufs++] =  GL_COLOR_ATTACHMENT3; break;
     }
     glDrawBuffers_(numbufs, drawbufs);
 }
@@ -525,15 +523,15 @@ void bindmsdepth()
 {
     if(gdepthformat)
     {
-        glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, msdepthrb);
-        if(msaadepthstencil && hasDS) glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, msdepthrb);
-        else if(msaastencil) glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, msstencilrb);
+        glFramebufferRenderbuffer_(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, msdepthrb);
+        if(msaadepthstencil && hasDS) glFramebufferRenderbuffer_(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, msdepthrb);
+        else if(msaastencil) glFramebufferRenderbuffer_(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, msstencilrb);
     }
     else
     {
-        glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D_MULTISAMPLE, msdepthtex, 0);
-        if(msaadepthstencil && hasDS) glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D_MULTISAMPLE, msdepthtex, 0);
-        else if(msaastencil) glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, msstencilrb);
+        glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, msdepthtex, 0);
+        if(msaadepthstencil && hasDS) glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, msdepthtex, 0);
+        else if(msaastencil) glFramebufferRenderbuffer_(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, msstencilrb);
     }
 }
 
@@ -548,9 +546,9 @@ static void texms(GLenum format, int w, int h, GLenum fixed)
 static void rbms(GLenum format, int w, int h)
 {
     if(msaamincolorsamples < msaasamples)
-        glRenderbufferStorageMultisampleCoverageNV_(GL_RENDERBUFFER_EXT, msaasamples, msaamincolorsamples, format, w, h);
+        glRenderbufferStorageMultisampleCoverageNV_(GL_RENDERBUFFER, msaasamples, msaamincolorsamples, format, w, h);
     else
-        glRenderbufferStorageMultisample_(GL_RENDERBUFFER_EXT, msaasamples, format, w, h);
+        glRenderbufferStorageMultisample_(GL_RENDERBUFFER, msaasamples, format, w, h);
 }
 
 void setupmsbuffer(int w, int h)
@@ -561,34 +559,34 @@ void setupmsbuffer(int w, int h)
     if(!msglowtex) glGenTextures(1, &msglowtex);
     if(!msfbo) glGenFramebuffers_(1, &msfbo);
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, msfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, msfbo);
 
     maskgbuffer("cngd");
 
-    if(msaadepthstencil && hasDS) stencilformat = GL_DEPTH24_STENCIL8_EXT;
-    else if(msaastencil) stencilformat = GL_STENCIL_INDEX8_EXT;
+    if(msaadepthstencil && hasDS) stencilformat = GL_DEPTH24_STENCIL8;
+    else if(msaastencil) stencilformat = GL_STENCIL_INDEX8;
 
     GLenum fixed = hasMSS && multisampledaa() ? GL_TRUE : GL_FALSE;
 
     if(gdepthformat)
     {
         if(!msdepthrb) glGenRenderbuffers_(1, &msdepthrb);
-        glBindRenderbuffer_(GL_RENDERBUFFER_EXT, msdepthrb);
-        rbms(msaadepthstencil && hasDS ? GL_DEPTH24_STENCIL8_EXT : GL_DEPTH_COMPONENT, w, h);
-        glBindRenderbuffer_(GL_RENDERBUFFER_EXT, 0);
+        glBindRenderbuffer_(GL_RENDERBUFFER, msdepthrb);
+        rbms(msaadepthstencil && hasDS ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT, w, h);
+        glBindRenderbuffer_(GL_RENDERBUFFER, 0);
         fixed = GL_TRUE; // spec requires fixed sample locations if renderbuffers are used with textures
     }
     if(msaastencil && (!msaadepthstencil || !hasDS))
     {
         if(!msstencilrb) glGenRenderbuffers_(1, &msstencilrb);
-        glBindRenderbuffer_(GL_RENDERBUFFER_EXT, msstencilrb);
-        rbms(GL_STENCIL_INDEX8_EXT, w, h);
-        glBindRenderbuffer_(GL_RENDERBUFFER_EXT, 0);
+        glBindRenderbuffer_(GL_RENDERBUFFER, msstencilrb);
+        rbms(GL_STENCIL_INDEX8, w, h);
+        glBindRenderbuffer_(GL_RENDERBUFFER, 0);
         fixed = GL_TRUE; // spec requires fixed sample locations if renderbuffers are used with textures
     }
 
     static const GLenum depthformats[] = { GL_RGBA8, GL_R16F, GL_R32F };
-    GLenum depthformat = gdepthformat ? depthformats[gdepthformat-1] : (msaadepthstencil && hasDS ? GL_DEPTH24_STENCIL8_EXT : GL_DEPTH_COMPONENT);
+    GLenum depthformat = gdepthformat ? depthformats[gdepthformat-1] : (msaadepthstencil && hasDS ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msdepthtex);
     texms(depthformat, w, h, fixed);
  
@@ -600,12 +598,12 @@ void setupmsbuffer(int w, int h)
     texms(GL_RGBA8, w, h, fixed);
 
     bindmsdepth();
-    glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D_MULTISAMPLE, mscolortex, 0);
-    glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_TEXTURE_2D_MULTISAMPLE, msnormaltex, 0);
-    glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT2_EXT, GL_TEXTURE_2D_MULTISAMPLE, msglowtex, 0);
-    if(gdepthformat) glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT3_EXT, GL_TEXTURE_2D_MULTISAMPLE, msdepthtex, 0);
+    glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, mscolortex, 0);
+    glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, msnormaltex, 0);
+    glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D_MULTISAMPLE, msglowtex, 0);
+    if(gdepthformat) glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D_MULTISAMPLE, msdepthtex, 0);
 
-    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         fatal("failed allocating MSAA g-buffer!");
 
     GLint colorsamples = msaasamples;
@@ -623,7 +621,7 @@ void setupmsbuffer(int w, int h)
     if(!mshdrtex) glGenTextures(1, &mshdrtex);
     if(!mshdrfbo) glGenFramebuffers_(1, &mshdrfbo);
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, mshdrfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, mshdrfbo);
 
     bindmsdepth();
 
@@ -636,8 +634,8 @@ void setupmsbuffer(int w, int h)
         texms(format, w, h, fixed);
         if(glGetError() == GL_NO_ERROR)
         {
-            glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D_MULTISAMPLE, mshdrtex, 0);
-            if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) == GL_FRAMEBUFFER_COMPLETE_EXT)
+            glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, mshdrtex, 0);
+            if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
             {
                 hdrformat = format;
                 break;
@@ -645,24 +643,24 @@ void setupmsbuffer(int w, int h)
         }
     }
 
-    if(!hdrformat || glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+    if(!hdrformat || glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         fatal("failed allocating MSAA HDR buffer!");
 
     if(!msrefracttex) glGenTextures(1, &msrefracttex);
     if(!msrefractfbo) glGenFramebuffers_(1, &msrefractfbo);
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, msrefractfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, msrefractfbo);
 
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msrefracttex);
     texms(GL_RGB, w, h, fixed);
 
-    glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D_MULTISAMPLE, msrefracttex, 0);
+    glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, msrefracttex, 0);
     bindmsdepth();
 
-    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         fatal("failed allocating MSAA refraction buffer!");
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+    glBindFramebuffer_(GL_FRAMEBUFFER, 0);
 
     useshaderbyname("msaaedgedetect");
     useshaderbyname("msaaresolve");
@@ -679,15 +677,15 @@ void bindgdepth()
 {
     if(gdepthformat || msaasamples)
     {
-        glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, gdepthrb);
-        if((msaasamples ? msaadepthstencil : gdepthstencil) && hasDS) glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, gdepthrb);
-        else if(msaasamples ? hasMSS && msaatonemap && msaatonemapstencil && msaastencil : gstencil) glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, gstencilrb);
+        glFramebufferRenderbuffer_(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, gdepthrb);
+        if((msaasamples ? msaadepthstencil : gdepthstencil) && hasDS) glFramebufferRenderbuffer_(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, gdepthrb);
+        else if(msaasamples ? hasMSS && msaatonemap && msaatonemapstencil && msaastencil : gstencil) glFramebufferRenderbuffer_(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, gstencilrb);
     }
     else
     {
-        glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_RECTANGLE_ARB, gdepthtex, 0);
-        if(gdepthstencil && hasDS) glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_RECTANGLE_ARB, gdepthtex, 0);
-        else if(gstencil) glFramebufferRenderbuffer_(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, gstencilrb);
+        glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_RECTANGLE, gdepthtex, 0);
+        if(gdepthstencil && hasDS) glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_RECTANGLE, gdepthtex, 0);
+        else if(gstencil) glFramebufferRenderbuffer_(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, gstencilrb);
     }
 }
 
@@ -722,16 +720,16 @@ void setupgbuffer(int w, int h)
     if(gdepthformat || msaasamples)
     {
         if(!gdepthrb) glGenRenderbuffers_(1, &gdepthrb);
-        glBindRenderbuffer_(GL_RENDERBUFFER_EXT, gdepthrb);
-        glRenderbufferStorage_(GL_RENDERBUFFER_EXT, (msaasamples ? msaadepthstencil : gdepthstencil) && hasDS ? GL_DEPTH24_STENCIL8_EXT : GL_DEPTH_COMPONENT, gw, gh);
-        glBindRenderbuffer_(GL_RENDERBUFFER_EXT, 0);
+        glBindRenderbuffer_(GL_RENDERBUFFER, gdepthrb);
+        glRenderbufferStorage_(GL_RENDERBUFFER, (msaasamples ? msaadepthstencil : gdepthstencil) && hasDS ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT, gw, gh);
+        glBindRenderbuffer_(GL_RENDERBUFFER, 0);
     }
     if(msaasamples ? hasMSS && msaatonemap && msaatonemapstencil && msaastencil && (!hasDS || !msaadepthstencil) : gstencil && (!hasDS || !gdepthstencil))
     {
         if(!gstencilrb) glGenRenderbuffers_(1, &gstencilrb);
-        glBindRenderbuffer_(GL_RENDERBUFFER_EXT, gstencilrb);
-        glRenderbufferStorage_(GL_RENDERBUFFER_EXT, GL_STENCIL_INDEX8_EXT, gw, gh);
-        glBindRenderbuffer_(GL_RENDERBUFFER_EXT, 0);
+        glBindRenderbuffer_(GL_RENDERBUFFER, gstencilrb);
+        glRenderbufferStorage_(GL_RENDERBUFFER, GL_STENCIL_INDEX8, gw, gh);
+        glBindRenderbuffer_(GL_RENDERBUFFER, 0);
     }
 
     if(!msaasamples)
@@ -742,42 +740,42 @@ void setupgbuffer(int w, int h)
         if(!gglowtex) glGenTextures(1, &gglowtex);
         if(!gfbo) glGenFramebuffers_(1, &gfbo);
 
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, gfbo);
+        glBindFramebuffer_(GL_FRAMEBUFFER, gfbo);
 
         maskgbuffer("cngd");
 
-        if(gdepthstencil && hasDS) stencilformat = GL_DEPTH24_STENCIL8_EXT;
-        else if(gstencil) stencilformat = GL_STENCIL_INDEX8_EXT;
+        if(gdepthstencil && hasDS) stencilformat = GL_DEPTH24_STENCIL8;
+        else if(gstencil) stencilformat = GL_STENCIL_INDEX8;
 
         static const GLenum depthformats[] = { GL_RGBA8, GL_R16F, GL_R32F };
-        GLenum depthformat = gdepthformat ? depthformats[gdepthformat-1] : (gdepthstencil && hasDS ? GL_DEPTH24_STENCIL8_EXT : GL_DEPTH_COMPONENT);
-        createtexture(gdepthtex, gw, gh, NULL, 3, 0, depthformat, GL_TEXTURE_RECTANGLE_ARB);
+        GLenum depthformat = gdepthformat ? depthformats[gdepthformat-1] : (gdepthstencil && hasDS ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT);
+        createtexture(gdepthtex, gw, gh, NULL, 3, 0, depthformat, GL_TEXTURE_RECTANGLE);
 
-        createtexture(gcolortex, gw, gh, NULL, 3, 0, GL_RGBA8, GL_TEXTURE_RECTANGLE_ARB);
-        createtexture(gnormaltex, gw, gh, NULL, 3, 0, GL_RGBA8, GL_TEXTURE_RECTANGLE_ARB);
-        createtexture(gglowtex, gw, gh, NULL, 3, 0, GL_RGBA8, GL_TEXTURE_RECTANGLE_ARB);
+        createtexture(gcolortex, gw, gh, NULL, 3, 0, GL_RGBA8, GL_TEXTURE_RECTANGLE);
+        createtexture(gnormaltex, gw, gh, NULL, 3, 0, GL_RGBA8, GL_TEXTURE_RECTANGLE);
+        createtexture(gglowtex, gw, gh, NULL, 3, 0, GL_RGBA8, GL_TEXTURE_RECTANGLE);
 
         bindgdepth();
-        glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, gcolortex, 0);
-        glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_TEXTURE_RECTANGLE_ARB, gnormaltex, 0);
-        glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT2_EXT, GL_TEXTURE_RECTANGLE_ARB, gglowtex, 0);
-        if(gdepthformat) glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT3_EXT, GL_TEXTURE_RECTANGLE_ARB, gdepthtex, 0);
+        glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, gcolortex, 0);
+        glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_RECTANGLE, gnormaltex, 0);
+        glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_RECTANGLE, gglowtex, 0);
+        if(gdepthformat) glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_RECTANGLE, gdepthtex, 0);
 
-        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             fatal("failed allocating g-buffer!");
     }
 
     if(!hdrtex) glGenTextures(1, &hdrtex);
     if(!hdrfbo) glGenFramebuffers_(1, &hdrfbo);
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, hdrfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, hdrfbo);
 
-    createtexture(hdrtex, gw, gh, NULL, 3, 1, hdrformat, GL_TEXTURE_RECTANGLE_ARB);
+    createtexture(hdrtex, gw, gh, NULL, 3, 1, hdrformat, GL_TEXTURE_RECTANGLE);
 
-    glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, hdrtex, 0);
+    glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, hdrtex, 0);
     bindgdepth();
 
-    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         fatal("failed allocating HDR buffer!");
 
     if(!msaasamples || (hasMSS && msaatonemap && msaatonemapblit))
@@ -785,18 +783,18 @@ void setupgbuffer(int w, int h)
         if(!refracttex) glGenTextures(1, &refracttex);
         if(!refractfbo) glGenFramebuffers_(1, &refractfbo);
 
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, refractfbo);
+        glBindFramebuffer_(GL_FRAMEBUFFER, refractfbo);
 
-        createtexture(refracttex, gw, gh, NULL, 3, 0, GL_RGB, GL_TEXTURE_RECTANGLE_ARB);
+        createtexture(refracttex, gw, gh, NULL, 3, 0, GL_RGB, GL_TEXTURE_RECTANGLE);
 
-        glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, refracttex, 0);
+        glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, refracttex, 0);
         bindgdepth();
 
-        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+        if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             fatal("failed allocating refraction buffer!");
     }
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+    glBindFramebuffer_(GL_FRAMEBUFFER, 0);
 
     if(gscale != 100) setupscale(sw, sh, w, h);
 }
@@ -826,11 +824,11 @@ void resolvemsaacolor(int w = vieww, int h = viewh)
 
     timer *resolvetimer = drawtex ? NULL : begintimer("msaa resolve");
 
-    glBindFramebuffer_(GL_READ_FRAMEBUFFER_EXT, mshdrfbo);
-    glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, hdrfbo);
+    glBindFramebuffer_(GL_READ_FRAMEBUFFER, mshdrfbo);
+    glBindFramebuffer_(GL_DRAW_FRAMEBUFFER, hdrfbo);
     glBlitFramebuffer_(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, hdrfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, hdrfbo);
 
     endtimer(resolvetimer);
 }
@@ -864,16 +862,16 @@ void readhdr(int w, int h, GLenum format, GLenum type, void *dst, GLenum target,
     if(msaasamples) resolvemsaacolor(w, h);
     GLERROR;
 
-    if(hasCBF || !hdrfloat) glBindFramebuffer_(GL_FRAMEBUFFER_EXT, hdrfbo);
+    if(hasCBF || !hdrfloat) glBindFramebuffer_(GL_FRAMEBUFFER, hdrfbo);
     else
     {
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+        glBindFramebuffer_(GL_FRAMEBUFFER, 0);
         SETSHADER(hdrnop);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, hdrtex);
+        glBindTexture(GL_TEXTURE_RECTANGLE, hdrtex);
         screenquad(w, h);
     }
 
-    if(hasCBF && hdrfloat) glClampColor_(GL_CLAMP_READ_COLOR_ARB, GL_TRUE);
+    if(hasCBF && hdrfloat) glClampColor_(GL_CLAMP_READ_COLOR, GL_TRUE);
 
     if(dst) glReadPixels(0, 0, w, h, format, type, dst);
     else if(target)
@@ -883,7 +881,7 @@ void readhdr(int w, int h, GLenum format, GLenum type, void *dst, GLenum target,
         glCopyTexImage2D(target, 0, format, 0, 0, w, h, 0);
     }
 
-    if(hasCBF && hdrfloat) glClampColor_(GL_CLAMP_READ_COLOR_ARB, GL_FIXED_ONLY_ARB);
+    if(hasCBF && hdrfloat) glClampColor_(GL_CLAMP_READ_COLOR, GL_FIXED_ONLY);
 
     hdrclear = 3;
 }
@@ -925,7 +923,7 @@ void processldr(GLuint outfbo, int aa)
 
     if(aa >= AA_SPLIT)
     {
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, outfbo);
+        glBindFramebuffer_(GL_FRAMEBUFFER, outfbo);
         glViewport(0, 0, vieww, viewh);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mshdrtex);
         switch(aa)
@@ -933,7 +931,7 @@ void processldr(GLuint outfbo, int aa)
             case AA_SPLIT_LUMA: SETSHADER(msaasplitluma); break;
             case AA_SPLIT_VELOCITY:
                 SETSHADER(msaasplitvelocity);
-                setaavelocityparams(GL_TEXTURE3_ARB);
+                setaavelocityparams(GL_TEXTURE3);
                 break;
             default: SETSHADER(msaasplit); break;
         }
@@ -945,24 +943,24 @@ void processldr(GLuint outfbo, int aa)
 
     if(msaasamples)
     {
-        glBindFramebuffer_(GL_READ_FRAMEBUFFER_EXT, mshdrfbo);
-        glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, outfbo && !aa ? outfbo : hdrfbo);
+        glBindFramebuffer_(GL_READ_FRAMEBUFFER, mshdrfbo);
+        glBindFramebuffer_(GL_DRAW_FRAMEBUFFER, outfbo && !aa ? outfbo : hdrfbo);
         glBlitFramebuffer_(0, 0, vieww, viewh, 0, 0, vieww, viewh, GL_COLOR_BUFFER_BIT, GL_NEAREST);
         if(outfbo && !aa) return;
     }
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, outfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, outfbo);
     glViewport(0, 0, vieww, viewh);
     switch(aa)
     {
         case AA_LUMA: SETSHADER(hdrnopluma); break;
         case AA_VELOCITY:
             SETSHADER(hdrnopvelocity);
-            setaavelocityparams(GL_TEXTURE3_ARB);
+            setaavelocityparams(GL_TEXTURE3);
             break;
         default: SETSHADER(hdrnop); break;
     }
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, hdrtex);
+    glBindTexture(GL_TEXTURE_RECTANGLE, hdrtex);
     screenquad(vieww, viewh);
     
     endtimer(ldrtimer);
@@ -984,22 +982,22 @@ void processhdr(GLuint outfbo, int aa)
     {
         if(!hasMSS || (!msaatonemap && aa < AA_SPLIT))
         {
-            glBindFramebuffer_(GL_READ_FRAMEBUFFER_EXT, mshdrfbo);
-            glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, hdrfbo);
+            glBindFramebuffer_(GL_READ_FRAMEBUFFER, mshdrfbo);
+            glBindFramebuffer_(GL_DRAW_FRAMEBUFFER, hdrfbo);
             glBlitFramebuffer_(0, 0, vieww, viewh, 0, 0, vieww, viewh, GL_COLOR_BUFFER_BIT, GL_NEAREST);
         }
         else if(hasFBMSBS && (vieww > bloomw || viewh > bloomh))
         {
             int cw = max(vieww/2, bloomw), ch = max(viewh/2, bloomh);
-            glBindFramebuffer_(GL_READ_FRAMEBUFFER_EXT, mshdrfbo);
-            glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, hdrfbo);
+            glBindFramebuffer_(GL_READ_FRAMEBUFFER, mshdrfbo);
+            glBindFramebuffer_(GL_DRAW_FRAMEBUFFER, hdrfbo);
             glBlitFramebuffer_(0, 0, vieww, viewh, 0, 0, cw, ch, GL_COLOR_BUFFER_BIT, GL_SCALED_RESOLVE_FASTEST_EXT);
             pw = cw;
             ph = ch;
         }
         else
         {
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, hdrfbo);
+            glBindFramebuffer_(GL_FRAMEBUFFER, hdrfbo);
             if(vieww/2 >= bloomw)
             {
                 pw = vieww/2;
@@ -1041,9 +1039,9 @@ void processhdr(GLuint outfbo, int aa)
         }
         else SETSHADER(hdrreduce);
         if(cw == bloomw && ch == bloomh) { if(bloomfbo[5]) { cfbo = bloomfbo[5]; ctex = bloomtex[5]; } else { cfbo = bloomfbo[2]; ctex = bloomtex[2]; } }
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, cfbo);
+        glBindFramebuffer_(GL_FRAMEBUFFER, cfbo);
         glViewport(0, 0, cw, ch);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, ptex);
+        glBindTexture(GL_TEXTURE_RECTANGLE, ptex);
         screenquad(pw, ph);
 
         ptex = ctex;
@@ -1074,9 +1072,9 @@ void processhdr(GLuint outfbo, int aa)
                 else if(i) SETSHADER(hdrreduce2w); else SETSHADER(hdrluminance2w);
             }
             else if(i) SETSHADER(hdrreduce); else SETSHADER(hdrluminance);
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, b1fbo);
+            glBindFramebuffer_(GL_FRAMEBUFFER, b1fbo);
             glViewport(0, 0, cw, ch);
-            glBindTexture(GL_TEXTURE_RECTANGLE_ARB, ltex);
+            glBindTexture(GL_TEXTURE_RECTANGLE, ltex);
             screenquad(lw, lh);
 
             ltex = b1tex;
@@ -1088,12 +1086,12 @@ void processhdr(GLuint outfbo, int aa)
             swap(b0h, b1h);
         }
 
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, bloomfbo[4]);
+        glBindFramebuffer_(GL_FRAMEBUFFER, bloomfbo[4]);
         glViewport(0, 0, 1, 1);
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
         SETSHADER(hdraccum);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, b0tex);
+        glBindTexture(GL_TEXTURE_RECTANGLE, b0tex);
         LOCALPARAMF(accumscale, (lasthdraccum ? pow(hdraccumscale, float(lastmillis - lasthdraccum)/hdraccummillis) : 0));
         screenquad(2, 2);
         glDisable(GL_BLEND);
@@ -1108,14 +1106,14 @@ void processhdr(GLuint outfbo, int aa)
     b0w = b1w = bloomw;
     b0h = b1h = bloomh;
 
-    glActiveTexture_(GL_TEXTURE2_ARB);
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, bloomtex[4]);
-    glActiveTexture_(GL_TEXTURE0_ARB);
+    glActiveTexture_(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, bloomtex[4]);
+    glActiveTexture_(GL_TEXTURE0);
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, b0fbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, b0fbo);
     glViewport(0, 0, b0w, b0h);
     SETSHADER(hdrbloom);
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, ptex);
+    glBindTexture(GL_TEXTURE_RECTANGLE, ptex);
     screenquad(pw, ph);
 
     if(bloomblur)
@@ -1124,10 +1122,10 @@ void processhdr(GLuint outfbo, int aa)
         setupblurkernel(bloomblur, bloomsigma, blurweights, bluroffsets);
         loopi(2 + 2*bloomiter)
         {
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, b1fbo);
+            glBindFramebuffer_(GL_FRAMEBUFFER, b1fbo);
             glViewport(0, 0, b1w, b1h);
-            setblurshader(i%2, 1, bloomblur, blurweights, bluroffsets, GL_TEXTURE_RECTANGLE_ARB);
-            glBindTexture(GL_TEXTURE_RECTANGLE_ARB, b0tex);
+            setblurshader(i%2, 1, bloomblur, blurweights, bluroffsets, GL_TEXTURE_RECTANGLE);
+            glBindTexture(GL_TEXTURE_RECTANGLE, b0tex);
             screenquad(b0w, b0h);
             swap(b0w, b1w);
             swap(b0h, b1h);
@@ -1138,18 +1136,18 @@ void processhdr(GLuint outfbo, int aa)
 
     if(aa >= AA_SPLIT)
     {
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, outfbo);
+        glBindFramebuffer_(GL_FRAMEBUFFER, outfbo);
         glViewport(0, 0, vieww, viewh);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mshdrtex);
-        glActiveTexture_(GL_TEXTURE1_ARB);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, b0tex);
-        glActiveTexture_(GL_TEXTURE0_ARB);
+        glActiveTexture_(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_RECTANGLE, b0tex);
+        glActiveTexture_(GL_TEXTURE0);
         switch(aa)
         {
             case AA_SPLIT_LUMA: SETSHADER(msaatonemapsplitluma); break;
             case AA_SPLIT_VELOCITY:
                 SETSHADER(msaatonemapsplitvelocity);
-                setaavelocityparams(GL_TEXTURE3_ARB);
+                setaavelocityparams(GL_TEXTURE3);
                 break;
             default: SETSHADER(msaatonemapsplit); break;
         }
@@ -1157,18 +1155,18 @@ void processhdr(GLuint outfbo, int aa)
     }
     else if(!msaasamples || !hasMSS || !msaatonemap)
     {
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, outfbo);
+        glBindFramebuffer_(GL_FRAMEBUFFER, outfbo);
         glViewport(0, 0, vieww, viewh);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, hdrtex);
-        glActiveTexture_(GL_TEXTURE1_ARB);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, b0tex);
-        glActiveTexture_(GL_TEXTURE0_ARB);
+        glBindTexture(GL_TEXTURE_RECTANGLE, hdrtex);
+        glActiveTexture_(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_RECTANGLE, b0tex);
+        glActiveTexture_(GL_TEXTURE0);
         switch(aa)
         {
             case AA_LUMA: SETSHADER(hdrtonemapluma); break;
             case AA_VELOCITY:
                 SETSHADER(hdrtonemapvelocity);
-                setaavelocityparams(GL_TEXTURE3_ARB);
+                setaavelocityparams(GL_TEXTURE3);
                 break;
             default: SETSHADER(hdrtonemap); break;
         }
@@ -1185,17 +1183,17 @@ void processhdr(GLuint outfbo, int aa)
         else if(msaatonemapstencil && stencilformat)
         {
             stencil = true;
-            glBindFramebuffer_(GL_READ_FRAMEBUFFER_EXT, mshdrfbo);
-            glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, hdrfbo);
+            glBindFramebuffer_(GL_READ_FRAMEBUFFER, mshdrfbo);
+            glBindFramebuffer_(GL_DRAW_FRAMEBUFFER, hdrfbo);
             glBlitFramebuffer_(0, 0, vieww, viewh, 0, 0, vieww, viewh, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
         }
 
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, blit ? msrefractfbo : (stencil && !outfbo ? hdrfbo : outfbo));
+        glBindFramebuffer_(GL_FRAMEBUFFER, blit ? msrefractfbo : (stencil && !outfbo ? hdrfbo : outfbo));
         glViewport(0, 0, vieww, viewh);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mshdrtex);
-        glActiveTexture_(GL_TEXTURE1_ARB);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, b0tex);
-        glActiveTexture_(GL_TEXTURE0_ARB);
+        glActiveTexture_(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_RECTANGLE, b0tex);
+        glActiveTexture_(GL_TEXTURE0);
 
         if(stencil) 
         {
@@ -1207,7 +1205,7 @@ void processhdr(GLuint outfbo, int aa)
                 case AA_LUMA: SETSHADER(msaatonemapluma); break;
                 case AA_VELOCITY:
                     SETSHADER(msaatonemapvelocity);
-                    setaavelocityparams(GL_TEXTURE3_ARB);
+                    setaavelocityparams(GL_TEXTURE3);
                     break;
                 default: SETSHADER(msaatonemap); break;
             }
@@ -1222,7 +1220,7 @@ void processhdr(GLuint outfbo, int aa)
             case AA_LUMA: SETVARIANT(msaatonemapluma, 0, 0); break;
             case AA_VELOCITY: 
                 SETVARIANT(msaatonemapvelocity, 0, 0);
-                setaavelocityparams(GL_TEXTURE3_ARB);
+                setaavelocityparams(GL_TEXTURE3);
                 break;
             default: SETVARIANT(msaatonemap, 0, 0); break;
         }
@@ -1232,14 +1230,14 @@ void processhdr(GLuint outfbo, int aa)
 
         if(blit)
         {
-            glBindFramebuffer_(GL_READ_FRAMEBUFFER_EXT, msrefractfbo);
-            glBindFramebuffer_(GL_DRAW_FRAMEBUFFER_EXT, aa || !outfbo ? refractfbo : outfbo);
+            glBindFramebuffer_(GL_READ_FRAMEBUFFER, msrefractfbo);
+            glBindFramebuffer_(GL_DRAW_FRAMEBUFFER, aa || !outfbo ? refractfbo : outfbo);
             glBlitFramebuffer_(0, 0, vieww, viewh, 0, 0, vieww, viewh, GL_COLOR_BUFFER_BIT, GL_NEAREST);
         }
 
         if((blit || stencil) && !outfbo)
         { 
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, outfbo);
+            glBindFramebuffer_(GL_FRAMEBUFFER, outfbo);
             glViewport(0, 0, vieww, viewh);
             if(!blit) SETSHADER(hdrnop);
             else switch(aa)
@@ -1247,11 +1245,11 @@ void processhdr(GLuint outfbo, int aa)
                 case AA_LUMA: SETSHADER(hdrnopluma); break;
                 case AA_VELOCITY: 
                     SETSHADER(hdrnopvelocity); 
-                    setaavelocityparams(GL_TEXTURE3_ARB);
+                    setaavelocityparams(GL_TEXTURE3);
                     break;
                 default: SETSHADER(hdrnop); break;
             }    
-            glBindTexture(GL_TEXTURE_RECTANGLE_ARB, blit ? refracttex : hdrtex);
+            glBindTexture(GL_TEXTURE_RECTANGLE, blit ? refracttex : hdrtex);
             screenquad(vieww, viewh);
         }
     }
@@ -1314,28 +1312,28 @@ void setupradiancehints()
 
     if(!rhfbo) glGenFramebuffers_(1, &rhfbo);
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, rhfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, rhfbo);
 
-    GLenum rhformat = hasTF && rhprec >= 1 ? GL_RGBA16F_ARB : GL_RGBA8;
+    GLenum rhformat = hasTF && rhprec >= 1 ? GL_RGBA16F : GL_RGBA8;
 
     loopi(rhcache ? 8 : 4)
     {
         create3dtexture(rhtex[i], rhgrid+2*rhborder, rhgrid+2*rhborder, (rhgrid+2*rhborder)*rhsplits, NULL, 7, 1, rhformat);
         if(rhborder)
         {
-            glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-            glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-            glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
             GLfloat border[4] = { 0.5f, 0.5f, 0.5f, 0 };
-            glTexParameterfv(GL_TEXTURE_3D_EXT, GL_TEXTURE_BORDER_COLOR, border);
+            glTexParameterfv(GL_TEXTURE_3D, GL_TEXTURE_BORDER_COLOR, border);
         }
-        glFramebufferTexture3D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_3D_EXT, rhtex[i], 0, 0);
+        glFramebufferTexture3D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_3D, rhtex[i], 0, 0);
     }
 
     static const GLenum drawbufs[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
     glDrawBuffers_(4, drawbufs);
 
-    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         fatal("failed allocating radiance hints buffer!");
 
     if(!rsmdepthtex) glGenTextures(1, &rsmdepthtex);
@@ -1344,24 +1342,24 @@ void setupradiancehints()
 
     if(!rsmfbo) glGenFramebuffers_(1, &rsmfbo);
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, rsmfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, rsmfbo);
 
     GLenum rsmformat = gethdrformat(rsmprec, GL_RGBA8);
 
-    createtexture(rsmdepthtex, rsmsize, rsmsize, NULL, 3, 0, GL_DEPTH_COMPONENT16_ARB, GL_TEXTURE_RECTANGLE_ARB);
-    createtexture(rsmcolortex, rsmsize, rsmsize, NULL, 3, 0, rsmformat, GL_TEXTURE_RECTANGLE_ARB);
-    createtexture(rsmnormaltex, rsmsize, rsmsize, NULL, 3, 0, rsmformat, GL_TEXTURE_RECTANGLE_ARB);
+    createtexture(rsmdepthtex, rsmsize, rsmsize, NULL, 3, 0, GL_DEPTH_COMPONENT16, GL_TEXTURE_RECTANGLE);
+    createtexture(rsmcolortex, rsmsize, rsmsize, NULL, 3, 0, rsmformat, GL_TEXTURE_RECTANGLE);
+    createtexture(rsmnormaltex, rsmsize, rsmsize, NULL, 3, 0, rsmformat, GL_TEXTURE_RECTANGLE);
 
-    glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_RECTANGLE_ARB, rsmdepthtex, 0);
-    glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, rsmcolortex, 0);
-    glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_TEXTURE_RECTANGLE_ARB, rsmnormaltex, 0);
+    glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_RECTANGLE, rsmdepthtex, 0);
+    glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, rsmcolortex, 0);
+    glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_RECTANGLE, rsmnormaltex, 0);
 
     glDrawBuffers_(2, drawbufs);
 
-    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         fatal("failed allocating RSM buffer!");
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+    glBindFramebuffer_(GL_FRAMEBUFFER, 0);
 
     loadrhshaders();
 }
@@ -1527,14 +1525,14 @@ int evictshadowcache = 0;
 
 static inline void setsmnoncomparemode() // use texture gather
 {
-    glTexParameteri(shadowatlastarget, GL_TEXTURE_COMPARE_MODE_ARB, GL_NONE);
+    glTexParameteri(shadowatlastarget, GL_TEXTURE_COMPARE_MODE, GL_NONE);
     glTexParameteri(shadowatlastarget, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(shadowatlastarget, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
 static inline void setsmcomparemode() // use embedded shadow cmp
 {
-    glTexParameteri(shadowatlastarget, GL_TEXTURE_COMPARE_MODE_ARB, GL_COMPARE_R_TO_TEXTURE_ARB);
+    glTexParameteri(shadowatlastarget, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
     glTexParameteri(shadowatlastarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(shadowatlastarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
@@ -1545,26 +1543,20 @@ static inline bool usesmcomparemode() { return !usegatherforsm() || (hasTG && ha
 
 void viewshadowatlas()
 {
-    int w = min(screen->w, screen->h)/2, h = (w*screen->h)/screen->w;
+    int w = min(screenw, screenh)/2, h = (w*screenh)/screenw, x = screenw-w, y = screenh-h;
     float tw = 1, th = 1;
-    if(shadowatlastarget == GL_TEXTURE_RECTANGLE_ARB)
+    if(shadowatlastarget == GL_TEXTURE_RECTANGLE)
     {
         tw = shadowatlaspacker.w;
         th = shadowatlaspacker.h;
-        rectshader->set();
+        SETSHADER(hudrect);
     }
     else hudshader->set();
     gle::colorf(1, 1, 1);
     glBindTexture(shadowatlastarget, shadowatlastex);
     if(usesmcomparemode()) setsmnoncomparemode();
-    glBegin(GL_TRIANGLE_STRIP);
-    glTexCoord2f(0, 0); glVertex2f(screen->w-w, screen->h-h);
-    glTexCoord2f(tw, 0); glVertex2f(screen->w, screen->h-h);
-    glTexCoord2f(0, th); glVertex2f(screen->w-w, screen->h);
-    glTexCoord2f(tw, th); glVertex2f(screen->w, screen->h);
-    glEnd();
+    debugquad(x, y, w, h, 0, 0, tw, th);
     if(usesmcomparemode()) setsmcomparemode();
-    notextureshader->set();
 }
 VAR(debugshadowatlas, 0, 0, 1);
 
@@ -1577,25 +1569,24 @@ void setupshadowatlas()
 
     if(!shadowatlastex) glGenTextures(1, &shadowatlastex);
 
-    shadowatlastarget = usegatherforsm() ? GL_TEXTURE_2D : GL_TEXTURE_RECTANGLE_ARB;
-    createtexture(shadowatlastex, shadowatlaspacker.w, shadowatlaspacker.h, NULL, 3, 1, GL_DEPTH_COMPONENT16_ARB, shadowatlastarget);
-    glTexParameteri(shadowatlastarget, GL_TEXTURE_COMPARE_MODE_ARB, GL_COMPARE_R_TO_TEXTURE_ARB);
-    glTexParameteri(shadowatlastarget, GL_TEXTURE_COMPARE_FUNC_ARB, GL_LEQUAL);
-    glTexParameteri(shadowatlastarget, GL_DEPTH_TEXTURE_MODE_ARB, GL_LUMINANCE);
+    shadowatlastarget = usegatherforsm() ? GL_TEXTURE_2D : GL_TEXTURE_RECTANGLE;
+    createtexture(shadowatlastex, shadowatlaspacker.w, shadowatlaspacker.h, NULL, 3, 1, GL_DEPTH_COMPONENT16, shadowatlastarget);
+    glTexParameteri(shadowatlastarget, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+    glTexParameteri(shadowatlastarget, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
     if(!shadowatlasfbo) glGenFramebuffers_(1, &shadowatlasfbo);
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, shadowatlasfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, shadowatlasfbo);
 
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
 
-    glFramebufferTexture2D_(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, shadowatlastarget, shadowatlastex, 0);
+    glFramebufferTexture2D_(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowatlastarget, shadowatlastex, 0);
 
-    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+    if(glCheckFramebufferStatus_(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         fatal("failed allocating shadow atlas!");
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0);
+    glBindFramebuffer_(GL_FRAMEBUFFER, 0);
 }
 
 void cleanupshadowatlas()
@@ -1793,8 +1784,8 @@ void cascadedshadowmap::getprojmatrix()
         split.offset = vec(border - offset.x, border - offset.y, -minz/(maxz - minz));
 
         split.proj.identity();
-        split.proj.scale(2*split.scale.x/sm.size, 2*split.scale.y/sm.size, 2*split.scale.z);
-        split.proj.translate(2*split.offset.x/sm.size - 1, 2*split.offset.y/sm.size - 1, 2*split.offset.z - 1);
+        split.proj.settranslation(2*split.offset.x/sm.size - 1, 2*split.offset.y/sm.size - 1, 2*split.offset.z - 1);
+        split.proj.setscale(2*split.scale.x/sm.size, 2*split.scale.y/sm.size, 2*split.scale.z);
 
         const float bias = (smfilter > 2 ? csmbias2 : csmbias) * (-512.0f / sm.size) * (split.farplane - split.nearplane) / (splits[0].farplane - splits[0].nearplane);
         split.offset.add(vec(sm.x, sm.y, bias));
@@ -1951,8 +1942,8 @@ void reflectiveshadowmap::getprojmatrix()
     offset = vec(-tcoff.x, -tcoff.y, -minz/(maxz - minz));
 
     proj.identity();
-    proj.scale(2*scale.x/rsmsize, 2*scale.y/rsmsize, 2*scale.z);
-    proj.translate(2*offset.x/rsmsize - 1, 2*offset.y/rsmsize - 1, 2*offset.z - 1);
+    proj.settranslation(2*offset.x/rsmsize - 1, 2*offset.y/rsmsize - 1, 2*offset.z - 1);
+    proj.setscale(2*scale.x/rsmsize, 2*scale.y/rsmsize, 2*scale.z);
 }
 
 void reflectiveshadowmap::gencullplanes()
@@ -2264,13 +2255,13 @@ static void initlightsphere(int slices, int stacks)
     }
 
     if(!lightspherevbuf) glGenBuffers_(1, &lightspherevbuf);
-    glBindBuffer_(GL_ARRAY_BUFFER_ARB, lightspherevbuf);
-    glBufferData_(GL_ARRAY_BUFFER_ARB, lightspherenumverts*sizeof(vec), lightsphereverts, GL_STATIC_DRAW_ARB);
+    glBindBuffer_(GL_ARRAY_BUFFER, lightspherevbuf);
+    glBufferData_(GL_ARRAY_BUFFER, lightspherenumverts*sizeof(vec), lightsphereverts, GL_STATIC_DRAW);
     DELETEA(lightsphereverts);
 
     if(!lightsphereebuf) glGenBuffers_(1, &lightsphereebuf);
-    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, lightsphereebuf);
-    glBufferData_(GL_ELEMENT_ARRAY_BUFFER_ARB, lightspherenumindices*sizeof(GLushort), lightsphereindices, GL_STATIC_DRAW_ARB);
+    glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, lightsphereebuf);
+    glBufferData_(GL_ELEMENT_ARRAY_BUFFER, lightspherenumindices*sizeof(GLushort), lightsphereindices, GL_STATIC_DRAW);
     DELETEA(lightsphereindices);
 }
 
@@ -2314,30 +2305,30 @@ void renderlights(float bsx1 = -1, float bsy1 = -1, float bsx2 = 1, float bsy2 =
     else glDepthMask(GL_FALSE);
 
     if(msaapass) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mscolortex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gcolortex);
-    glActiveTexture_(GL_TEXTURE1_ARB);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, gcolortex);
+    glActiveTexture_(GL_TEXTURE1);
     if(msaapass) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msnormaltex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gnormaltex);
-    glActiveTexture_(GL_TEXTURE2_ARB);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, gnormaltex);
+    glActiveTexture_(GL_TEXTURE2);
     if(msaapass) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msglowtex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gglowtex);
-    glActiveTexture_(GL_TEXTURE3_ARB);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, gglowtex);
+    glActiveTexture_(GL_TEXTURE3);
     if(msaapass) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msdepthtex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gdepthtex);
-    glActiveTexture_(GL_TEXTURE4_ARB);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, gdepthtex);
+    glActiveTexture_(GL_TEXTURE4);
     glBindTexture(shadowatlastarget, shadowatlastex);
     if(usesmcomparemode()) setsmcomparemode(); else setsmnoncomparemode();
     if(ao)
     {
-        glActiveTexture_(GL_TEXTURE5_ARB);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, aotex[2] ? aotex[2] : aotex[0]);
+        glActiveTexture_(GL_TEXTURE5);
+        glBindTexture(GL_TEXTURE_RECTANGLE, aotex[2] ? aotex[2] : aotex[0]);
     }
     if(sunlight && csmshadowmap && gi && giscale && gidist) loopi(4)
     {
-        glActiveTexture_(GL_TEXTURE6_ARB + i);
-        glBindTexture(GL_TEXTURE_3D_EXT, rhtex[i]);
+        glActiveTexture_(GL_TEXTURE6 + i);
+        glBindTexture(GL_TEXTURE_3D, rhtex[i]);
     }
-    glActiveTexture_(GL_TEXTURE0_ARB);
+    glActiveTexture_(GL_TEXTURE0);
 
     GLOBALPARAM(worldmatrix, worldmatrix);
     GLOBALPARAM(fogdir, cammatrix.getrow(2));
@@ -2385,7 +2376,6 @@ void renderlights(float bsx1 = -1, float bsy1 = -1, float bsx2 = 1, float bsy2 =
 
     gle::defvertex(3);
 
-
     int btx1, bty1, btx2, bty2;
     calctilebounds(bsx1, bsy1, bsx2, bsy2, btx1, bty1, btx2, bty2);
     if(msaapass == 1)
@@ -2399,12 +2389,7 @@ void renderlights(float bsx1 = -1, float bsy1 = -1, float bsx2 = 1, float bsy2 =
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glScissor(tx1, ty1, tx2-tx1, ty2-ty1);
         SETSHADER(msaaedgedetect);
-        glBegin(GL_TRIANGLE_STRIP);
-        glVertex3f( 1, -1, -1);
-        glVertex3f(-1, -1, -1);
-        glVertex3f( 1,  1, -1);
-        glVertex3f(-1,  1, -1);
-        glEnd();
+        lightquad();
         glStencilFunc(GL_EQUAL, stencilmask, ~0);
         glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -2414,6 +2399,10 @@ void renderlights(float bsx1 = -1, float bsy1 = -1, float bsx2 = 1, float bsy2 =
         glStencilFunc(GL_EQUAL, stencilmask|0x08, ~0);
     }
 
+    glmatrix lightmatrix;
+    lightmatrix.identity();
+    GLOBALPARAM(lightmatrix, lightmatrix);
+
     if(sunpass)
     {
         int tx1 = max(int(floor((bsx1*0.5f+0.5f)*vieww)), 0), ty1 = max(int(floor((bsy1*0.5f+0.5f)*viewh)), 0),
@@ -2421,12 +2410,7 @@ void renderlights(float bsx1 = -1, float bsy1 = -1, float bsx2 = 1, float bsy2 =
         s->set();
         glScissor(tx1, ty1, tx2-tx1, ty2-ty1);
         if(depthtestlights && depth) { glDisable(GL_DEPTH_TEST); depth = false; }
-        glBegin(GL_TRIANGLE_STRIP);
-        glVertex3f( 1, -1, -1);
-        glVertex3f(-1, -1, -1);
-        glVertex3f( 1,  1, -1);
-        glVertex3f(-1,  1, -1);
-        glEnd();
+        lightquad();
         lightpassesused++;
     }
 
@@ -2494,6 +2478,11 @@ void renderlights(float bsx1 = -1, float bsy1 = -1, float bsx2 = 1, float bsy2 =
                 shadowoffsetv[0] = vec2(sm.x + 0.5f*sm.size, sm.y + 0.5f*sm.size);
             }
 
+            lightmatrix = camprojmatrix;
+            lightmatrix.translate(l.o);
+            lightmatrix.scale(l.radius*lightradiustweak);
+            GLOBALPARAM(lightmatrix, lightmatrix);
+
             s->setvariant(0, (shadowmap ? 1 : 0) + 2 + (spotlight ? 4 : 0));
             lightpos.setv(lightposv, 1);
             lightcolor.setv(lightcolorv, 1);
@@ -2531,16 +2520,9 @@ void renderlights(float bsx1 = -1, float bsy1 = -1, float bsx2 = 1, float bsy2 =
                 glCullFace(GL_BACK);
             }
 
-            glPushMatrix();
-            glTranslatef(l.o.x, l.o.y, l.o.z);
-            glScalef(l.radius*lightradiustweak, l.radius*lightradiustweak, l.radius*lightradiustweak);
-
-            if(hasDRE) glDrawRangeElements_(GL_TRIANGLES, 0, lightspherenumverts-1, lightspherenumindices, GL_UNSIGNED_SHORT, lightsphereindices);
-            else glDrawElements(GL_TRIANGLES, lightspherenumindices, GL_UNSIGNED_SHORT, lightsphereindices);
+            glDrawRangeElements_(GL_TRIANGLES, 0, lightspherenumverts-1, lightspherenumindices, GL_UNSIGNED_SHORT, lightsphereindices);
             xtraverts += lightspherenumindices;
             glde++;
-
-            glPopMatrix();
 
             lightpassesused++;
         }
@@ -2685,12 +2667,7 @@ void renderlights(float bsx1 = -1, float bsy1 = -1, float bsx2 = 1, float bsy2 =
                     if(hasDBT && depthtestlights > 1) glDepthBounds_(sz1*0.5f + 0.5f, sz2*0.5f + 0.5f);
 
                     // FIXME: render light geometry here
-                    glBegin(GL_TRIANGLE_STRIP);
-                    glVertex3f( 1, -1, sz1);
-                    glVertex3f(-1, -1, sz1);
-                    glVertex3f( 1,  1, sz1);
-                    glVertex3f(-1,  1, sz1);
-                    glEnd();
+                    lightquad(sz1);
 
                     lightpassesused++;
                 }
@@ -2833,7 +2810,8 @@ void collectlights()
 
     lightorder.sort(sortlights);
 
-    if(!drawtex && smquery && hasOQ && oqfrags && oqlights) loopv(lightorder)
+    bool queried = false;
+    if(!drawtex && smquery && oqfrags && oqlights) loopv(lightorder)
     {
         int idx = lightorder[i];
         lightinfo &l = lights[idx];
@@ -2994,7 +2972,7 @@ void radiancehints::renderslices()
 {
     if(rhcache) loopi(4) swap(rhtex[i], rhtex[i+4]);
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, rhfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, rhfbo);
     glViewport(0, 0, rhgrid+2*rhborder, rhgrid+2*rhborder);
 
     GLOBALPARAMF(rhatten, (1.0f/(gidist*gidist)));
@@ -3003,9 +2981,11 @@ void radiancehints::renderslices()
     GLOBALPARAMF(rhaoatten, (1.0f/(gidist*rsmspread)));
     GLOBALPARAMF(rhaoheight, (gidist*rsmspread));
 
-    glmatrix rsmtcmatrix = rsm.model;
-    rsmtcmatrix.scale(rsm.scale);
-    rsmtcmatrix.translate(rsm.offset);
+    glmatrix rsmtcmatrix;
+    rsmtcmatrix.identity();
+    rsmtcmatrix.settranslation(rsm.offset);
+    rsmtcmatrix.setscale(rsm.scale);
+    rsmtcmatrix.mul(rsm.model);
     GLOBALPARAM(rsmtcmatrix, rsmtcmatrix);
 
     glmatrix rsmworldmatrix;
@@ -3019,10 +2999,10 @@ void radiancehints::renderslices()
     glBindTexture(GL_TEXTURE_RECTANGLE, rsmnormaltex);
     loopi(rhcache ? 8 : 4)
     {
-        glActiveTexture_(GL_TEXTURE3_ARB + i);
-        glBindTexture(GL_TEXTURE_3D_EXT, rhtex[i]);
+        glActiveTexture_(GL_TEXTURE3 + i);
+        glBindTexture(GL_TEXTURE_3D, rhtex[i]);
     }
-    glActiveTexture_(GL_TEXTURE0_ARB);
+    glActiveTexture_(GL_TEXTURE0);
 
     glClearColor(0.5f, 0.5f, 0.5f, 0);
 
@@ -3112,13 +3092,7 @@ void radiancehints::renderslices()
                 bz = bz*next.scale.z + next.offset.z;
 
                 SETSHADER(radiancehintsborder);
-
-                glBegin(GL_TRIANGLE_STRIP);
-                glTexCoord3f(btx2, bty1, bz); glVertex2f(bvx2, bvy1);
-                glTexCoord3f(btx1, bty1, bz); glVertex2f(bvx1, bvy1);
-                glTexCoord3f(btx2, bty2, bz); glVertex2f(bvx2, bvy2);
-                glTexCoord3f(btx1, bty2, bz); glVertex2f(bvx1, bvy2);
-                glEnd();
+                rhquad(bvx1, bvy1, bvx2, bvy2, btx1, bty1, btx2, bty2, bz);
             }
             else
             {
@@ -3169,19 +3143,8 @@ void radiancehints::renderslices()
                     if(px1 != tx1 || px2 != tx2 || py1 != ty1 || py2 != ty2)
                     {
                         radiancehintsshader->set();
-
-                        glBegin(GL_TRIANGLE_STRIP);
-                        glTexCoord3f(px2, py1, z); glVertex2f(pvx2, pvy1);
-                            glTexCoord3f(tx2, ty1, z); glVertex2f(vx2, vy1);
-                        glTexCoord3f(px1, py1, z); glVertex2f(pvx1, pvy1);
-                            glTexCoord3f(tx1, ty1, z); glVertex2f(vx1, vy1);
-                        glTexCoord3f(px1, py2, z); glVertex2f(pvx1, pvy2);
-                            glTexCoord3f(tx1, ty2, z); glVertex2f(vx1, vy2);
-                        glTexCoord3f(px2, py2, z); glVertex2f(pvx2, pvy2);
-                            glTexCoord3f(tx2, ty2, z); glVertex2f(vx2, vy2);
-                        glTexCoord3f(px2, py1, z); glVertex2f(pvx2, pvy1);
-                            glTexCoord3f(tx2, ty1, z); glVertex2f(vx2, vy1);
-                        glEnd();
+                        rhquad(pvx1, pvy1, pvx2, pvy2, px1, py1, px2, py2, z,
+                                vx1,  vy1,  vx2,  vy2, tx1, ty1, tx2, ty2, z);
                     }
 
                     if(z > dmin.z && z < dmax.z)
@@ -3203,55 +3166,24 @@ void radiancehints::renderslices()
                             if(dx1 != px1 || dx2 != px2 || dy1 != py1 || dy2 != py2)
                             {
                                 SETSHADER(radiancehintscached);
-
-                                glBegin(GL_TRIANGLE_STRIP);
-                                glTexCoord3f(dtx2, dty1, dz); glVertex2f(dvx2, dvy1);
-                                    glTexCoord3f(ptx2, pty1, pz); glVertex2f(pvx2, pvy1);
-                                glTexCoord3f(dtx1, dty1, dz); glVertex2f(dvx1, dvy1);
-                                    glTexCoord3f(ptx1, pty1, pz); glVertex2f(pvx1, pvy1);
-                                glTexCoord3f(dtx1, dty2, dz); glVertex2f(dvx1, dvy2);
-                                    glTexCoord3f(ptx1, pty2, pz); glVertex2f(pvx1, pvy2);
-                                glTexCoord3f(dtx2, dty2, dz); glVertex2f(dvx2, dvy2);
-                                    glTexCoord3f(ptx2, pty2, pz); glVertex2f(pvx2, pvy2);
-                                glTexCoord3f(dtx2, dty1, dz); glVertex2f(dvx2, dvy1);
-                                    glTexCoord3f(ptx2, pty1, pz); glVertex2f(pvx2, pvy1);
-                                glEnd();
+                                rhquad(dvx1, dvy1, dvx2, dvy2, dtx1, dty1, dtx2, dty2, dz,
+                                       pvx1, pvy1, pvx2, pvy2, ptx1, pty1, ptx2, pty2, pz);
                             }
 
                             radiancehintsshader->set();
-
-                            glBegin(GL_TRIANGLE_STRIP);
-                            glTexCoord3f(dx2, dy1, z); glVertex2f(dvx2, dvy1);
-                            glTexCoord3f(dx1, dy1, z); glVertex2f(dvx1, dvy1);
-                            glTexCoord3f(dx2, dy2, z); glVertex2f(dvx2, dvy2);
-                            glTexCoord3f(dx1, dy2, z); glVertex2f(dvx1, dvy2);
-                            glEnd();
-
+                            rhquad(dvx1, dvy1, dvx2, dvy2, dx1, dy1, dx2, dy2, z);
                             continue;
                         }
                     }
 
                     SETSHADER(radiancehintscached);
-
-                    glBegin(GL_TRIANGLE_STRIP);
-                    glTexCoord3f(ptx2, pty1, pz); glVertex2f(pvx2, pvy1);
-                    glTexCoord3f(ptx1, pty1, pz); glVertex2f(pvx1, pvy1);
-                    glTexCoord3f(ptx2, pty2, pz); glVertex2f(pvx2, pvy2);
-                    glTexCoord3f(ptx1, pty2, pz); glVertex2f(pvx1, pvy2);
-                    glEnd();
-
+                    rhquad(pvx1, pvy1, pvx2, pvy2, ptx1, pty1, ptx2, pty2, pz);
                     continue;
                 }
             }
 
             radiancehintsshader->set();
-
-            glBegin(GL_TRIANGLE_STRIP);
-            glTexCoord3f(tx2, ty1, z); glVertex2f(vx2, vy1);
-            glTexCoord3f(tx1, ty1, z); glVertex2f(vx1, vy1);
-            glTexCoord3f(tx2, ty2, z); glVertex2f(vx2, vy2);
-            glTexCoord3f(tx1, ty2, z); glVertex2f(vx1, vy2);
-            glEnd();
+            rhquad(vx1, vy1, vx2, vy2, tx1, ty1, tx2, ty2, z);
         }
     }
 
@@ -3289,15 +3221,10 @@ void renderradiancehints()
 
     if(!rhcache || rh.prevdynmin.z < rh.prevdynmax.z || rh.dynmin.z < rh.dynmax.z || !rh.allcached())
     {
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glLoadMatrixf(rsm.proj.a.v);
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadMatrixf(rsm.model.a.v);
+        glBindFramebuffer_(GL_FRAMEBUFFER, rsmfbo);
 
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, rsmfbo);
-
+        shadowmatrix.mul(rsm.proj, rsm.model);
+        GLOBALPARAM(rsmmatrix, shadowmatrix);
         GLOBALPARAMF(rsmdir, (-rsm.lightview.x, -rsm.lightview.y, -rsm.lightview.z));
 
         glViewport(0, 0, rsmsize, rsmsize);
@@ -3305,14 +3232,9 @@ void renderradiancehints()
         glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
 
         renderrsmgeom(rhdyntex!=0);
-        rendermodelbatches(rhdynmm!=0);
+        rendershadowmodelbatches(rhdynmm!=0);
 
         rh.renderslices();
-
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glPopMatrix();
     }
 
     clearbatchedmapmodels();
@@ -3348,10 +3270,9 @@ void rendercsmshadowmaps()
     {
         const shadowmapinfo &sm = shadowmaps[csm.splits[i].idx];
 
-        glMatrixMode(GL_PROJECTION);
-        glLoadMatrixf(csm.splits[i].proj.a.v);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadMatrixf(csm.model.a.v);
+        shadowmatrix.mul(csm.splits[i].proj, csm.model);
+        GLOBALPARAM(shadowmatrix, shadowmatrix);
+
         glViewport(sm.x, sm.y, sm.size, sm.size);
         glScissor(sm.x, sm.y, sm.size, sm.size);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -3359,7 +3280,7 @@ void rendercsmshadowmaps()
         shadowside = i;
 
         rendershadowmapworld();
-        rendermodelbatches();
+        rendershadowmodelbatches();
     }
 
     clearbatchedmapmodels();
@@ -3402,7 +3323,9 @@ int calcshadowinfo(const extentity &e, vec &origin, float &radius, vec &spotloc,
 
     return type;
 }
-    
+   
+glmatrix shadowmatrix;
+ 
 void rendershadowmaps()
 {
     float polyfactor = smpolyfactor, polyoffset = smpolyoffset;
@@ -3474,9 +3397,6 @@ void rendershadowmaps()
                               vec4(0, float(sm.size - border) / sm.size, 0, 0),
                               vec4(0, 0, -(smfarclip + smnearclip) / (smfarclip - smnearclip), -2*smnearclip*smfarclip / (smfarclip - smnearclip)),
                               vec4(0, 0, -1, 0));
-        glMatrixMode(GL_PROJECTION);
-        glLoadMatrixf(smprojmatrix.a.v);
-        glMatrixMode(GL_MODELVIEW);
 
         if(shadowmapping == SM_SPOT)
         {
@@ -3486,15 +3406,16 @@ void rendershadowmaps()
 
             glmatrix spotmatrix(l.spotx, l.spoty, vec(l.dir).neg());
             spotmatrix.scale(1.0f/l.radius);
-            spotmatrix.transformedtranslate(vec(l.o).neg());
-            glLoadMatrixf(spotmatrix.a.v);
+            spotmatrix.translate(vec(l.o).neg());
+            shadowmatrix.mul(smprojmatrix, spotmatrix);
+            GLOBALPARAM(shadowmatrix, shadowmatrix);
 
             glCullFace((l.dir.scalartriple(l.spoty, l.spotx) < 0) == (smcullside != 0) ? GL_BACK : GL_FRONT);
 
             shadowside = 0;
 
             if(mesh) rendershadowmesh(mesh); else rendershadowmapworld();
-            rendermodelbatches();
+            rendershadowmodelbatches();
         }
         else
         {
@@ -3516,15 +3437,16 @@ void rendershadowmaps()
 
                 glmatrix cubematrix(cubeshadowviewmatrix[side]);
                 cubematrix.scale(1.0f/l.radius);
-                cubematrix.transformedtranslate(vec(l.o).neg());
-                glLoadMatrixf(cubematrix.a.v);
+                cubematrix.translate(vec(l.o).neg());
+                shadowmatrix.mul(smprojmatrix, cubematrix);
+                GLOBALPARAM(shadowmatrix, shadowmatrix);
 
                 glCullFace((side & 1) ^ (side >> 2) ^ smcullside ? GL_FRONT : GL_BACK);
 
                 shadowside = side;
 
                 if(mesh) rendershadowmesh(mesh); else rendershadowmapworld();
-                rendermodelbatches();
+                rendershadowmodelbatches();
             }
         }
 
@@ -3541,7 +3463,7 @@ void rendershadowatlas()
     timer *smcputimer = begintimer("shadow map", false);
     timer *smtimer = begintimer("shadow map");
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, shadowatlasfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, shadowatlasfbo);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
     if(debugshadowatlas)
@@ -3552,11 +3474,6 @@ void rendershadowatlas()
     }
 
     glEnable(GL_SCISSOR_TEST);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
 
     // sun light
     if(sunlight && csmshadowmap)
@@ -3569,11 +3486,6 @@ void rendershadowatlas()
 
     // point lights
     rendershadowmaps();
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
 
     glCullFace(GL_BACK);
     glDisable(GL_SCISSOR_TEST);
@@ -3597,10 +3509,10 @@ void rendertransparent()
 
     if(hasalphavas&4 || hasmats&4)
     {
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, msaasamples ? msrefractfbo : refractfbo);
+        glBindFramebuffer_(GL_FRAMEBUFFER, msaasamples ? msrefractfbo : refractfbo);
         glDepthMask(GL_FALSE);
         if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msdepthtex);
-        else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gdepthtex);
+        else glBindTexture(GL_TEXTURE_RECTANGLE, gdepthtex);
         float sx1 = min(alpharefractsx1, matrefractsx1), sy1 = min(alpharefractsy1, matrefractsy1),
               sx2 = max(alpharefractsx2, matrefractsx2), sy2 = max(alpharefractsy2, matrefractsy2);
         bool scissor = sx1 > -1 || sy1 > -1 || sx2 < 1 || sy2 < 1;
@@ -3624,16 +3536,16 @@ void rendertransparent()
         glDepthMask(GL_TRUE);
     }
 
-    glActiveTexture_(GL_TEXTURE7_ARB);
+    glActiveTexture_(GL_TEXTURE7);
     if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msrefracttex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, refracttex);
-    glActiveTexture_(GL_TEXTURE8_ARB);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, refracttex);
+    glActiveTexture_(GL_TEXTURE8);
     if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mshdrtex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, hdrtex);
-    glActiveTexture_(GL_TEXTURE9_ARB);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, hdrtex);
+    glActiveTexture_(GL_TEXTURE9);
     if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msdepthtex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gdepthtex);
-    glActiveTexture_(GL_TEXTURE0_ARB);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, gdepthtex);
+    glActiveTexture_(GL_TEXTURE0);
 
     if(stencilformat) glEnable(GL_STENCIL_TEST);
 
@@ -3683,7 +3595,7 @@ void rendertransparent()
             continue;
         }
 
-        glBindFramebuffer_(GL_FRAMEBUFFER_EXT, msaasamples ? msfbo : gfbo);
+        glBindFramebuffer_(GL_FRAMEBUFFER, msaasamples ? msfbo : gfbo);
         if(stencilformat)
         {
             glStencilFunc(GL_ALWAYS, layer+1, ~0);
@@ -3730,7 +3642,7 @@ void rendertransparent()
 
         if(msaasamples)
         {
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, mshdrfbo);
+            glBindFramebuffer_(GL_FRAMEBUFFER, mshdrfbo);
             if(stencilformat)
             {
                 if(!msaaedgedetect)
@@ -3745,7 +3657,7 @@ void rendertransparent()
         }
         else
         {
-            glBindFramebuffer_(GL_FRAMEBUFFER_EXT, hdrfbo);
+            glBindFramebuffer_(GL_FRAMEBUFFER, hdrfbo);
             if(stencilformat)
             {
                 glStencilFunc(GL_EQUAL, layer+1, ~0);
@@ -3765,7 +3677,7 @@ VAR(gcolorclear, 0, 1, 1);
 
 void preparegbuffer(bool depthclear)
 {
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, msaasamples ? msfbo : gfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, msaasamples ? msfbo : gfbo);
     glViewport(0, 0, vieww, viewh);
 
     if(drawtex)
@@ -3788,8 +3700,8 @@ void preparegbuffer(bool depthclear)
 
     glmatrix invscreenmatrix;
     invscreenmatrix.identity();
-    invscreenmatrix.scale(2.0f/vieww, 2.0f/viewh, 2.0f);
-    invscreenmatrix.translate(-1.0f, -1.0f, -1.0f);
+    invscreenmatrix.settranslation(-1.0f, -1.0f, -1.0f);
+    invscreenmatrix.setscale(2.0f/vieww, 2.0f/viewh, 2.0f);
     eyematrix.mul(invprojmatrix, invscreenmatrix);
     if(drawtex == DRAWTEX_MINIMAP)
     {
@@ -3807,8 +3719,8 @@ void preparegbuffer(bool depthclear)
     }
 
     screenmatrix.identity();
-    screenmatrix.scale(0.5f*vieww, 0.5f*viewh, 0.5f);
-    screenmatrix.translate(0.5f*vieww, 0.5f*viewh, 0.5f);
+    screenmatrix.settranslation(0.5f*vieww, 0.5f*viewh, 0.5f);
+    screenmatrix.setscale(0.5f*vieww, 0.5f*viewh, 0.5f);
     screenmatrix.mul(camprojmatrix);
 
     GLOBALPARAMF(viewsize, (vieww, viewh, 1.0f/vieww, 1.0f/viewh));
@@ -3862,7 +3774,7 @@ void shademinimap(const vec &color)
 {
     GLERROR;
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, msaasamples ? mshdrfbo : hdrfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, msaasamples ? mshdrfbo : hdrfbo);
     glViewport(0, 0, vieww, viewh);
 
     if(color.x >= 0)
@@ -3880,21 +3792,21 @@ void shademodelpreview(int x, int y, int w, int h, bool background, bool scissor
     GLERROR;
 
     GLuint outfbo = w > vieww || h > viewh ? scalefbo[0] : 0;
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, outfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, outfbo);
     glViewport(outfbo ? 0 : x, outfbo ? 0 : y, vieww, viewh);
 
     if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mscolortex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gcolortex);
-    glActiveTexture_(GL_TEXTURE1_ARB);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, gcolortex);
+    glActiveTexture_(GL_TEXTURE1);
     if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msnormaltex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gnormaltex);
-    glActiveTexture_(GL_TEXTURE2_ARB);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, gnormaltex);
+    glActiveTexture_(GL_TEXTURE2);
     if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msglowtex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gglowtex);
-    glActiveTexture_(GL_TEXTURE3_ARB);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, gglowtex);
+    glActiveTexture_(GL_TEXTURE3);
     if(msaasamples) glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msdepthtex);
-    else glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gdepthtex);
-    glActiveTexture_(GL_TEXTURE0_ARB);
+    else glBindTexture(GL_TEXTURE_RECTANGLE, gdepthtex);
+    glActiveTexture_(GL_TEXTURE0);
 
     GLOBALPARAM(worldmatrix, worldmatrix);
 
@@ -3905,34 +3817,29 @@ void shademodelpreview(int x, int y, int w, int h, bool background, bool scissor
 
     SETSHADER(modelpreview);
 
-    if(background || outfbo)
+    if(outfbo)
     {
-        if(!outfbo && scissor) glEnable(GL_SCISSOR_TEST);
         screenquad(vieww, viewh);
-        if(!outfbo && scissor) glDisable(GL_SCISSOR_TEST);
 
-        if(outfbo)
-        {
-           glBindFramebuffer_(GL_FRAMEBUFFER_EXT, 0); 
-           glViewport(x, y, w, h);
-           glBindTexture(GL_TEXTURE_RECTANGLE_ARB, scaletex[0]);
-           SETSHADER(scalelinear);
-        }
+        glBindFramebuffer_(GL_FRAMEBUFFER, 0); 
+        glViewport(x, y, w, h);
+        glBindTexture(GL_TEXTURE_RECTANGLE, scaletex[0]);
+        SETSHADER(scalelinear);
     }
     
     if(!background)
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
-        if(scissor) glEnable(GL_SCISSOR_TEST);
-        screenquad(vieww, viewh);
-        if(scissor) glDisable(GL_SCISSOR_TEST);
-        glDisable(GL_BLEND);
     }
+    if(scissor) glEnable(GL_SCISSOR_TEST);
+    screenquad(vieww, viewh);
+    if(scissor) glDisable(GL_SCISSOR_TEST);
+    if(!background) glDisable(GL_BLEND);
 
     GLERROR;
     
-    glViewport(0, 0, screen->w, screen->h);
+    glViewport(0, 0, screenw, screenh);
 }
 
 void shadegbuffer()
@@ -3942,7 +3849,7 @@ void shadegbuffer()
     timer *shcputimer = begintimer("deferred shading", false);
     timer *shtimer = begintimer("deferred shading");
 
-    glBindFramebuffer_(GL_FRAMEBUFFER_EXT, msaasamples ? mshdrfbo : hdrfbo);
+    glBindFramebuffer_(GL_FRAMEBUFFER, msaasamples ? mshdrfbo : hdrfbo);
     glViewport(0, 0, vieww, viewh);
 
     if(hdrclear > 0 || msaasamples)
@@ -3972,6 +3879,7 @@ void shadegbuffer()
 
 void setupframe(int w, int h)
 {
+    GLERROR;
     setupgbuffer(w, h);
     if(hdr && (bloomw < 0 || bloomh < 0)) setupbloom(gw, gh);
     if(ao && (aow < 0 || aoh < 0)) setupao(gw, gh);

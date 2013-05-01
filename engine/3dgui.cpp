@@ -319,30 +319,28 @@ struct gui : g3d_gui
                 hudnotextureshader->set();
                 gle::colorf(0, 0, 0, 0.75f);
                 rect_(xi+SHADOW, yi+SHADOW, xs, ys, -1);
-                glEnable(GL_TEXTURE_2D);
-                defaultshader->set();
+                hudshader->set();
             }
-            int x1 = int(floor(screen->w*(xi*scale.x+origin.x))), y1 = int(floor(screen->h*(1 - ((yi+ys)*scale.y+origin.y)))),
-                x2 = int(ceil(screen->w*((xi+xs)*scale.x+origin.x))), y2 = int(ceil(screen->h*(1 - (yi*scale.y+origin.y))));
+            int x1 = int(floor(screenw*(xi*scale.x+origin.x))), y1 = int(floor(screenh*(1 - ((yi+ys)*scale.y+origin.y)))),
+                x2 = int(ceil(screenw*((xi+xs)*scale.x+origin.x))), y2 = int(ceil(screenh*(1 - (yi*scale.y+origin.y))));
             glDisable(GL_BLEND);
             gle::disable();
             modelpreview::start(x1, y1, x2-x1, y2-y1, overlaid);
             game::renderplayerpreview(model, team, weap);
             modelpreview::end();
+            hudshader->set();
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glEnable(GL_BLEND);
             if(overlaid)
             {
                 if(hit)
                 {
-                    glDisable(GL_TEXTURE_2D);
-                    notextureshader->set();
+                    hudnotextureshader->set();
                     glBlendFunc(GL_ZERO, GL_SRC_COLOR);
                     gle::colorf(1, 0.5f, 0.5f);
                     rect_(xi, yi, xs, ys, -1);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                    glEnable(GL_TEXTURE_2D);
-                    defaultshader->set();
+                    hudshader->set();
                 }
                 if(!overlaytex) overlaytex = textureload("data/gui/guioverlay.png", 3);
                 gle::colorf(1, 1, 1);
@@ -367,11 +365,10 @@ struct gui : g3d_gui
                 hudnotextureshader->set();
                 gle::colorf(0, 0, 0, 0.75f);
                 rect_(xi+SHADOW, yi+SHADOW, xs, ys, -1);
-                glEnable(GL_TEXTURE_2D);
-                defaultshader->set();
+                hudshader->set();
             }
-            int x1 = int(floor(screen->w*(xi*scale.x+origin.x))), y1 = int(floor(screen->h*(1 - ((yi+ys)*scale.y+origin.y)))),
-                x2 = int(ceil(screen->w*((xi+xs)*scale.x+origin.x))), y2 = int(ceil(screen->h*(1 - (yi*scale.y+origin.y))));
+            int x1 = int(floor(screenw*(xi*scale.x+origin.x))), y1 = int(floor(screenh*(1 - ((yi+ys)*scale.y+origin.y)))),
+                x2 = int(ceil(screenw*((xi+xs)*scale.x+origin.x))), y2 = int(ceil(screenh*(1 - (yi*scale.y+origin.y))));
             glDisable(GL_BLEND);
             gle::disable();
             modelpreview::start(x1, y1, x2-x1, y2-y1, overlaid);
@@ -386,20 +383,19 @@ struct gui : g3d_gui
                 rendermodel(name, anim, o, yaw, 0, 0, NULL, NULL, 0);
             }
             modelpreview::end();
+            hudshader->set();
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glEnable(GL_BLEND);
             if(overlaid)
             {
                 if(hit)
                 {
-                    glDisable(GL_TEXTURE_2D);
-                    notextureshader->set();
+                    hudnotextureshader->set();
                     glBlendFunc(GL_ZERO, GL_SRC_COLOR);
                     gle::colorf(1, 0.5f, 0.5f);
                     rect_(xi, yi, xs, ys, -1);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                    glEnable(GL_TEXTURE_2D);
-                    defaultshader->set();
+                    hudshader->set();
                 }
                 if(!overlaytex) overlaytex = textureload("data/gui/guioverlay.png", 3);
                 gle::colorf(1, 1, 1);
@@ -515,13 +511,13 @@ struct gui : g3d_gui
             
             e->draw(curx+FONTW/2, cury, color, hit && editing);
             
-            notextureshader->set();
+            hudnotextureshader->set();
             glDisable(GL_BLEND);
             if(editing) gle::colorf(1, 0, 0);
             else gle::color(vec::hexcolor(color));
             rect_(curx, cury, w, h, -1, true);
             glEnable(GL_BLEND);
-            defaultshader->set();
+            hudshader->set();
         }
         layout(w, h);
         
@@ -595,7 +591,7 @@ struct gui : g3d_gui
             h = p.springs > 0 && !((curdepth-parentdepth)&1) ? lists[p.parent].h : p.h;
         }
         rect_(curx, cury, w, h);
-        defaultshader->set();
+        hudshader->set();
     }
 
     void icon_(Texture *t, bool overlaid, int x, int y, int size, bool hit)
@@ -649,17 +645,17 @@ struct gui : g3d_gui
             hudnotextureshader->set();
             gle::colorf(0, 0, 0, 0.75f);
             rect_(x+SHADOW, y+SHADOW, xs, ys);
-            defaultshader->set();	
+            hudshader->set();	
         }
-        SETSHADER(rgbonly);
+        SETSHADER(hudrgb);
         const vec &color = hit ? vec(1, 0.5f, 0.5f) : vec(1, 1, 1);
-        float tc[4][2] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
+        vec2 tc[4] = { vec2(0, 0), vec2(1, 0), vec2(1, 1), vec2(0, 1) };
         int xoff = vslot.offset.x, yoff = vslot.offset.y;
         if(vslot.rotation)
         {
-            if((vslot.rotation&5) == 1) { swap(xoff, yoff); loopk(4) swap(tc[k][0], tc[k][1]); }
-            if(vslot.rotation >= 2 && vslot.rotation <= 4) { xoff *= -1; loopk(4) tc[k][0] *= -1; }
-            if(vslot.rotation <= 2 || vslot.rotation == 5) { yoff *= -1; loopk(4) tc[k][1] *= -1; }
+            if((vslot.rotation&5) == 1) { swap(xoff, yoff); loopk(4) swap(tc[k].x, tc[k].y); }
+            if(vslot.rotation >= 2 && vslot.rotation <= 4) { xoff *= -1; loopk(4) tc[k].x *= -1; }
+            if(vslot.rotation <= 2 || vslot.rotation == 5) { yoff *= -1; loopk(4) tc[k].y *= -1; }
         }
         loopk(4) { tc[k].x = tc[k].x/xt - float(xoff)/t->xs; tc[k].y = tc[k].y/yt - float(yoff)/t->ys; }
         gle::color(slot.loaded ? vec(color).mul(vslot.colorscale) : color);
@@ -697,7 +693,7 @@ struct gui : g3d_gui
             gle::end();
         }
             
-        defaultshader->set();
+        hudshader->set();
         if(overlaid) 
         {
             if(!overlaytex) overlaytex = textureload("data/gui/guioverlay.png", 3);
@@ -837,7 +833,6 @@ struct gui : g3d_gui
                     gle::attribf(xo+xstep, yo);       gle::attribf(tright, ttop);
                     gle::attribf(xo+xstep, yo+ystep); gle::attribf(tright, tbottom);
                     gle::attribf(xo,       yo+ystep); gle::attribf(tleft,  tbottom);
-
                     if(!(p.flags&0x01)) break;
                     xo += xstep;
                 }
@@ -846,7 +841,6 @@ struct gui : g3d_gui
                 yo += ystep;
             }
         }
-
         if(quads) xtraverts += gle::end();
     } 
 
@@ -864,7 +858,7 @@ struct gui : g3d_gui
         if(tcurrent) h += ((skiny[5]-skiny[1])-(skiny[3]-skiny[2]))*SKIN_SCALE + FONTH-2*INSERT;
         else h += (skiny[6]-skiny[3])*SKIN_SCALE;
 
-        float aspect = forceaspect ? 1.0f/forceaspect : float(screen->h)/float(screen->w), fit = 1.0f;
+        float aspect = forceaspect ? 1.0f/forceaspect : float(screenh)/float(screenw), fit = 1.0f;
         if(w*aspect*basescale>1.0f) fit = 1.0f/(w*aspect*basescale);
         if(h*basescale*fit>maxscale) fit *= maxscale/(h*basescale*fit);
         origin = vec(0.5f-((w-xsize)/2 - (skinx[2]-skinx[1])*SKIN_SCALE)*aspect*scale.x*fit, 0.5f + (0.5f*h-(skiny[9]-skiny[7])*SKIN_SCALE)*scale.y*fit, 0);
@@ -897,10 +891,11 @@ struct gui : g3d_gui
             if(tcurrent && !*tcurrent) tcurrent = NULL;
             cury = -ysize; 
             curx = -xsize/2;
-            
-            glPushMatrix();
-            glTranslatef(origin.x, origin.y, origin.z);
-            glScalef(scale.x, scale.y, scale.z);
+           
+            pushhudmatrix();
+            hudmatrix.translate(origin);
+            hudmatrix.scale(scale); 
+            flushhudmatrix();
 
             drawskin(curx-skinx[2]*SKIN_SCALE, cury-skiny[6]*SKIN_SCALE, xsize, ysize, 0, 9, alpha);
             if(!tcurrent) drawskin(curx-skinx[5]*SKIN_SCALE, cury-skiny[6]*SKIN_SCALE, xsize, 0, 9, 1, alpha);
@@ -979,7 +974,7 @@ struct gui : g3d_gui
         else
         {
             if(tcurrent && tx<xsize) drawskin(curx+tx-skinx[5]*SKIN_SCALE, -ysize-skiny[6]*SKIN_SCALE, xsize-tx, FONTH, 9, 1, alpha);
-            glPopMatrix();
+            pophudmatrix();
         }
         poplist();
     }
@@ -1043,7 +1038,16 @@ static vector<gui> guis2d;
 
 VARP(guipushdist, 1, 4, 64);
 
-bool menukey(int code, bool isdown, int cooked)
+bool g3d_input(const char *str, int len)
+{
+    editor *e = currentfocus();
+    if(fieldmode == FIELDKEY || fieldmode == FIELDSHOW || !e) return false;
+    
+    e->input(str, len);
+    return true;
+}
+
+bool g3d_key(int code, bool isdown)
 {
     editor *e = currentfocus();
     if(fieldmode == FIELDKEY)
@@ -1108,31 +1112,12 @@ bool menukey(int code, bool isdown, int cooked)
             return true;
         case SDLK_RETURN:
         case SDLK_TAB:
-            if(cooked && (e->maxy != 1)) break;
+            if(e->maxy != 1) break;
         case SDLK_KP_ENTER:
             if(isdown) fieldmode = FIELDCOMMIT; //signal field commit (handled when drawing field)
             return true;
-        case SDLK_HOME:
-        case SDLK_END:
-        case SDLK_PAGEUP:
-        case SDLK_PAGEDOWN:
-        case SDLK_DELETE:
-        case SDLK_BACKSPACE:
-        case SDLK_UP:
-        case SDLK_DOWN:
-        case SDLK_LEFT:
-        case SDLK_RIGHT:
-        case SDLK_LSHIFT:
-        case SDLK_RSHIFT:
-        case -4:
-        case -5:
-            break;
-        default:
-            if(!cooked || (code<32)) return false;
-            break;
     }
-    if(!isdown) return true;
-    e->key(code, cooked);
+    if(isdown) e->key(code);
     return true;
 }
 
@@ -1153,7 +1138,7 @@ bool g3d_movecursor(int dx, int dy)
 {
     if(!guis2d.length() || !hascursor) return false;
     const float CURSORSCALE = 500.0f;
-    cursorx = max(0.0f, min(1.0f, cursorx+guisens*dx*(screen->h/(screen->w*CURSORSCALE))));
+    cursorx = max(0.0f, min(1.0f, cursorx+guisens*dx*(screenh/(screenw*CURSORSCALE))));
     cursory = max(0.0f, min(1.0f, cursory+guisens*dy/CURSORSCALE));
     return true;
 }
@@ -1217,24 +1202,16 @@ void g3d_render()
 
     if(guis2d.length())
     {
+        hudmatrix.ortho(0, 1, 1, 0, -1, 1);
+        resethudmatrix();
+        hudshader->set();
+
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glLoadIdentity();
-        glOrtho(0, 1, 1, 0, -1, 1);
-
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
-
         loopvrev(guis2d) guis2d[i].draw();
 
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glPopMatrix();
+        glDisable(GL_BLEND);
 
         gle::disable();
     }
@@ -1243,8 +1220,8 @@ void g3d_render()
     if(!fieldsactive) fieldmode = FIELDSHOW; //didn't draw any fields, so loose focus - mainly for menu closed
     if((fieldmode!=FIELDSHOW) != wasfocused) 
     {
-        SDL_EnableUNICODE(fieldmode!=FIELDSHOW);
-        keyrepeat(fieldmode!=FIELDSHOW || editmode);
+        textinput(fieldmode!=FIELDSHOW, TI_GUI);
+        keyrepeat(fieldmode!=FIELDSHOW, KR_GUI);
     }
     
     mousebuttons = 0;
@@ -1253,16 +1230,17 @@ void g3d_render()
 void consolebox(int x1, int y1, int x2, int y2)
 {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glPushMatrix();
-    glTranslatef(x1, y1, 0);
     float bw = x2 - x1, bh = y2 - y1, aspect = bw/bh, sh = bh, sw = sh*aspect;
     bw *= float(4*FONTH)/(SKIN_H*SKIN_SCALE);
     bh *= float(4*FONTH)/(SKIN_H*SKIN_SCALE);
     sw /= bw + (gui::skinx[2]-gui::skinx[1] + gui::skinx[10]-gui::skinx[9])*SKIN_SCALE;
     sh /= bh + (gui::skiny[9]-gui::skiny[7] + gui::skiny[6]-gui::skiny[4])*SKIN_SCALE;
-    glScalef(sw, sh, 1);
+    pushhudmatrix();
+    hudmatrix.translate(x1, y1, 0);
+    hudmatrix.scale(sw, sh, 1);
+    flushhudmatrix();
     gui::drawskin(-gui::skinx[1]*SKIN_SCALE, -gui::skiny[4]*SKIN_SCALE, int(bw), int(bh), 0, 9, 0.60f);
     gui::drawskin((-gui::skinx[1] + gui::skinx[2] - gui::skinx[5])*SKIN_SCALE, -gui::skiny[4]*SKIN_SCALE, int(bw), 0, 9, 1, 0.60f);
-    glPopMatrix();
+    pophudmatrix();
 }
 

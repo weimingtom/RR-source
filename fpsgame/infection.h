@@ -171,7 +171,7 @@ struct infectionclientmode : clientmode
 		if (dist > maxdist) return;
 		float balpha = 1.f-max(.5f, (dist/maxdist));
 
-		settexture(team==0? "data/hud/blip_grey.png": team==1? "data/hud/blip_blue.png": "data/hud/blip_red.png");
+		settexture(team==0? "packages/hud/blip_grey.png": team==1? "packages/hud/blip_blue.png": "packages/hud/blip_red.png");
 
 		vec po(pos);
 		po.normalize().mul(mindist);

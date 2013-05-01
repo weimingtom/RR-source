@@ -1186,8 +1186,8 @@ namespace server
         else
         {
             lilswap(&hdr.version, 2);
-            if(hdr.version!=DEMO_VERSION) formatstring(msg)("demo \"%s\" requires an %s version of Tesseract", file, hdr.version<DEMO_VERSION ? "older" : "newer");
-            else if(hdr.protocol!=PROTOCOL_VERSION) formatstring(msg)("demo \"%s\" requires an %s version of Tesseract", file, hdr.protocol<PROTOCOL_VERSION ? "older" : "newer");
+            if(hdr.version!=DEMO_VERSION) formatstring(msg)("demo \"%s\" requires an %s version of Revelade Revolution", file, hdr.version<DEMO_VERSION ? "older" : "newer");
+            else if(hdr.protocol!=PROTOCOL_VERSION) formatstring(msg)("demo \"%s\" requires an %s version of Revelade Revolution", file, hdr.protocol<PROTOCOL_VERSION ? "older" : "newer");
         }
         if(msg[0])
         {
@@ -3522,10 +3522,10 @@ namespace server
         }
     }
 
-    int laninfoport() { return TESSERACT_LANINFO_PORT; }
-    int serverport() { return TESSERACT_SERVER_PORT; }
-    const char *defaultmaster() { return "tesseract.gg"; }
-    int masterport() { return TESSERACT_MASTER_PORT; }
+    int laninfoport() { return RR_LANINFO_PORT; }
+    int serverport() { return RR_SERVER_PORT; }
+    const char *defaultmaster() { return "tigwiki.com"; }
+    int masterport() { return RR_MASTER_PORT; }
     int numchannels() { return 3; }
 
     #include "extinfo.h"

@@ -344,6 +344,8 @@ void text_boundsf(const char *str, float &width, float &height, int maxwidth)
     #undef TEXTWORD
 }
 
+Shader *textshader = NULL;
+
 void draw_text(const char *str, int left, int top, int r, int g, int b, int a, int cursor, int maxwidth) 
 {
     #define TEXTINDEX(idx) if(idx == cursor) { cx = x; cy = y; }
@@ -360,6 +362,8 @@ void draw_text(const char *str, int left, int top, int r, int g, int b, int a, i
     bool usecolor = true;
     if(a < 0) { usecolor = false; a = -a; }
     Texture *tex = curfont->texs[0];
+    Shader *oldshader = Shader::lastshader;
+    (textshader ? textshader : hudshader)->setvariant(hasTRG ? (tex->bpp==1 ? 0 : (tex->bpp==2 ? 1 : -1)) : -1, 0);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBindTexture(GL_TEXTURE_2D, tex->id);
     gle::color(color, a);

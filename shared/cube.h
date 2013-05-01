@@ -66,7 +66,6 @@
 #include "geom.h"
 #include "ents.h"
 #include "command.h"
-
 #ifndef STANDALONE
 #include "glexts.h"
 #include "glemu.h"

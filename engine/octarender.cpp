@@ -44,9 +44,9 @@ void genvbo(int type, void *buf, int len, vtxarray **vas, int numva)
 {
     GLuint vbo;
     glGenBuffers_(1, &vbo);
-    GLenum target = type==VBO_VBUF ? GL_ARRAY_BUFFER_ARB : GL_ELEMENT_ARRAY_BUFFER_ARB;
+    GLenum target = type==VBO_VBUF ? GL_ARRAY_BUFFER : GL_ELEMENT_ARRAY_BUFFER;
     glBindBuffer_(target, vbo);
-    glBufferData_(target, len, buf, GL_STATIC_DRAW_ARB);
+    glBufferData_(target, len, buf, GL_STATIC_DRAW);
     glBindBuffer_(target, 0);
 
     vboinfo &vbi = vbos[vbo]; 
@@ -272,11 +272,10 @@ struct vacollect : verthash
             f++; \
         } \
     } while(0)
-#define GENVERTSPOSNORMUV(type, ptr, body) GENVERTS(type, ptr, { f->pos = v.pos; f->norm = v.norm; f->norm.flip(); f->reserved = 0; f->u = v.u; f->v = v.v; body; })
 
     void genverts(void *buf)
     {
-        GENVERTS(vertex, buf, { *f = v; f->norm.flip(); });
+        GENVERTS(vertex, buf, { *f = v; f->norm.flip(); f->tangent.flip(); f->bitangent -= 128; });
     }
 
     void setupdata(vtxarray *va)
@@ -664,7 +663,7 @@ void addcubeverts(VSlot &vslot, int orient, int size, vec *pos, int convex, usho
             v.tangent = bvec(t);
             v.bitangent = vec().cross(n, t).dot(orientation_binormal[vslot.rotation][dim]) < 0 ? 0 : 255;
         }
-        else if(texture != DEFAULT_SKY && vslot.slot->shader->type&(SHADER_NORMALSLMS | SHADER_ENVMAP))
+        else if(texture != DEFAULT_SKY)
         {
             if(!k) guessnormals(pos, numverts, normals);
             const vec &n = normals[k];

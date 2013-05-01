@@ -207,7 +207,7 @@ void startmusic(char *name, char *cmd)
     stopmusic();
     if(soundvol && musicvol && *name)
     {
-        defformatstring(file)("data/%s", name);
+        defformatstring(file)("packages/%s", name);
         path(file);
         if(loadmusic(file))
         {
@@ -468,14 +468,14 @@ static bool loadsoundslot(soundslot &slot, bool msg = false)
     string filename;
     loopi(sizeof(exts)/sizeof(exts[0]))
     {
-        formatstring(filename)("data/sounds/%s%s", slot.sample->name, exts[i]);
+        formatstring(filename)("packages/sounds/%s%s", slot.sample->name, exts[i]);
         if(msg && !i) renderprogress(0, filename);
         path(filename);
         slot.sample->chunk = loadwav(filename);
         if(slot.sample->chunk) return true;
     }
 
-    conoutf(CON_ERROR, "failed to load sample: data/sounds/%s", slot.sample->name); 
+    conoutf(CON_ERROR, "failed to load sample: packages/sounds/%s", slot.sample->name); 
     return false;
 }
 
@@ -622,12 +622,6 @@ ICOMMAND(playsound, "i", (int *n), playsound(*n));
 
 void resetsound()
 {
-    const SDL_version *v = Mix_Linked_Version();
-    if(SDL_VERSIONNUM(v->major, v->minor, v->patch) <= SDL_VERSIONNUM(1, 2, 8))
-    {
-        conoutf(CON_ERROR, "Sound reset not available in-game due to SDL_mixer-1.2.8 bug. Please restart for changes to take effect.");
-        return;
-    }
     clearchanges(CHANGE_SOUND);
     if(!nosound) 
     {

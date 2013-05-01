@@ -77,7 +77,6 @@ static void renderlightning(Texture *tex, const vec &o, const vec &d, float sz)
         cur = next;
     }
     gle::end();
-
 }
 
 struct lightningrenderer : listrenderer
@@ -111,7 +110,7 @@ struct lightningrenderer : listrenderer
         pe.extendbb(d, size);
     }
 
-    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts, uchar *color)
+    void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts)
     {
         blend = min(blend<<2, 255);
         if(type&PT_MOD) //multiply alpha into color

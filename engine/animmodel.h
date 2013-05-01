@@ -195,21 +195,21 @@ struct animmodel : model
             }
             if(n && n!=lastnormalmap)
             {
-                glActiveTexture_(GL_TEXTURE3_ARB);
+                glActiveTexture_(GL_TEXTURE3);
                 activetmu = 3;
                 glBindTexture(GL_TEXTURE_2D, n->id);
                 lastnormalmap = n;
             }
             if(decal && decal!=lastdecal)
             {
-                glActiveTexture_(GL_TEXTURE4_ARB);
+                glActiveTexture_(GL_TEXTURE4);
                 activetmu = 4;
                 glBindTexture(GL_TEXTURE_2D, decal->id);
                 lastdecal = n;
             } 
             if(m!=lastmasks && m!=notexture)
             {
-                glActiveTexture_(GL_TEXTURE1_ARB);
+                glActiveTexture_(GL_TEXTURE1);
                 activetmu = 1;
                 glBindTexture(GL_TEXTURE_2D, m->id);
                 lastmasks = m;
@@ -219,13 +219,13 @@ struct animmodel : model
                 GLuint emtex = envmap ? envmap->id : closestenvmaptex;
                 if(lastenvmaptex!=emtex)
                 {
-                    glActiveTexture_(GL_TEXTURE0_ARB+envmaptmu);
+                    glActiveTexture_(GL_TEXTURE0+envmaptmu);
                     activetmu = envmaptmu;
-                    glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, emtex);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, emtex);
                     lastenvmaptex = emtex;
                 }
             }
-            if(activetmu != 0) glActiveTexture_(GL_TEXTURE0_ARB);
+            if(activetmu != 0) glActiveTexture_(GL_TEXTURE0);
             setshaderparams(b, as, m!=notexture, s->type&Texture::ALPHA && alphatest > 0);
             setshader(b, as, m!=notexture, s->type&Texture::ALPHA && alphatest > 0);
         }
@@ -403,6 +403,7 @@ struct animmodel : model
             loopv(meshes) meshes[i]->gentris(skins[i].tex && skins[i].tex->type&Texture::ALPHA ? skins[i].tex : NULL, tris, m);
         }
 
+        virtual void *animkey() { return this; }
         virtual int totalframes() const { return 1; }
         bool hasframe(int i) const { return i>=0 && i<totalframes(); }
         bool hasframes(int i, int n) const { return i>=0 && i+n<=totalframes(); }
@@ -417,7 +418,7 @@ struct animmodel : model
         {
             if(lastebuf!=ebuf)
             {
-                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER_ARB, ebuf);
+                glBindBuffer_(GL_ELEMENT_ARRAY_BUFFER, ebuf);
                 lastebuf = ebuf;
             }
             if(lastvbuf!=vbuf)
@@ -550,7 +551,7 @@ struct animmodel : model
             {
                 matrix3x4 n;
                 meshes->concattagtransform(this, links[i].tag, m, n);
-                n.transformedtranslate(links[i].translate, model->scale);
+                n.translate(links[i].translate, model->scale);
                 links[i].p->calcbb(bbmin, bbmax, n);
             }
         }
@@ -564,7 +565,7 @@ struct animmodel : model
             {
                 matrix3x4 n;
                 meshes->concattagtransform(this, links[i].tag, m, n);
-                n.transformedtranslate(links[i].translate, model->scale);
+                n.translate(links[i].translate, model->scale);
                 links[i].p->gentris(tris, n);
             }
         }
@@ -718,12 +719,13 @@ struct animmodel : model
             {
                 animinterpinfo &ai = d->animinterp[interp];
                 if((info.anim&ANIM_CLAMP)==ANIM_CLAMP) aitime = min(aitime, int(info.range*info.speed*0.5e-3f));
+                void *ak = meshes->animkey();
                 if(d->ragdoll && !(anim&ANIM_RAGDOLL)) 
                 {
                     ai.prev.range = ai.cur.range = 0;
                     ai.lastswitch = -1;
                 }
-                else if(ai.lastmodel!=this || ai.lastswitch<0 || lastmillis-d->lastrendered>aitime)
+                else if(ai.lastmodel!=ak || ai.lastswitch<0 || lastmillis-d->lastrendered>aitime)
                 {
                     ai.prev = ai.cur = info;
                     ai.lastswitch = lastmillis-aitime*2;
@@ -735,7 +737,7 @@ struct animmodel : model
                     ai.lastswitch = lastmillis;
                 }
                 else if(info.anim&ANIM_SETTIME) ai.cur.basetime = info.basetime;
-                ai.lastmodel = this;
+                ai.lastmodel = ak;
             }
             return true;
         }
@@ -768,6 +770,8 @@ struct animmodel : model
                 }
             }
 
+            float resize = model->scale * sizescale;
+            int oldpos = matrixpos;
             vec oaxis, oforward, oo, oray;
             matrixstack[matrixpos].transposedtransformnormal(axis, oaxis);
             float pitchamount = pitchscale*pitch + pitchoffset;
@@ -780,13 +784,20 @@ struct animmodel : model
                 matrixstack[matrixpos] = matrixstack[matrixpos-1];
                 matrixstack[matrixpos].rotate(pitchamount*RAD, oaxis);
             }
+            if(!index && !model->translate.iszero())
+            {
+                if(oldpos == matrixpos)
+                {
+                    ++matrixpos;
+                    matrixstack[matrixpos] = matrixstack[matrixpos-1];
+                }
+                matrixstack[matrixpos].translate(model->translate, resize);
+            }
             matrixstack[matrixpos].transposedtransformnormal(forward, oforward);
             matrixstack[matrixpos].transposedtransform(o, oo);
-            oo.div(model->scale);
-            if(!index) oo.sub(model->translate);
-            matrixstack[matrixpos].transposedtransformnormal(oray, oray);
+            oo.div(resize);
+            matrixstack[matrixpos].transposedtransformnormal(ray, oray);
 
-            float resize = model->scale * sizescale;
             intersectscale = resize;
             meshes->intersect(as, pitch, oaxis, oforward, d, this, oo, oray);
 
@@ -796,7 +807,7 @@ struct animmodel : model
                 {
                     linkedpart &link = links[i];
                     if(!link.p) continue;
-                    link.matrix.transformedtranslate(links[i].translate, resize);
+                    link.matrix.translate(links[i].translate, resize);
 
                     matrixpos++;
                     matrixstack[matrixpos].mul(matrixstack[matrixpos-1], link.matrix);
@@ -814,7 +825,7 @@ struct animmodel : model
                 }
             }
 
-            if(pitchamount) matrixpos--;
+            matrixpos = oldpos;
         }
 
         void render(int anim, int basetime, int basetime2, float pitch, const vec &axis, const vec &forward, dynent *d)
@@ -866,15 +877,17 @@ struct animmodel : model
                     ++matrixpos;
                     matrixstack[matrixpos] = matrixstack[matrixpos-1];
                 }
-                matrixstack[matrixpos].transformedtranslate(model->translate, resize);
+                matrixstack[matrixpos].translate(model->translate, resize);
             }
             matrixstack[matrixpos].transposedtransformnormal(forward, oforward);
 
             if(!(anim&ANIM_NORENDER))
             {
-                glPushMatrix();
-                glMultMatrixf(matrixstack[matrixpos].a.v);
-                if(resize!=1) glScalef(resize, resize, resize);
+                glmatrix modelmatrix;
+                modelmatrix.mul(shadowmapping ? shadowmatrix : aamaskmatrix, matrixstack[matrixpos]);
+                if(resize!=1) modelmatrix.scale(resize);
+                GLOBALPARAM(modelmatrix, modelmatrix);
+
                 if(!(anim&ANIM_NOSKIN))
                 {
                     GLOBALPARAM(oworld, glmatrix3x3(matrixstack[matrixpos]));
@@ -888,17 +901,12 @@ struct animmodel : model
 
             meshes->render(as, pitch, oaxis, oforward, d, this);
 
-            if(!(anim&ANIM_NORENDER))
-            {
-                glPopMatrix();
-            }
-
             if(!(anim&ANIM_REUSE)) 
             {
                 loopv(links)
                 {
                     linkedpart &link = links[i];
-                    link.matrix.transformedtranslate(links[i].translate, resize);
+                    link.matrix.translate(links[i].translate, resize);
 
                     matrixpos++;
                     matrixstack[matrixpos].mul(matrixstack[matrixpos-1], link.matrix);
@@ -1034,7 +1042,7 @@ struct animmodel : model
         matrixstack[0].identity();
         if(!d || !d->ragdoll || anim&ANIM_RAGDOLL)
         {
-            matrixstack[0].translate(pos);
+            matrixstack[0].settranslation(pos);
             matrixstack[0].rotate_around_z(yaw*RAD);
             matrixstack[0].transformnormal(vec(axis), axis);
             matrixstack[0].transformnormal(vec(forward), forward);
@@ -1042,7 +1050,7 @@ struct animmodel : model
         }
         else 
         {
-            matrixstack[0].translate(d->ragdoll->center);
+            matrixstack[0].settranslation(d->ragdoll->center);
             pitch = 0;
         }
 
@@ -1137,7 +1145,7 @@ struct animmodel : model
         matrixstack[0].identity();
         if(!d || !d->ragdoll || anim&ANIM_RAGDOLL)
         {
-            matrixstack[0].translate(o);
+            matrixstack[0].settranslation(o);
             matrixstack[0].rotate_around_z(yaw*RAD);
             matrixstack[0].transformnormal(vec(axis), axis);
             matrixstack[0].transformnormal(vec(forward), forward);
@@ -1145,7 +1153,7 @@ struct animmodel : model
         }
         else
         {
-            matrixstack[0].translate(d->ragdoll->center);
+            matrixstack[0].settranslation(d->ragdoll->center);
             pitch = 0;
         }
 
@@ -1209,7 +1217,7 @@ struct animmodel : model
         m.identity();
         if(offsetyaw) m.rotate_around_z(offsetyaw*RAD);
         if(offsetpitch) m.rotate_around_y(-offsetpitch*RAD);
-        m.transformedtranslate(translate, scale);
+        m.translate(translate, scale);
     }
 
     void gentris(vector<BIH::tri> *tris)
