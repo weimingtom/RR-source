@@ -246,7 +246,7 @@ namespace game
         }
         if(player1->clientnum>=0) c2sinfo();   // do this last, to reduce the effective frame lag
     }
-	
+
     VARP(spawnwait, 0, 0, 1000);
 	 void respawn()
     {
@@ -703,17 +703,17 @@ namespace game
         ammohuddown[3] = { GUN_RIFLE, GUN_SG, GUN_PISTOL },
         ammohudcycle[7] = { -1, -1, -1, -1, -1, -1, -1 };
 
-    ICOMMAND(ammohudup, "V", (tagval *args, int numargs),
+    ICOMMAND_NOLUA(ammohudup, "V", (tagval *args, int numargs),
     {
         loopi(3) ammohudup[i] = i < numargs ? getweapon(args[i].getstr()) : -1;
     });
 
-    ICOMMAND(ammohuddown, "V", (tagval *args, int numargs),
+    ICOMMAND_NOLUA(ammohuddown, "V", (tagval *args, int numargs),
     {
         loopi(3) ammohuddown[i] = i < numargs ? getweapon(args[i].getstr()) : -1;
     });
 
-    ICOMMAND(ammohudcycle, "V", (tagval *args, int numargs),
+    ICOMMAND_NOLUA(ammohudcycle, "V", (tagval *args, int numargs),
     {
         loopi(7) ammohudcycle[i] = i < numargs ? getweapon(args[i].getstr()) : -1;
     });

@@ -90,12 +90,12 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
         if(!radarteammates) return;
         float scale = calcradarscale();
         int alive = 0, dead = 0;
-        loopv(players) 
+        loopv(players)
         {
             fpsent *o = players[i];
             if(o != d && o->state == CS_ALIVE && isteam(o->team, d->team))
             {
-                if(!alive++) 
+                if(!alive++)
                 {
                     settexture(isteam(d->team, player1->team) ? "packages/hud/blip_blue_alive.png" : "packages/hud/blip_red_alive.png");
                     gle::defvertex(2);
@@ -107,12 +107,12 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
         }
         if(alive) gle::end();
 
-        loopv(players) 
+        loopv(players)
         {
             fpsent *o = players[i];
             if(o != d && o->state == CS_DEAD && isteam(o->team, d->team))
             {
-                if(!dead++) 
+                if(!dead++)
                 {
                     settexture(isteam(d->team, player1->team) ? "packages/hud/blip_blue_dead.png" : "packages/hud/blip_red_dead.png");
                     gle::defvertex(2);
@@ -125,7 +125,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
         if(dead) gle::end();
 
     }
-        
+
     #include "capture.h"
     #include "ctf.h"
     #include "collect.h"
@@ -419,7 +419,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
     {
         authkey *a = findauthkey(desc);
         int vn = parseplayer(victim);
-        if(a && vn>=0 && vn!=player1->clientnum) 
+        if(a && vn>=0 && vn!=player1->clientnum)
         {
             a->lastauth = lastmillis;
             addmsg(N_AUTHKICK, "rssis", a->desc, a->name, vn, reason);
@@ -450,7 +450,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
     bool isignored(int cn) { return ignores.find(cn) >= 0; }
 
     ICOMMAND(ignore, "s", (char *arg), ignore(parseplayer(arg)));
-    ICOMMAND(unignore, "s", (char *arg), unignore(parseplayer(arg))); 
+    ICOMMAND(unignore, "s", (char *arg), unignore(parseplayer(arg)));
     ICOMMAND(isignored, "s", (char *arg), intret(isignored(parseplayer(arg)) ? 1 : 0));
 
     void setteam(const char *arg1, const char *arg2)
@@ -480,7 +480,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
         }
         string hash = "";
         if(!arg[1] && isdigit(arg[0])) val = parseint(arg);
-        else 
+        else
         {
             if(cn != player1->clientnum) return;
             server::hashpassword(player1->clientnum, sessionid, arg, hash);
@@ -547,7 +547,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
     }
     ICOMMAND(mode, "i", (int *val), setmode(*val));
     ICOMMAND(getmode, "", (), intret(gamemode));
-    ICOMMAND(timeremaining, "i", (int *formatted), 
+    ICOMMAND(timeremaining, "i", (int *formatted),
     {
         int val = max(maplimit - lastmillis, 0)/1000;
         if(*formatted)
@@ -556,21 +556,23 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
             result(str);
         }
         else intret(val);
-    });
-   /* ICOMMANDS("m_noitems", "i", (int *mode), { int gamemode = *mode; intret(m_noitems); });
-    ICOMMANDS("m_noammo", "i", (int *mode), { int gamemode = *mode; intret(m_noammo); });
-    ICOMMANDS("m_insta", "i", (int *mode), { int gamemode = *mode; intret(m_insta); });
-    ICOMMANDS("m_tactics", "i", (int *mode), { int gamemode = *mode; intret(m_tactics); });
-    ICOMMANDS("m_efficiency", "i", (int *mode), { int gamemode = *mode; intret(m_efficiency); });
-    ICOMMANDS("m_capture", "i", (int *mode), { int gamemode = *mode; intret(m_capture); });
-    ICOMMANDS("m_regencapture", "i", (int *mode), { int gamemode = *mode; intret(m_regencapture); });
-    ICOMMANDS("m_ctf", "i", (int *mode), { int gamemode = *mode; intret(m_ctf); });
-    ICOMMANDS("m_protect", "i", (int *mode), { int gamemode = *mode; intret(m_protect); });
-    ICOMMANDS("m_hold", "i", (int *mode), { int gamemode = *mode; intret(m_hold); });
-    ICOMMANDS("m_collect", "i", (int *mode), { int gamemode = *mode; intret(m_collect); });
-    ICOMMANDS("m_teammode", "i", (int *mode), { int gamemode = *mode; intret(m_teammode); });
-    ICOMMANDS("m_demo", "i", (int *mode), { int gamemode = *mode; intret(m_demo); });*/
-    ICOMMANDS("m_edit", "i", (int *mode), { int gamemode = *mode; intret(m_edit); });
+        });
+
+/* ICOMMANDS("m_noitems", "i", (int *mode), { int gamemode = *mode; intret(m_noitems); });
+     ICOMMANDS("m_noammo", "i", (int *mode), { int gamemode = *mode; intret(m_noammo); });
+     ICOMMANDS("m_insta", "i", (int *mode), { int gamemode = *mode; intret(m_insta); });
+     ICOMMANDS("m_tactics", "i", (int *mode), { int gamemode = *mode; intret(m_tactics); });
+     ICOMMANDS("m_efficiency", "i", (int *mode), { int gamemode = *mode; intret(m_efficiency); });
+     ICOMMANDS("m_capture", "i", (int *mode), { int gamemode = *mode; intret(m_capture); });
+     ICOMMANDS("m_regencapture", "i", (int *mode), { int gamemode = *mode; intret(m_regencapture); });
+     ICOMMANDS("m_ctf", "i", (int *mode), { int gamemode = *mode; intret(m_ctf); });
+     ICOMMANDS("m_protect", "i", (int *mode), { int gamemode = *mode; intret(m_protect); });
+     ICOMMANDS("m_hold", "i", (int *mode), { int gamemode = *mode; intret(m_hold); });
+     ICOMMANDS("m_collect", "i", (int *mode), { int gamemode = *mode; intret(m_collect); });
+     ICOMMANDS("m_teammode", "i", (int *mode), { int gamemode = *mode; intret(m_teammode); });
+     ICOMMANDS("m_demo", "i", (int *mode), { int gamemode = *mode; intret(m_demo); });*/
+    ICOMMANDS(is_m_edit, "i", (int *mode), {
+        int gamemode = *mode; intret(m_edit);});
     /*ICOMMANDS("m_lobby", "i", (int *mode), { int gamemode = *mode; intret(m_lobby); });*/
 
     void changemap(const char *name, int mode) // request map change, server may ignore
@@ -686,7 +688,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
                 int val = *id->storage.i;
                 string str;
                 if(val < 0)
-                    formatstring(str)("%d", val); 
+                    formatstring(str)("%d", val);
                 else if(id->flags&IDF_HEX && id->maxval==0xFFFFFF)
                     formatstring(str)("0x%.6X (%d, %d, %d)", val, (val>>16)&0xFF, (val>>8)&0xFF, val&0xFF);
                 else
@@ -731,11 +733,11 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
         else addmsg(N_PAUSEGAME, "ri", val ? 1 : 0);
     }
     ICOMMAND(pausegame, "i", (int *val), pausegame(*val > 0));
-    ICOMMAND(paused, "iN$", (int *val, int *numargs, ident *id),
-    { 
+    ICOMMAND_NOLUA(paused, "iN$", (int *val, int *numargs, ident *id),
+    {
         if(*numargs > 0) pausegame(clampvar(id, *val, 0, 1) > 0);
         else if(*numargs < 0) intret(gamepaused ? 1 : 0);
-        else printvar(id, gamepaused ? 1 : 0); 
+        else printvar(id, gamepaused ? 1 : 0);
     });
 
     bool ispaused() { return gamepaused; }
@@ -748,7 +750,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
         if(!remote) server::forcegamespeed(val);
         else addmsg(N_GAMESPEED, "ri", val);
     }
-    ICOMMAND(gamespeed, "iN$", (int *val, int *numargs, ident *id),
+    ICOMMAND_NOLUA(gamespeed, "iN$", (int *val, int *numargs, ident *id),
     {
         if(*numargs > 0) changegamespeed(clampvar(id, *val, 10, 1000));
         else if(*numargs < 0) intret(gamespeed);
@@ -1252,7 +1254,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
                 else conoutf("gamespeed is %d", val);
                 break;
             }
-                
+
             case N_CLIENT:
             {
                 int cn = getint(p), len = getuint(p);
