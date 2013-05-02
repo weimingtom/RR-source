@@ -76,7 +76,7 @@ namespace game
         }
         playsound(S_NOAMMO);
     }
-    ICOMMAND(cycleweapon, "V", (tagval *args, int numargs),
+    ICOMMAND_NOLUA(cycleweapon, "V", (tagval *args, int numargs),
     {
          int numguns = min(numargs, 7);
          int guns[7];
@@ -99,7 +99,7 @@ namespace game
         gunselect(s, d);
     }
 
-    ICOMMAND(weapon, "V", (tagval *args, int numargs),
+    ICOMMAND_NOLUA(weapon, "V", (tagval *args, int numargs),
     {
         if(player1->state!=CS_ALIVE) return;
         loopi(7)
@@ -202,7 +202,7 @@ namespace game
         b->bounces++;
         adddecal(DECAL_BLOOD, vec(b->o).sub(vec(surface).mul(b->radius)), surface, 2.96f/b->bounces, bvec(0x60, 0xFF, 0xFF), rnd(4));
     }
-        
+
     void updatebouncers(int time)
     {
         loopv(bouncers)
@@ -245,7 +245,7 @@ namespace game
                 }
                 delete bouncers.remove(i--);
             }
-            else if(!roll) 
+            else if(!roll)
 			{
 			bnc.roll += old.sub(bnc.o).magnitude()/(4*RAD);
 			bnc.offsetmillis = max(bnc.offsetmillis-time, 0);
@@ -401,7 +401,7 @@ namespace game
         particle_fireball(v, guns[gun].exprad, gun!=GUN_GL ? PART_EXPLOSION : PART_EXPLOSION_BLUE, gun!=GUN_GL ? -1 : int((guns[gun].exprad-4.0f)*15), gun!=GUN_GL ? 0xFF8080 : 0x80FFFF, 4.0f);
         int numdebris = gun==GUN_BARREL ? rnd(max(maxbarreldebris-5, 1))+5 : rnd(maxdebris-5)+5;
         vec debrisvel = owner->o==v ? vec(0, 0, 0) : vec(owner->o).sub(v).normalize(), debrisorigin(v);
-        if(gun==GUN_RL) 
+        if(gun==GUN_RL)
         {
             debrisorigin.add(vec(debrisvel).mul(8));
             adddynlight(safe ? v : debrisorigin, 1.15f*guns[gun].exprad, vec(4, 3.0f, 2.0), 700, 100, 0, guns[gun].exprad/2, vec(2.0, 1.5f, 1.0f));
@@ -710,7 +710,7 @@ namespace game
         {
             dynent *hits[MAXRAYS];
             int maxrays = guns[d->gunselect].rays;
-            loopi(maxrays) 
+            loopi(maxrays)
             {
                 if((hits[i] = intersectclosest(from, rays[i], d, dist))) shorten(from, rays[i], dist);
                 else adddecal(DECAL_BULLET, rays[i], vec(from).sub(rays[i]).normalize(), 2.0f);
@@ -819,7 +819,7 @@ namespace game
     static const char * const gibnames[3] = { "gibs/gib01", "gibs/gib02", "gibs/gib03" };
     static const char * const debrisnames[4] = { "debris/debris01", "debris/debris02", "debris/debris03", "debris/debris04" };
     static const char * const barreldebrisnames[4] = { "barreldebris/debris01", "barreldebris/debris02", "barreldebris/debris03", "barreldebris/debris04" };
-         
+
     void preloadbouncers()
     {
         loopi(sizeof(projnames)/sizeof(projnames[0])) preloadmodel(projnames[i]);
