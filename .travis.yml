@@ -2,10 +2,15 @@ language: cpp
 before_install:
   - git submodule init
   - git submodule update
-  - sudo apt-get -y -qq install build-essential zlib1g-dev automake
+  - sudo apt-get -y -qq install build-essential zlib1g-dev wget
   - mkdir dummyprefix
   - export PREFIX=$PWD/dummyprefix
   - export PATH=$PWD/dummyprefix/bin
+  - (wget "http://ftp.gnu.org/gnu/automake/automake-1.13.1.tar.gz" && tar -zxvf automake-1.13.1.tar.gz)
+  - cd automake-1.13.1
+  - ./configure --prefix=$PREFIX --docdir=$PREFIX/share/doc/automake-1.13.1
+  - (make && make install)
+  - cd ..
   - hg clone http://hg.libsdl.org/SDL && mkdir SDL_build
   - (cd SDL && ./autogen.sh)
   - (cd SDL_build && ../SDL/configure --prefix=$PREFIX && make -j5 && make install)
