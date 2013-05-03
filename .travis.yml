@@ -24,4 +24,4 @@ before_install:
 script:
   - make install
 notifications:
-  irc: "irc.gamesurge.org#ReveladeRevolution"
+  irc: "irc.gamesurge.net#ReveladeRevolution"
