@@ -2,7 +2,8 @@ language: cpp
 before_install:
   - git submodule init
   - git submodule update
-  - sudo apt-get -y -qq install build-essential zlib1g-dev wget
+  - sudo apt-get update -qq
+  - sudo apt-get -y install build-essential zlib1g-dev
   - mkdir dummyprefix
   - export PREFIX=$PWD/dummyprefix
   - export PATH=$PWD/dummyprefix/bin
@@ -22,6 +23,6 @@ before_install:
   - (cd SDL_mixer && ./configure --prefix=$PREFIX && make -j5 && make install)
   - ls $PREFIX -R
 script:
-  - make install
+  - make all
 notifications:
   irc: "irc.gamesurge.net#ReveladeRevolution"
