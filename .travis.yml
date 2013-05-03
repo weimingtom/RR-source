@@ -1,7 +1,8 @@
+language: cpp
 before_install:
   - git submodule init
   - git submodule update
-  - sudo apt-get -y -qq install build-essential zlib1g-dev mercurial
+  - sudo apt-get -y -qq install build-essential zlib1g-dev automake
   - mkdir dummyprefix
   - export PREFIX=$PWD/dummyprefix
   - export PATH=$PWD/dummyprefix/bin
@@ -17,3 +18,5 @@ before_install:
   - ls $PREFIX -R
 script:
   - make install
+notifications:
+  irc: "irc.gamesurge.org#ReveladeRevolution"
