@@ -1,7 +1,7 @@
 before_install:
   - git submodule init
   - git submodule update
-  - sudo apt-get -y -qq install build-essential zlib1g-dev
+  - sudo apt-get -y -qq install build-essential zlib1g-dev hg
   - mkdir dummyprefix
   - export PREFIX=$PWD/dummyprefix
   - export PATH=$PWD/dummyprefix/bin
