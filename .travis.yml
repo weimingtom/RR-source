@@ -1,28 +1,37 @@
 language: cpp
 before_install:
-  - git submodule init
-  - git submodule update
+  # Install dependencies
   - sudo apt-get update
   - sudo apt-get -y install build-essential zlib1g-dev curl
+  
+  # Create the directory where to install the dependencies
   - mkdir dummyprefix
   - export PREFIX=$PWD/dummyprefix
   - export PATH=$PATH:$PWD/dummyprefix/bin
+  
+  # Download and install automake-1.13.1, required for SDL
   - curl "http://ftp.gnu.org/gnu/automake/automake-1.13.1.tar.gz" > automake-1.13.1.tar.gz
   - tar -zxvf automake-1.13.1.tar.gz
   - cd automake-1.13.1
   - ./configure --prefix=$PREFIX --docdir=$PREFIX/share/doc/automake-1.13.1
   - (make && make install)
   - cd ..
+  
+  #SDL2
   - hg clone http://hg.libsdl.org/SDL && mkdir SDL_build
   - (cd SDL && ./autogen.sh)
   - (cd SDL_build && ../SDL/configure --prefix=$PREFIX && make -j5 && make install)
+  
+  #SDL2_image
   - hg clone http://hg.libsdl.org/SDL_image
   - (cd SDL_image && ./autogen.sh)
   - (cd SDL_image && ./configure --prefix=$PREFIX && make -j5 && make install)
+  
+  #SDL2_mixer
   - hg clone http://hg.libsdl.org/SDL_mixer
   - (cd SDL_mixer && ./autogen.sh)  
   - (cd SDL_mixer && ./configure --prefix=$PREFIX && make -j5 && make install)
-  - ls $PREFIX -R
+
 script:
   - make all
 notifications:
