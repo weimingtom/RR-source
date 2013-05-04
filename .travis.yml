@@ -6,7 +6,7 @@ before_install:
   - sudo apt-get -y install build-essential zlib1g-dev curl
   - mkdir dummyprefix
   - export PREFIX=$PWD/dummyprefix
-  - export PATH=$PWD/dummyprefix/bin
+  - export PATH=$PATH;$PWD/dummyprefix/bin
   - curl "http://ftp.gnu.org/gnu/automake/automake-1.13.1.tar.gz" > automake-1.13.1.tar.gz
   - tar -zxvf automake-1.13.1.tar.gz
   - cd automake-1.13.1
