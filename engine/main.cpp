@@ -1,6 +1,7 @@
 // main.cpp: initialisation & main loop
 
 #include "engine.h"
+#include "joystick.h"
 
 extern void cleargamma();
 
@@ -868,7 +869,9 @@ void checkinput()
                 else if(event.wheel.y < 0) { processkey(-5, true); processkey(-5, false); }
                 break;
         }
+        joystick::process_event(&event);
     }
+    joystick::move();
     if(mousemoved) resetmousemotion();
 }
 
@@ -1120,6 +1123,9 @@ int main(int argc, char **argv)
     initserver(dedicated>0, dedicated>1);  // never returns if dedicated
     ASSERT(dedicated <= 1);
     game::initclient();
+
+    logoutf("init: joystick");
+    joystick::init();
 
     logoutf("init: video");
     SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "0");

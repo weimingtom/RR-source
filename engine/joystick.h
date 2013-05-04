@@ -1,11 +1,11 @@
 // Game Controller Support by dbox (dwbox@hotmail.com) (04/16/2007)
 // Updated for Cube Engine 2 by Leviscus Tempris (l._tempris@hotmail.com) (11/04/2012)
+// Updated for Tesseract engine by Killme (4/5/2013)
 // -------------------------------------------------------
 // If would like to use this code you are free to do so.
 // The only condition placed on its use use is that you
 // credit the author.
-//
-// Last Modified: 12/31/2012
+
 
 
 #include "engine.h"
@@ -24,6 +24,8 @@ struct joyaxis
 	bool min_pressed;
 	bool max_pressed;
 };
+
+void processkey(int code, bool isdown);
 
 namespace joystick
 {
@@ -134,19 +136,20 @@ namespace joystick
         return 0;
     }
 
+
     // translate any hat movements into keypress events
     void process_hat(int index, int current)
     {
         if(last_hat_move[index] > 0)
         {
             int key = JOYHATKEYMAP+index*8+last_hat_move[index]-1;
-            keypress(key, false, 0);
+            processkey(key, false);
         }
         last_hat_move[index] = current;
         if(current > 0)
         {
             int key = JOYHATKEYMAP+index*8+last_hat_move[index]-1;
-            keypress(key, true, 0);
+            processkey(key, true);
         }
     }
 
@@ -191,7 +194,7 @@ namespace joystick
             case SDL_JOYBUTTONDOWN:
             case SDL_JOYBUTTONUP:
                 if(joyshowevents) conoutf("JOYBUTTON%d: %s", event->button.button+1, (event->button.state == SDL_PRESSED) ? "DOWN" : "UP");
-                if(!menuon) keypress(event->button.button + JOYBUTTONKEYMAP, event->button.state==SDL_PRESSED, 0);
+                if(!menuon) processkey(event->button.button + JOYBUTTONKEYMAP, event->button.state==SDL_PRESSED);
                 break;
 
             case SDL_JOYAXISMOTION:
@@ -241,23 +244,23 @@ namespace joystick
             int key = JOYAXISKEYMAP + i * 2;
             if(jmove[i].value > joyaxisminmove * 1000)
             {
-                if(jmove[i].min_pressed) keypress(key, false, 0);
+                if(jmove[i].min_pressed) processkey(key, false);
                 jmove[i].min_pressed = false;
-                if(!jmove[i].max_pressed) keypress(key+1, true, 0);
+                if(!jmove[i].max_pressed) processkey(key+1, true);
                 jmove[i].max_pressed = true;
             }
             else if(jmove[i].value < joyaxisminmove * -1000)
             {
-                if(jmove[i].max_pressed) keypress(key+1, false, 0);
+                if(jmove[i].max_pressed) processkey(key+1, false);
                 jmove[i].max_pressed = false;
-                if(!jmove[i].min_pressed) keypress(key, true, 0);
+                if(!jmove[i].min_pressed) processkey(key, true);
                 jmove[i].min_pressed = true;
             }
             else
             {
-                if(jmove[i].max_pressed) keypress(key+1, false, 0);
+                if(jmove[i].max_pressed) processkey(key+1, false);
                 jmove[i].max_pressed = false;
-                if(jmove[i].min_pressed) keypress(key, false, 0);
+                if(jmove[i].min_pressed) processkey(key, false);
                 jmove[i].min_pressed = false;
             }
         }
