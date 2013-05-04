@@ -52,13 +52,13 @@ OBJDIR = build
 OSX_FRAMEWORKS = /Library/Frameworks
 
 # C++ compiler flags for OF client
-CLIENT_XCXXFLAGS = -std=c++11 -g
+CLIENT_XCXXFLAGS = -std=gnu++0x
 
 # C++ compiler flags for OF server
-SERVER_XCXXFLAGS = -std=c++11
+SERVER_XCXXFLAGS = -std=gnu++0x
 
 # C compiler flags for ENet
-ENET_XCFLAGS =
+ENET_XCFLAGS = 
 
 # C compiler flags for LuaJIT
 LUAJIT_XCFLAGS =
