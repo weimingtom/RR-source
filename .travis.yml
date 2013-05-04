@@ -2,12 +2,13 @@ language: cpp
 before_install:
   - git submodule init
   - git submodule update
-  - sudo apt-get update -qq
-  - sudo apt-get -y install build-essential zlib1g-dev
+  - sudo apt-get update
+  - sudo apt-get -y install build-essential zlib1g-dev curl
   - mkdir dummyprefix
   - export PREFIX=$PWD/dummyprefix
   - export PATH=$PWD/dummyprefix/bin
-  - (wget "http://ftp.gnu.org/gnu/automake/automake-1.13.1.tar.gz" && tar -zxvf automake-1.13.1.tar.gz)
+  - curl "http://ftp.gnu.org/gnu/automake/automake-1.13.1.tar.gz" > automake-1.13.1.tar.gz
+  - tar -zxvf automake-1.13.1.tar.gz
   - cd automake-1.13.1
   - ./configure --prefix=$PREFIX --docdir=$PREFIX/share/doc/automake-1.13.1
   - (make && make install)
