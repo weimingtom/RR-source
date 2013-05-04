@@ -1,13 +1,16 @@
-Revelade Revolution source code
+# Revelade Revolution source code
+
+[![Build Status][build status]][build status page]
 
 This code is based on Tesseract and is under the same license, ZLIB.
 
 The other readme files are included in this repository.
 
-Compiling Revelade Revolution
-********************
+## Compiling Revelade Revolution
 
-Make sure you have all the dependencies installed,
-open a terminal.
-cd to the src directory and type make client install to build the client
-then run the ./rr_unix file or ./rr_windows.bat file to start the game.
+Please read the wiki [here][wiki compile guide]
+
+
+[build status]: https://travis-ci.org/TheinitercoolerGames/RR-Tesseract-source.png?branch=master
+[build status page]: https://travis-ci.org/TheinitercoolerGames/RR-Tesseract-source
+[wiki compile guide]: http://tigwiki.com/wiki/index.php?n=ReveladeRevolution.CompilingReveladeRevolution
