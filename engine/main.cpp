@@ -195,8 +195,11 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
 
         gle::colorf(1, 1, 1);
         settexture("@{tig/rr-core}/texture/gui/background.png", 0);
-        float bu = w*0.67f/256.0f + backgroundu, bv = h*0.67f/256.0f + backgroundv;
-        bgquad(0, 0, w, h, 0, 0, bu, bv);
+        //float bu = w*0.67f/256.0f + backgroundu, bv = h*0.67f/256.0f + backgroundv;
+        bgquad(0, 0, w, h);
+
+
+
         glEnable(GL_BLEND);
 #if 0
         settexture("<premul>data/gui/background_detail.png", 0);
@@ -264,6 +267,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
             }
             settexture("@{tig/rr-core}/texture/gui/mapshot_frame.png", 3);
             bgquad(x, y, sz, sz);
+
             if(mapname)
             {
                 int tw = text_width(mapname);
