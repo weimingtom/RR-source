@@ -671,12 +671,22 @@ bool listdir(const char *dirname_, bool rel, const char *ext, vector<char *> &fi
     if(Find != INVALID_HANDLE_VALUE)
     {
         do {
-            if(!ext) files.add(newstring(FindFileData.cFileName));
+            if(!ext){
+                defformatstring(path)("%s/%s", dirname_, FindFileData.cFileName);
+                files.add(newstring(path));
+            }
             else
             {
                 int namelength = (int)strlen(FindFileData.cFileName) - extsize;
                 if(namelength > 0 && FindFileData.cFileName[namelength] == '.' && strncmp(FindFileData.cFileName+namelength+1, ext, extsize-1)==0)
-                    files.add(newstring(FindFileData.cFileName, namelength));
+                {
+                    int length = namelength + strlen(dirname_) + 2 + extsize;
+                    defformatstring(path)("%s/%s", dirname_, FindFileData.cFileName);
+
+                    path[length-extsize-1] = '\0';
+
+                    files.add(newstring(path));
+                }
             }
         } while(FindNextFile(Find, &FindFileData));
         FindClose(Find);
@@ -692,13 +702,8 @@ bool listdir(const char *dirname_, bool rel, const char *ext, vector<char *> &fi
         {
             if(!ext)
             {
-                int length = strlen(de->d_name) + strlen(dirname_) + 2;
-                char *path = new char[length];
-                strcat(path, dirname_);
-                strcat(path, "/");
-                strcat(path, de->d_name);
-                path[length] = '\0';
-                files.add(path);
+                defformatstring(path)("%s/%s", dirname_, de->d_name);
+                files.add(newstring(path));
             }
             else
             {
@@ -706,8 +711,7 @@ bool listdir(const char *dirname_, bool rel, const char *ext, vector<char *> &fi
                 if(namelength > 0 && de->d_name[namelength] == '.' && strncmp(de->d_name+namelength+1, ext, extsize-1)==0)
                 {
                     int length = namelength + strlen(dirname_) + 2 + extsize;
-                    string path;
-                    formatstring(path)("%s/%s", dirname_, de->d_name);
+                    defformatstring(path)("%s/%s", dirname_, de->d_name);
 
                     path[length-extsize-1] = '\0';
 
