@@ -261,7 +261,7 @@ inline void ident::getval(tagval &v) const
 
 #define LUACOMMAND(name, fun) \
 void __lua_command_hook_##name () { lua::getEnvironment().registerFunction(#name, fun); } \
-bool __lua_command_hook_return_##name= lua::getEnvironment().registerFunction(__lua_command_hook_##name);
+bool __lua_command_hook_return_##name= lua::getEnvironment().registerDelayedFunction(#name, __lua_command_hook_##name);
 
 #define LUAINLINENAME(name) __lua_command_inline_##name
 

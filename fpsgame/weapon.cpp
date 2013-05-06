@@ -815,10 +815,10 @@ namespace game
         }
     }
 
-    static const char * const projnames[2] = { "projectiles/grenade", "projectiles/rocket" };
-    static const char * const gibnames[3] = { "gibs/gib01", "gibs/gib02", "gibs/gib03" };
-    static const char * const debrisnames[4] = { "debris/debris01", "debris/debris02", "debris/debris03", "debris/debris04" };
-    static const char * const barreldebrisnames[4] = { "barreldebris/debris01", "barreldebris/debris02", "barreldebris/debris03", "barreldebris/debris04" };
+    static const char * const projnames[2] = { "@{tig/rr-core}/model/projectiles/grenade", "@{tig/rr-core}/model/projectiles/rocket" };
+    static const char * const gibnames[3] = { "@{tig/rr-core}/model/gibs/gib01", "@{tig/rr-core}/model/gibs/gib02", "@{tig/rr-core}/model/gibs/gib03" };
+    static const char * const debrisnames[4] = { "@{tig/rr-core}/model/debris/debris01", "@{tig/rr-core}/model/debris/debris02", "@{tig/rr-core}/model/debris/debris03", "@{tig/rr-core}/model/debris/debris04" };
+    static const char * const barreldebrisnames[4] = { "@{tig/rr-core}/model/barreldebris/debris01", "@{tig/rr-core}/model/barreldebris/debris02", "@{tig/rr-core}/model/barreldebris/debris03", "@{tig/rr-core}/model/barreldebris/debris04" };
 
     void preloadbouncers()
     {
@@ -846,7 +846,7 @@ namespace game
             }
             pitch = -bnc.roll;
             if(bnc.bouncetype==BNC_GRENADE)
-                rendermodel("projectiles/grenade", ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, MDL_CULL_VFC|MDL_CULL_OCCLUDED);
+                rendermodel("@{tig/rr-core}/model/projectiles/grenade", ANIM_MAPMODEL|ANIM_LOOP, pos, yaw, pitch, MDL_CULL_VFC|MDL_CULL_OCCLUDED);
             else
             {
                 const char *mdl = NULL;
@@ -880,7 +880,7 @@ namespace game
             yaw += 90;
             v.mul(3);
             v.add(pos);
-            rendermodel("projectiles/rocket", ANIM_MAPMODEL|ANIM_LOOP, v, yaw, pitch, MDL_CULL_VFC|MDL_CULL_OCCLUDED);
+            rendermodel("@{tig/rr-core}/model/projectiles/rocket", ANIM_MAPMODEL|ANIM_LOOP, v, yaw, pitch, MDL_CULL_VFC|MDL_CULL_OCCLUDED);
         }
     }
 

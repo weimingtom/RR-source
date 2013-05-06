@@ -664,9 +664,7 @@ namespace ai
         if(!mname || !*mname) mname = getclientmap();
         if(!*mname) return false;
 
-        string pakname, mapname, cfgname;
-        getmapfilenames(mname, NULL, pakname, mapname, cfgname);
-        formatstring(wptname)("packages/%s.wpt", mapname);
+        formatstring(wptname)("%s.wpt", getMapName());
         path(wptname);
         return true;
     }

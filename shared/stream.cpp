@@ -150,17 +150,17 @@ int encodeutf8(uchar *dstbuf, int dstlen, const uchar *srcbuf, int srclen, int *
         {
             if(dst >= dstend) goto done;
             const uchar *end = min(srcend, &src[dstend-dst]);
-            do 
-            { 
+            do
+            {
                 if(uni == '\f')
                 {
                     if(++src >= srcend) goto done;
                     goto uni1;
                 }
-                *dst++ = uni; 
-                if(++src >= end) goto done; 
-                uni = cube2uni(*src); 
-            } 
+                *dst++ = uni;
+                if(++src >= end) goto done;
+                uni = cube2uni(*src);
+            }
             while(uni <= 0x7F);
         }
         if(uni <= 0x7FF) { if(dst + 2 > dstend) goto done; *dst++ = 0xC0 | (uni>>6); goto uni2; }
@@ -175,7 +175,7 @@ int encodeutf8(uchar *dstbuf, int dstlen, const uchar *srcbuf, int srclen, int *
     uni3: *dst++ = 0x80 | ((uni>>6)&0x3F);
     uni2: *dst++ = 0x80 | (uni&0x3F);
     uni1:;
-    } 
+    }
     while(++src < srcend);
 
 done:
@@ -195,12 +195,7 @@ done:
 #endif
 
 string homedir = "";
-struct packagedir
-{
-    char *dir, *filter;
-    int dirlen, filterlen;
-};
-vector<packagedir> packagedirs;
+vector<const char *> packagedirs;
 
 char *makerelpath(const char *dir, const char *file, const char *prefix, const char *cmd)
 {
@@ -360,26 +355,260 @@ const char *addpackagedir(const char *dir)
     string pdir;
     copystring(pdir, dir);
     if(!subhomedir(pdir, sizeof(pdir), dir) || !fixpackagedir(pdir)) return NULL;
-    char *filter = pdir;
-    for(;;)
-    {
-        static int len = strlen("packages");
-        filter = strstr(filter, "packages");
-        if(!filter) break;
-        if(filter > pdir && filter[-1] == PATHDIV && filter[len] == PATHDIV) break;
-        filter += len;
-    }    
-    packagedir &pf = packagedirs.add();
-    pf.dir = filter ? newstring(pdir, filter-pdir) : newstring(pdir);
-    pf.dirlen = filter ? filter-pdir : strlen(pdir);
-    pf.filter = filter ? newstring(filter) : NULL;
-    pf.filterlen = filter ? strlen(filter) : 0;
-    return pf.dir;
+
+    return packagedirs.add(newstring(pdir));
 }
+
+
+namespace fs
+{
+
+    struct listDirEntity
+    {
+        string path;
+        bool isFile;
+        bool isDirectory;
+
+        listDirEntity(const char *parent, const char *path_, bool isDirectory_, bool isFile_) : isFile(isFile_), isDirectory(isDirectory_)
+        {
+            formatstring(path)("%s/%s", parent, path_);
+        }
+    };
+    bool listDir(const char *dirname, vector<listDirEntity *> &files)
+{
+    #ifdef WIN32
+    WIN32_FIND_DATA FindFileData;
+    HANDLE Find = FindFirstFile(dirname, &FindFileData);
+    if(Find != INVALID_HANDLE_VALUE)
+    {
+        do {
+            if(0 == strcmp(ffd.cFileName, ".") || 0 == strcmp(ffd.cFileName, ".."))
+                continue;
+            files.add(new listDirEntity(dirname, ffd.cFileName, !ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY, ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+        } while(FindNextFile(Find, &FindFileData));
+
+        FindClose(Find);
+        return true;
+    }
+    #else
+        DIR *d = opendir(dirname);
+    if(d)
+    {
+        struct dirent *de;
+        while((de = readdir(d)) != NULL)
+        {
+            if(0 == strcmp(de->d_name, ".") || 0 == strcmp(de->d_name, ".."))
+                continue;
+            files.add(new listDirEntity(dirname, de->d_name, de->d_type == DT_DIR, de->d_type == DT_REG));
+        }
+        closedir(d);
+        return true;
+    }
+    #endif
+    else return false;
+}
+
+
+    struct Bundle
+    {
+        //example: tig/rr-game
+        const char *name;
+        const char *path;
+        //vector<Bundle *> children;
+
+        Bundle(const char *name_, const char *path_) : name(name_), path(path_) {};
+    };
+
+    struct LookedUp
+    {
+        const char *name;
+        const char *path;
+    };
+
+    vector<Bundle *> bundles;
+    vector<LookedUp *> lookedUp;
+
+    /*
+    const char *extractBundleName(const char *path)
+    {
+
+
+        static string bundleName;
+
+        int j = 0;
+        while(path[j+2] != '}')
+        {
+            if(path[j+2] == '\0')
+            {
+                printf("ERROR: malformatted path: %s\n", path);
+                return NULL;
+            }
+
+            bundleName[j] = path[j+2];
+            j++;
+        }
+        bundleName[j] = '\0';
+
+        return bundleName;
+    }
+
+    char *prefixBundle(const char *file, const char *bundle)
+    {
+        //+4 -> @{}\0
+        int length = strlen(file) + strlen(bundle) + 4;
+        char *name = new char[length];
+        strcat(name, "@{");
+        strcat(name, bundle);
+        strcat(name, "}");
+        strcat(name, file);
+
+        return name;
+    }*/
+
+    const char *lookUp(const char *path)
+    {
+        loopv(lookedUp)
+        {
+            if(0 == strcmp(lookedUp[i]->name, path))
+                return lookedUp[i]->path;
+        }
+
+        static string newPath;
+        if(path[0] != '@' || path[1] != '{')
+        {
+            printf("WARNING: path was not part of a bundle: %s\n", path);
+            return path;
+        }
+
+
+        string bundleName;
+
+        int j = 0;
+        while(path[j+2] != '}')
+        {
+            if(path[j+2] == '\0')
+            {
+                printf("ERROR: malformatted path: %s\n", path);
+                return path;
+            }
+
+            bundleName[j] = path[j+2];
+            j++;
+        }
+
+        bundleName[j] = '\0';
+        j += 3;
+
+
+
+        loopv(bundles)
+        {
+            //printf("Bundle lookup %s == %s ?\n", bundles[i]->name, bundleName);
+            if(strcmp(bundles[i]->name, bundleName) == 0)
+            {
+                formatstring(newPath)("%s%s", bundles[i]->path, path+j);
+
+                LookedUp *lookup = new LookedUp;
+                lookup->path = newstring(newPath);
+                lookup->name = newstring(path);
+                lookedUp.add(lookup);
+
+                //printf("Created new path: %s from %s\n", newPath, path);
+                return newPath;
+            }
+        }
+
+        printf("ERROR: could not find bundle: %s (%s)\n", bundleName, path);
+        return path;
+    }
+
+    void addBundle(const char *name, const char *path)
+    {
+        printf("Registered bundle \"%s\": %s\n", name, path);
+        bundles.add(new Bundle(name, path));
+    }
+
+    //TODO: allow extending packages and make this less required
+    void overridePath(const char *name, const char *path)
+    {
+        LookedUp *lookup = new LookedUp;
+        lookup->path = newstring(path);
+        lookup->name = newstring(name);
+        lookedUp.add(lookup);
+    }
+
+    void init()
+    {
+        lua::Environment &env = lua::getEnvironment();
+
+        //TODO: loopv(bundleDirs)
+
+        loopv(packagedirs)
+        {
+            vector<listDirEntity *> vendors;
+            if(!listDir(packagedirs[i], vendors))
+            {
+                printf("ERROR: could not read any bundles! does the bundle directory exist?");
+                return;
+            }
+
+            //vendors
+            loopv(vendors)
+            {
+
+                if(vendors[i]->isDirectory)
+                {
+                    printf("Vendor: %s %i %i\n", vendors[i]->path, vendors[i]->isDirectory, vendors[i]->isFile);
+
+                    vector<listDirEntity *> packages;
+                    if(!listDir(vendors[i]->path, packages))
+                    {
+                        printf("ERROR: could not read vendor dir: %s", vendors[i]->path);
+                    }
+                    else
+                    {
+                        loopv(packages)
+                        {
+                            if(packages[i]->isDirectory)
+                            {
+                                printf("Package: %s %i %i\n", packages[i]->path, packages[i]->isDirectory, packages[i]->isFile);
+                                defformatstring(configName)("%s/%s", packages[i]->path, "package.lua");
+
+                                env.push(packages[i]->path);
+                                env.setGlobal("__BUNDLE_PATH__");
+
+                                env.run(configName);
+
+                                env.push(lua::nil);
+                                env.setGlobal("__BUNDLE_PATH__");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //home dir acts like a package
+        if(!homedir[0])
+        {
+            strcpy(homedir, "packages/user/unkown");
+        }
+
+        bundles.add(new Bundle("@User", homedir));
+
+        //make sure directories are available
+        createdir(lookUp("@{@User}/map"));
+    }
+}
+
+    LUACOMMAND(addBundle, fs::addBundle);
+    LUACOMMAND(overridePath, fs::overridePath);
 
 const char *findfile(const char *filename, const char *mode)
 {
-    static string s;
+    //static char *s;
+
+    /*
     if(homedir[0])
     {
         formatstring(s)("%s%s", homedir, filename);
@@ -406,13 +635,35 @@ const char *findfile(const char *filename, const char *mode)
         if(pf.filter && strncmp(filename, pf.filter, pf.filterlen)) continue;
         formatstring(s)("%s%s", pf.dir, filename);
         if(fileexists(s, mode)) return s;
+    }*/
+    const char *file = fs::lookUp(filename);
+
+    if(!fileexists(file, mode))
+    {
+        if(mode[0]=='w' || mode[0]=='a')
+        {
+            string dirs;
+            copystring(dirs, file);
+            char *dir = strchr(dirs[0] == PATHDIV ? dirs + 1 : dirs, PATHDIV);
+            while (dir)
+            {
+                *dir = '\0';
+                if (!fileexists(dirs, "d") && !createdir(dirs)) break;
+                *dir = PATHDIV;
+                dir = strchr(dir + 1, PATHDIV);
+            }
+
+        }
     }
-    return filename;
+
+    return file;
 }
 
-bool listdir(const char *dirname, bool rel, const char *ext, vector<char *> &files)
+bool listdir(const char *dirname_, bool rel, const char *ext, vector<char *> &files)
 {
     int extsize = ext ? (int)strlen(ext)+1 : 0;
+    const char *dirname = fs::lookUp(dirname_);
+    //TODO: fix lookup stuff for windows
     #ifdef WIN32
     defformatstring(pathname)(rel ? ".\\%s\\*.%s" : "%s\\*.%s", dirname, ext ? ext : "*");
     WIN32_FIND_DATA FindFileData;
@@ -432,19 +683,36 @@ bool listdir(const char *dirname, bool rel, const char *ext, vector<char *> &fil
         return true;
     }
     #else
-    defformatstring(pathname)(rel ? "./%s" : "%s", dirname);
-    DIR *d = opendir(pathname);
+    //defformatstring(pathname)(rel ? "./%s" : "%s", dirname);
+    DIR *d = opendir(dirname);
     if(d)
     {
         struct dirent *de;
         while((de = readdir(d)) != NULL)
         {
-            if(!ext) files.add(newstring(de->d_name));
+            if(!ext)
+            {
+                int length = strlen(de->d_name) + strlen(dirname_) + 2;
+                char *path = new char[length];
+                strcat(path, dirname_);
+                strcat(path, "/");
+                strcat(path, de->d_name);
+                path[length] = '\0';
+                files.add(path);
+            }
             else
             {
                 int namelength = (int)strlen(de->d_name) - extsize;
                 if(namelength > 0 && de->d_name[namelength] == '.' && strncmp(de->d_name+namelength+1, ext, extsize-1)==0)
-                    files.add(newstring(de->d_name, namelength));
+                {
+                    int length = namelength + strlen(dirname_) + 2 + extsize;
+                    string path;
+                    formatstring(path)("%s/%s", dirname_, de->d_name);
+
+                    path[length-extsize-1] = '\0';
+
+                    files.add(newstring(path));
+                }
             }
         }
         closedir(d);
@@ -469,14 +737,19 @@ int listfiles(const char *dir, const char *ext, vector<char *> &files)
         formatstring(s)("%s%s", homedir, dirname);
         if(listdir(s, false, ext, files)) dirs++;
     }
-    loopv(packagedirs)
+
+    /*loopv(packagedirs)
     {
         packagedir &pf = packagedirs[i];
         if(pf.filter && strncmp(dirname, pf.filter, dirlen == pf.filterlen-1 ? dirlen : pf.filterlen))
             continue;
         formatstring(s)("%s%s", pf.dir, dirname);
         if(listdir(s, false, ext, files)) dirs++;
-    }
+    }*/
+
+
+    //TODO: list files in bundles
+
 #ifndef STANDALONE
     dirs += listzipfiles(dirname, ext, files);
 #endif
@@ -599,20 +872,20 @@ struct filestream : stream
     }
 
     bool end() { return feof(file)!=0; }
-    offset tell() 
-    { 
+    offset tell()
+    {
 #ifdef WIN32
 #ifdef __GNUC__
         return ftello64(file);
 #else
-        return _ftelli64(file);       
+        return _ftelli64(file);
 #endif
 #else
-        return ftello(file); 
+        return ftello(file);
 #endif
     }
-    bool seek(offset pos, int whence) 
-    { 
+    bool seek(offset pos, int whence)
+    {
 #ifdef WIN32
 #ifdef __GNUC__
         return fseeko64(file, pos, whence) >= 0;
@@ -944,7 +1217,7 @@ struct utf8stream : stream
     offset pos;
     int bufread, bufcarry, buflen;
     bool reading, writing, autoclose;
-    uchar buf[BUFSIZE]; 
+    uchar buf[BUFSIZE];
 
     utf8stream() : file(NULL), pos(0), bufread(0), bufcarry(0), buflen(0), reading(false), writing(false), autoclose(false)
     {
@@ -971,10 +1244,10 @@ struct utf8stream : stream
     {
         int n = file->read(buf, 3);
         if(n == 3 && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF) return true;
-        buflen = n; 
+        buflen = n;
         return false;
     }
-            
+
     bool open(stream *f, const char *mode, bool needclose)
     {
         if(file) return false;
@@ -984,16 +1257,16 @@ struct utf8stream : stream
             else if(*mode=='w') { writing = true; break; }
         }
         if(!reading && !writing) return false;
-       
+
         autoclose = needclose;
         file = f;
-       
-        if(reading) checkheader();
- 
-        return true;
-    } 
 
-    void finishreading() 
+        if(reading) checkheader();
+
+        return true;
+    }
+
+    void finishreading()
     {
         if(!reading) return;
     }
@@ -1031,14 +1304,14 @@ struct utf8stream : stream
             return !off;
         }
         else if(whence == SEEK_CUR) off += pos;
-       
+
         if(off >= pos) off -= pos;
         else if(off < 0 || !file->seek(0, SEEK_SET)) return false;
         else
         {
             bufread = bufcarry = buflen = 0;
             pos = 0;
-            checkheader(); 
+            checkheader();
         }
 
         uchar skip[512];
@@ -1048,7 +1321,7 @@ struct utf8stream : stream
             if(read(skip, skipped) != skipped) { stopreading(); return false; }
             off -= skipped;
         }
-        
+
         return true;
     }
 
@@ -1078,7 +1351,7 @@ struct utf8stream : stream
             if(bufread >= bufcarry) { if(readbuf(BUFSIZE)) continue; stopreading(); if(!next) return false; break; }
             int n = min(len - next, bufcarry - bufread);
             uchar *endline = (uchar *)memchr(&buf[bufread], '\n', n);
-            if(endline) { n = endline+1 - &buf[bufread]; len = next + n; } 
+            if(endline) { n = endline+1 - &buf[bufread]; len = next + n; }
             memcpy(&((uchar *)dst)[next], &buf[bufread], n);
             next += n;
             bufread += n;
@@ -1162,7 +1435,7 @@ char *loadfile(const char *fn, int *size, bool utf8)
         if(f->read(buf, 3) != 3) { delete f; delete[] buf; return NULL; }
         if(((uchar *)buf)[0] == 0xEF && ((uchar *)buf)[1] == 0xBB && ((uchar *)buf)[2] == 0xBF) len -= 3;
         else offset += 3;
-    } 
+    }
     int rlen = f->read(&buf[offset], len-offset);
     delete f;
     if(rlen != len-offset) { delete[] buf; return NULL; }

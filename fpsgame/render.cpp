@@ -1,7 +1,7 @@
 #include "game.h"
 
 namespace game
-{      
+{
     vector<fpsent *> bestplayers;
     vector<const char *> bestteams;
 
@@ -24,7 +24,7 @@ namespace game
         r->attackchan = r->idlechan = -1;
         if(d==player1) r->playermodel = playermodel;
         ragdolls.add(r);
-        d->ragdoll = NULL;   
+        d->ragdoll = NULL;
     }
 
     void clearragdolls()
@@ -48,12 +48,12 @@ namespace game
 
     static const playermodelinfo playermodels[5] =
     {
-        { "mrfixit", "mrfixit/blue", "mrfixit/red", "mrfixit/hudguns", NULL, "mrfixit/horns", { "mrfixit/armor/blue", "mrfixit/armor/green", "mrfixit/armor/yellow" }, "mrfixit", "mrfixit_blue", "mrfixit_red", true },
-        { "snoutx10k", "snoutx10k/blue", "snoutx10k/red", "snoutx10k/hudguns", NULL, "snoutx10k/wings", { "snoutx10k/armor/blue", "snoutx10k/armor/green", "snoutx10k/armor/yellow" }, "snoutx10k", "snoutx10k_blue", "snoutx10k_red", true },
+        { "@{tig/rr-core}/model/mrfixit", "@{tig/rr-core}/model/mrfixit/blue", "@{tig/rr-core}/model/mrfixit/red", "@{tig/rr-core}/model/mrfixit/hudguns", NULL, "@{tig/rr-core}/model/mrfixit/horns", { "@{tig/rr-core}/model/mrfixit/armor/blue", "@{tig/rr-core}/model/mrfixit/armor/green", "@{tig/rr-core}/model/mrfixit/armor/yellow" }, "mrfixit", "mrfixit_blue", "mrfixit_red", true },
+        { "@{tig/rr-core}/model/snoutx10k", "@{tig/rr-core}/model/snoutx10k/blue", "@{tig/rr-core}/model/snoutx10k/red", "@{tig/rr-core}/model/snoutx10k/hudguns", NULL, "@{tig/rr-core}/model/snoutx10k/wings", { "@{tig/rr-core}/model/snoutx10k/armor/blue", "@{tig/rr-core}/model/snoutx10k/armor/green", "@{tig/rr-core}/model/snoutx10k/armor/yellow" }, "snoutx10k", "snoutx10k_blue", "snoutx10k_red", true },
         //{ "ogro/green", "ogro/blue", "ogro/red", "mrfixit/hudguns", "ogro/vwep", NULL, { NULL, NULL, NULL }, "ogro", "ogro_blue", "ogro_red", false },
-        { "ogro2", "ogro2/blue", "ogro2/red", "mrfixit/hudguns", NULL, "ogro2/quad", { "ogro2/armor/blue", "ogro2/armor/green", "ogro2/armor/yellow" }, "ogro", "ogro_blue", "ogro_red", true },
-        { "inky", "inky/blue", "inky/red", "inky/hudguns", NULL, "inky/quad", { "inky/armor/blue", "inky/armor/green", "inky/armor/yellow" }, "inky", "inky_blue", "inky_red", true },
-        { "captaincannon", "captaincannon/blue", "captaincannon/red", "captaincannon/hudguns", NULL, "captaincannon/quad", { "captaincannon/armor/blue", "captaincannon/armor/green", "captaincannon/armor/yellow" }, "captaincannon", "captaincannon_blue", "captaincannon_red", true }
+        { "@{tig/rr-core}/model/ogro2", "@{tig/rr-core}/model/ogro2/blue", "@{tig/rr-core}/model/ogro2/red", "@{tig/rr-core}/model/mrfixit/hudguns", NULL, "@{tig/rr-core}/model/ogro2/quad", { "@{tig/rr-core}/model/ogro2/armor/blue", "@{tig/rr-core}/model/ogro2/armor/green", "@{tig/rr-core}/model/ogro2/armor/yellow" }, "ogro", "ogro_blue", "ogro_red", true },
+        { "@{tig/rr-core}/model/inky", "@{tig/rr-core}/model/inky/blue", "@{tig/rr-core}/model/inky/red", "@{tig/rr-core}/model/inky/hudguns", NULL, "@{tig/rr-core}/model/inky/quad", { "@{tig/rr-core}/model/inky/armor/blue", "@{tig/rr-core}/model/inky/armor/green", "@{tig/rr-core}/model/inky/armor/yellow" }, "inky", "inky_blue", "inky_red", true },
+        { "@{tig/rr-core}/model/captaincannon", "@{tig/rr-core}/model/captaincannon/blue", "@{tig/rr-core}/model/captaincannon/red", "@{tig/rr-core}/model/captaincannon/hudguns", NULL, "@{tig/rr-core}/model/captaincannon/quad", { "@{tig/rr-core}/model/captaincannon/armor/blue", "@{tig/rr-core}/model/captaincannon/armor/green", "@{tig/rr-core}/model/captaincannon/armor/yellow" }, "captaincannon", "captaincannon_blue", "captaincannon_red", true }
     };
 
     int chooserandomplayermodel(int seed)
@@ -78,7 +78,7 @@ namespace game
     {
         if(player1->clientnum < 0) player1->playermodel = playermodel;
         if(player1->ragdoll) cleanragdoll(player1);
-        loopv(ragdolls) 
+        loopv(ragdolls)
         {
             fpsent *d = ragdolls[i];
             if(!d->ragdoll) continue;
@@ -119,7 +119,7 @@ namespace game
             loopj(3) if(mdl->armour[j]) preloadmodel(mdl->armour[j]);
         }
     }
-    
+
     VAR(testquad, 0, 0, 1);
     VAR(testarmour, 0, 0, 1);
     VAR(testteam, 0, 0, 3);
@@ -177,7 +177,7 @@ namespace game
         }
         renderclient(d, mdlname, a[0].tag ? a : NULL, hold, attack, delay, lastaction, intermission && d->state!=CS_DEAD ? 0 : d->lastpain, fade, ragdoll && mdl.ragdoll);
 #if 0
-        if(d->state!=CS_DEAD && d->quadmillis) 
+        if(d->state!=CS_DEAD && d->quadmillis)
         {
             rendermodel("quadrings", ANIM_MAPMODEL|ANIM_LOOP, vec(d->o).sub(vec(0, 0, d->eyeheight/2)), 360*lastmillis/1000.0f, 0, MDL_CULL_VFC | MDL_CULL_DIST);
         }
@@ -216,10 +216,10 @@ namespace game
             int team = 0;
             if(teamskins) team = isteam(player1->team, d->team) ? 1 : 2;
             float fade = 1.0f;
-            if(ragdollmillis && ragdollfade) 
+            if(ragdollmillis && ragdollfade)
                 fade -= clamp(float(lastmillis - (d->lastupdate + max(ragdollmillis - ragdollfade, 0)))/min(ragdollmillis, ragdollfade), 0.0f, 1.0f);
             renderplayer(d, getplayermodelinfo(d), team, fade);
-        } 
+        }
         if(isthirdperson() && !followingplayer() && (player1->state!=CS_DEAD || !hidedead)) renderplayer(player1, getplayermodelinfo(player1), teamskins || true ? 1 : 0, 1);
         entities::renderentities();
         renderbouncers();
@@ -316,8 +316,8 @@ namespace game
     void drawhudgun()
     {
         fpsent *d = hudplayer();
-        if(d->state==CS_SPECTATOR || d->state==CS_EDITING || !hudgun || editmode) 
-        { 
+        if(d->state==CS_SPECTATOR || d->state==CS_EDITING || !hudgun || editmode)
+        {
             d->muzzle = player1->muzzle = vec(-1, -1, -1);
             return;
         }

@@ -9,12 +9,17 @@ void loadsky(const char *basename, Texture *texs[6])
     {
         const char *side = cubemapsides[i].name;
         string name;
-        copystring(name, makerelpath("packages", basename));
+
+        if(basename[0] != '@')
+            formatstring(name)("@{tig/rr-core}/skybox/%s", basename);
+        else
+            copystring(name, basename);
+
         if(wildcard)
         {
             char *chop = strchr(name, '*');
             if(chop) { *chop = '\0'; concatstring(name, side); concatstring(name, wildcard+1); }
-            texs[i] = textureload(name, 3, true, false); 
+            texs[i] = textureload(name, 3, true, false);
         }
         else
         {
@@ -34,9 +39,9 @@ Texture *cloudoverlay = NULL;
 
 Texture *loadskyoverlay(const char *basename)
 {
-    const char *ext = strrchr(basename, '.'); 
+    const char *ext = strrchr(basename, '.');
     string name;
-    copystring(name, makerelpath("packages", basename));
+    copystring(name, basename);
     Texture *t = notexture;
     if(ext) t = textureload(name, 0, true, false);
     else
@@ -52,7 +57,7 @@ Texture *loadskyoverlay(const char *basename)
     return t;
 }
 
-SVARFR(skybox, "", { if(skybox[0]) loadsky(skybox, sky); }); 
+SVARFR(skybox, "", { if(skybox[0]) loadsky(skybox, sky); });
 HVARR(skyboxcolour, 0, 0xFFFFFF, 0xFFFFFF);
 FVARR(skyboxoverbright, 1, 2, 16);
 FVARR(skyboxoverbrightmin, 0, 1, 16);
@@ -156,7 +161,7 @@ void draw_env_overlay(int w, Texture *overlay = NULL, float tx = 0, float ty = 0
     {
         vec p(1, 1, 0);
         p.rotate_around_z((-2.0f*M_PI*i)/cloudsubdiv);
-        gle::attribf(p.x*psz, p.y*psz, z); 
+        gle::attribf(p.x*psz, p.y*psz, z);
             gle::attribf(tx + p.x*tsz, ty + p.y*tsz);
     }
     xtraverts += gle::end();
@@ -277,7 +282,7 @@ static void initdome(const bvec &color, float minalpha = 0.0f, float maxalpha = 
         int domecapverts = 0;
         loopi(domenumverts) if(!domeverts[i].pos.z) domecap[domecapverts++] = i;
         domeverts[domenumverts++] = domevert(vec(0.0f, 0.0f, -capsize), color, maxalpha);
-        quicksort(domecap, domecapverts, sortdomecap); 
+        quicksort(domecap, domecapverts, sortdomecap);
         loopi(domecapverts)
         {
             int n = domecapverts-1-i;
@@ -306,7 +311,7 @@ static void deletedome()
     if(domeebuf) { glDeleteBuffers_(1, &domeebuf); domeebuf = 0; }
 }
 
-FVARR(fogdomeheight, -1, -0.5f, 1); 
+FVARR(fogdomeheight, -1, -0.5f, 1);
 FVARR(fogdomemin, 0, 0, 1);
 FVARR(fogdomemax, 0, 0, 1);
 VARR(fogdomecap, 0, 1, 1);
@@ -321,7 +326,7 @@ static void drawdome()
 {
     float capsize = fogdomecap && fogdomeheight < 1 ? (1 + fogdomeheight) / (1 - fogdomeheight) : -1;
     bvec color = fogdomecolour ? fogdomecolor : fogcolor;
-    if(!domenumverts || domecolor != color || domeminalpha != fogdomemin || domemaxalpha != fogdomemax || domecapsize != capsize || domeclipz != fogdomeclip) 
+    if(!domenumverts || domecolor != color || domeminalpha != fogdomemin || domemaxalpha != fogdomemax || domecapsize != capsize || domeclipz != fogdomeclip)
     {
         initdome(color, min(fogdomemin, fogdomemax), fogdomemax, capsize, fogdomeclip);
         domecolor = color;
@@ -355,7 +360,7 @@ void cleanupsky()
     deletedome();
 }
 
-VAR(showsky, 0, 1, 1); 
+VAR(showsky, 0, 1, 1);
 VAR(clampsky, 0, 1, 1);
 
 VARR(fogdomeclouds, 0, 1, 1);
@@ -370,7 +375,7 @@ static void drawfogdome(int farplane)
     glmatrix skymatrix = cammatrix, skyprojmatrix;
     skymatrix.d = vec4(0, 0, 0, 1);
     skymatrix.translate(0, 0, farplane*fogdomeheight*0.5f);
-    skymatrix.scale(farplane/2, farplane/2, farplane*(0.5f - fogdomeheight*0.5f)); 
+    skymatrix.scale(farplane/2, farplane/2, farplane*(0.5f - fogdomeheight*0.5f));
     skyprojmatrix.mul(projmatrix, skymatrix);
     LOCALPARAM(skymatrix, skyprojmatrix);
 
@@ -392,7 +397,7 @@ bool limitsky()
 void drawskybox(int farplane)
 {
     float skyclip = 0, topclip = 1;
-    if(skyclip) skyclip = 0.5f + 0.5f*(skyclip-camera1->o.z)/float(worldsize); 
+    if(skyclip) skyclip = 0.5f + 0.5f*(skyclip-camera1->o.z)/float(worldsize);
 
     if(limitsky())
     {
@@ -403,7 +408,7 @@ void drawskybox(int farplane)
         glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_FALSE);
     }
-   
+
     if(ldrscale < 1 && (skyboxoverbrightmin != 1 || (skyboxoverbright > 1 && skyboxoverbrightthreshold < 1)))
     {
         SETSHADER(skyboxoverbright);
@@ -423,12 +428,12 @@ void drawskybox(int farplane)
 
     draw_envbox(farplane/2, skyclip, topclip, 0x3F, sky);
 
-    if(fogdomemax && !fogdomeclouds) 
+    if(fogdomemax && !fogdomeclouds)
     {
         drawfogdome(farplane);
     }
-   
-    SETSHADER(skybox); 
+
+    SETSHADER(skybox);
 
     if(cloudbox[0])
     {

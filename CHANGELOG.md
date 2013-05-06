@@ -2,6 +2,11 @@ Revelade Revolution
 
 Change history:
 ======================================================================
+-Features/additions:
+    Changed content to seperate directories and make more extendable
+
+
+======================================================================
 1.0.6 (2/3/2013):
 -Features/additions:
     Added new server XRRS (eXtensible Revelade Revolution Server) based on XSBS.

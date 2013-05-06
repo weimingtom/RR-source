@@ -95,7 +95,7 @@ VARF(scr_h, SCR_MINH, -1, SCR_MAXH, initwarning("screen resolution"));
 
 void writeinitcfg()
 {
-    stream *f = openutf8file("init.cfg", "w");
+    stream *f = openutf8file("@{@User}/config/rr/init.cfg", "w");
     if(!f) return;
     f->printf("// automatically written on exit, DO NOT MODIFY\n// modify settings in game\n");
     extern int fullscreen;
@@ -194,7 +194,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         gle::deftexcoord0();
 
         gle::colorf(1, 1, 1);
-        settexture("data/gui/background.png", 0);
+        settexture("@{tig/rr-core}/texture/gui/background.png", 0);
         float bu = w*0.67f/256.0f + backgroundu, bv = h*0.67f/256.0f + backgroundv;
         bgquad(0, 0, w, h, 0, 0, bu, bv);
         glEnable(GL_BLEND);
@@ -211,13 +211,15 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
 #endif
         float lh = 0.5f*min(w, h), lw = lh*2,
               lx = 0.5f*(w - lw), ly = 0.5f*(h*0.5f - lh);
-        settexture(/*(maxtexsize ? min(maxtexsize, hwtexsize) : hwtexsize) >= 1024 && (screenw > 1280 || screenh > 800) ? "<premul>data/gui/logo_1024.png" :*/ "<premul>data/gui/logo.png", 3);
+        settexture(/*(maxtexsize ? min(maxtexsize, hwtexsize) : hwtexsize) >= 1024 && (screenw > 1280 || screenh > 800) ? "<premul>data/gui/logo_1024.png" :*/ "<premul>@{tig/rr-core}/texture/gui/logo.png", 3);
         bgquad(lx, ly, lw, lh);
 
+#if 0
         float bh = 0.1f*min(w, h), bw = bh*2,
               bx = w - 1.1f*bw, by = h - 1.1f*bh;
         settexture("<premul>data/gui/cube2badge.png", 3);
         bgquad(bx, by, bw, bh);
+#endif
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         if(caption)
@@ -260,7 +262,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
                 pophudmatrix();
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
-            settexture("data/gui/mapshot_frame.png", 3);
+            settexture("@{tig/rr-core}/texture/gui/mapshot_frame.png", 3);
             bgquad(x, y, sz, sz);
             if(mapname)
             {
@@ -339,7 +341,7 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
           fy = renderedframe ? fh/4 : h - fh*1.5f,
           fu1 = 0/512.0f, fu2 = 511/512.0f,
           fv1 = 0/64.0f, fv2 = 52/64.0f;
-    settexture("data/gui/loading_frame.png", 3);
+    settexture("@{tig/rr-core}/texture/gui/loading_frame.png", 3);
     bgquad(fx, fy, fw, fh, fu1, fv1, fu2-fu1, fv2-fv1);
 
     glEnable(GL_BLEND);
@@ -354,7 +356,7 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
           ex = bx+sw + max(mw*bar, fw*7/511.0f);
     if(bar > 0)
     {
-        settexture("data/gui/loading_bar.png", 3);
+        settexture("@{tig/rr-core}/texture/gui/loading_bar.png", 3);
         bgquad(bx, by, sw, bh, su1, bv1, su2-su1, bv2-bv1);
         bgquad(bx+sw, by, ex-(bx+sw), bh, su2, bv1, eu1-su2, bv2-bv1);
         bgquad(ex, by, ew, bh, eu1, bv1, eu2-eu1, bv2-bv1);
@@ -383,7 +385,7 @@ void renderprogress(float bar, const char *text, GLuint tex, bool background)   
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        settexture("data/gui/mapshot_frame.png", 3);
+        settexture("@{tig/rr-core}/texture/gui/mapshot_frame.png", 3);
         bgquad(x, y, sz, sz);
         glDisable(GL_BLEND);
     }
@@ -651,17 +653,17 @@ void resetgl()
     extern void reloadshaders();
     inbetweenframes = false;
     if(!reloadtexture(*notexture) ||
-       !reloadtexture("<premul>data/gui/logo.png") ||
-       !reloadtexture("<premul>data/gui/logo_1024.png") ||
-       !reloadtexture("<premul>data/gui/cube2badge.png") ||
-       !reloadtexture("data/gui/background.png") ||
+       !reloadtexture("<premul>@{tig/rr-core}/texture/gui/logo.png") ||
+       !reloadtexture("<premul>@{tig/rr-core}/texture/gui/logo_1024.png") ||
+       !reloadtexture("<premul>@{tig/rr-core}/texture/gui/cube2badge.png") ||
+       !reloadtexture("@{tig/rr-core}/texture/gui/background.png") ||
 #if 0
-       !reloadtexture("<premul>data/gui/background_detail.png") ||
-       !reloadtexture("<premul>data/gui/background_decal.png") ||
+       !reloadtexture("<premul>@{tig/rr-core}/texture/gui/background_detail.png") ||
+       !reloadtexture("<premul>@{tig/rr-core}/texture/gui/background_decal.png") ||
 #endif
-       !reloadtexture("data/gui/mapshot_frame.png") ||
-       !reloadtexture("data/gui/loading_frame.png") ||
-       !reloadtexture("data/gui/loading_bar.png"))
+       !reloadtexture("@{tig/rr-core}/texture/gui/mapshot_frame.png") ||
+       !reloadtexture("@{tig/rr-core}/texture/gui/loading_frame.png") ||
+       !reloadtexture("@{tig/rr-core}/texture/gui/loading_bar.png"))
         fatal("failed to reload core texture");
     reloadfonts();
     inbetweenframes = true;
@@ -1030,7 +1032,12 @@ int getclockmillis()
 }
 
 VAR(numcpus, 1, 1, 16);
-SVAR(DATAPATH, "data");
+
+        namespace fs
+        {
+            extern void init();
+        }
+
 int main(int argc, char **argv)
 {
     #ifdef WIN32
@@ -1041,6 +1048,9 @@ int main(int argc, char **argv)
     #endif
     #endif
     #endif
+
+
+
 
     setlogfile(NULL);
 
@@ -1058,21 +1068,29 @@ int main(int argc, char **argv)
 				if(dir) logoutf("Using home directory: %s", dir);
 				break;
 			}
+
+            case 'k':
+            {
+                //Adds a directory where packages may be located
+                const char *dir = addpackagedir(&argv[i][2]);
+                if(dir) logoutf("Adding package directory: %s", dir);
+                break;
+            }
         }
     }
-    execfile("init.cfg", false);
+
+    logoutf("Init: lua");
+    lua::getEnvironment().init();
+
+    fs::init();
+    execfile("@{@User}/config/rr/init.cfg", false);
     for(int i = 1; i<argc; i++)
     {
         if(argv[i][0]=='-') switch(argv[i][1])
         {
             case 'q': /* parsed first */ break;
             case 'r': /* compat, ignore */ break;
-            case 'k':
-            {
-                const char *dir = addpackagedir(&argv[i][2]);
-                if(dir) logoutf("Adding package directory: %s", dir);
-                break;
-            }
+            case 'k': /* parsed first */ break;
             case 'g': logoutf("Setting log file: %s", &argv[i][2]); setlogfile(&argv[i][2]); break;
             case 'd': dedicated = atoi(&argv[i][2]); if(dedicated<=0) dedicated = 2; break;
             case 'w': scr_w = clamp(atoi(&argv[i][2]), SCR_MINW, SCR_MAXW); if(!findarg(argc, argv, "-h")) scr_h = -1; break;
@@ -1084,14 +1102,7 @@ int main(int argc, char **argv)
             case 't': fullscreen = atoi(&argv[i][2]); break;
             case 's': /* compat, ignore */ break;
             case 'f': /* compat, ignore */ break;
-            case 'l':
-            {
-                char pkgdir[] = "packages/";
-                load = strstr(path(&argv[i][2]), path(pkgdir));
-                if(load) load += sizeof(pkgdir)-1;
-                else load = &argv[i][2];
-                break;
-            }
+            case 'l': /* compat, ignore */ break;
             case 'x': initscript = &argv[i][2]; break;
             default: if(!serveroption(argv[i])) gameargs.add(argv[i]); break;
         }
@@ -1139,18 +1150,12 @@ int main(int argc, char **argv)
     logoutf("init: gl");
     gl_checkextensions();
     gl_init(scr_w, scr_h);
-    notexture = textureload("packages/textures/notexture.png");
+    notexture = textureload("@{tig/engine-base}/texture/notexture.png");
     if(!notexture) fatal("could not find core textures");
 
-        logoutf("Init: lua");
-        lua::getEnvironment().init();
-
     logoutf("init: console");
-	defformatstring(path)("%s/stdlib.cfg", DATAPATH);
-#define EXEC(p,d,m) formatstring(path)(p,d); execfile(path, m);
-    if(!execfile(path, false)) fatal("cannot find data files (you are running from the wrong folder, try .bat file in the main folder)");   // this is the first file we load.
-	formatstring(path)("%s/font.cfg", DATAPATH);
-	if(!execfile(path, false)) fatal("cannot find font definitions");
+    if(!execfile("@{tig/engine-base}/cubescript/stdlib.cfg")) fatal("cannot find data files (you are running from the wrong folder, try .bat file in the main folder)");   // this is the first file we load.
+	if(!execfile("@{tig/rr-core}/font/init.cfg")) fatal("cannot find font definitions");
     if(!setfont("default")) fatal("no default font specified");
 
     inbetweenframes = true;
@@ -1164,12 +1169,13 @@ int main(int argc, char **argv)
     initsound();
 
     logoutf("init: cfg");
-	EXEC("%s/keymap.cfg",DATAPATH,true);
-	EXEC("%s/stdedit.cfg",DATAPATH,true);
-	EXEC("%s/menus.cfg",DATAPATH,true);
-	EXEC("%s/sounds.cfg",DATAPATH,true);
-	EXEC("%s/brush.cfg",DATAPATH,true);
-	EXEC("%s/mybrushes.cfg",DATAPATH,false);
+	execfile("@{tig/engine-base}/cubescript/keymap.cfg", true);
+	execfile("@{tig/engine-base}/cubescript/stdedit.cfg", true);
+	execfile("@{tig/engine-base}/cubescript/menus.cfg", true);
+	execfile("@{tig/rr-core}/sound/init.cfg", true);
+    execfile("@{tig/engine-base}/brush/init.cfg", true);
+    execfile("@{@User}/config/rr/brush.cfg", false);
+
     if(game::savedservers()) execfile(game::savedservers(), false);
 
     identflags |= IDF_PERSIST;
@@ -1186,11 +1192,8 @@ int main(int argc, char **argv)
     identflags &= ~IDF_PERSIST;
 
     initing = INIT_GAME;
-    string gamecfgname;
-    copystring(gamecfgname, "data/game_");
-    concatstring(gamecfgname, game::gameident());
-    concatstring(gamecfgname, ".cfg");
-    execfile(gamecfgname);
+
+    execfile("@{tig/rr-core}/config/game.cfg");
 
     game::loadconfigs();
     initing = NOT_INITING;
@@ -1205,7 +1208,7 @@ int main(int argc, char **argv)
 
     logoutf("init: mainloop");
 
-    if(execfile("once.cfg", false)) remove(findfile("once.cfg", "rb"));
+    if(execfile("@{@User}/config/rr/once.cfg", false)) remove(findfile("@{@User}/config/rr/once.cfg", "rb"));
 
     if(load)
     {

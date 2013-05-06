@@ -147,7 +147,7 @@ static int csnumzombies = 20;
 		}
 
 #endif
-		       
+
 #ifndef SERVMODE
 		void pain(int damage, fpsent *d)
 		{
@@ -231,7 +231,7 @@ static int csnumzombies = 20;
 				if(targetyaw>yaw) yaw = targetyaw;
 			}
 			float dist = enemy->o.dist(o);
-			if(zombiestate!=M_SLEEP) pitch = asin((enemy->o.z - o.z) / dist) / RAD; 
+			if(zombiestate!=M_SLEEP) pitch = asin((enemy->o.z - o.z) / dist) / RAD;
 
 			if(blocked)                                                              // special case: if we run into scenery
 			{
@@ -246,9 +246,9 @@ static int csnumzombies = 20;
 					transition(M_SEARCH, 1, 100, 1000);
 				}
 			}
-            
+
 			float enemyyaw = -atan2(enemy->o.x - o.x, enemy->o.y - o.y)/RAD;
-            
+
 			switch(zombiestate)
 			{
 				case M_PAIN:
@@ -256,10 +256,10 @@ static int csnumzombies = 20;
 				case M_SEARCH:
 					if(trigger<lastmillis) transition(M_HOME, 1, 100, 200);
 					break;
-                    
+
 				case M_SLEEP:                       // state classic sp monster start in, wait for visual contact
 				{
-					if(editmode) break;          
+					if(editmode) break;
 					normalize_yaw(enemyyaw);
 					float angle = (float)fabs(enemyyaw-yaw);
 					if(dist<32                   // the better the angle to the player, the further the monster can see/hear
@@ -278,7 +278,7 @@ static int csnumzombies = 20;
 					}
 					break;
 				}
-                
+
 				case M_AIMING:                      // this state is the delay between wanting to shoot and actually firing
 					if(trigger<lastmillis)
 					{
@@ -301,7 +301,7 @@ static int csnumzombies = 20;
 						{
 							transition(M_HOME, 1, 800, 500);
 						}
-						else 
+						else
 						{
 							bool melee = false, longrange = false;
 							switch(zombietypes[ztype].gun)
@@ -310,9 +310,9 @@ static int csnumzombies = 20;
 								case WEAP_FIST: melee = true; break;
 								case WEAP_SNIPER: longrange = true; break;
 							}
-							// the closer the monster is the more likely he wants to shoot, 
+							// the closer the monster is the more likely he wants to shoot,
 							if((!melee || dist<20) && !rnd(longrange ? (int)dist/12+1 : min((int)dist/12+1,6)) && enemy->state==CS_ALIVE)      // get ready to fire
-							{ 
+							{
 								attacktarget = target;
 								transition(M_AIMING, 0, zombietypes[ztype].lag, 10);
 							}
@@ -323,7 +323,7 @@ static int csnumzombies = 20;
 						}
 					}
 					break;
-                    
+
 			}
 
 			if(move || maymove() || (stacked && (stacked->state!=CS_ALIVE || stackpos != stacked->o)))
@@ -351,7 +351,7 @@ struct survivalclientmode : clientmode
 {
 
 #ifdef SERVMODE
-	
+
 	static void spawnzombie()
     {
 		if (clients.length() == 0) return;
@@ -708,9 +708,9 @@ struct survivalclientmode : clientmode
 
 	void update(int curtime)
 	{
-        
+
         bool zombiewashurt = zombiehurt;
-        
+
         loopv(zombies)
         {
             if(zombies[i]->state==CS_ALIVE && zombies[i]->ownernum == player1->clientnum)
@@ -736,7 +736,7 @@ struct survivalclientmode : clientmode
 				addmsg(N_ONFIRE, "ri5", zombies[i]->clientnum, zombies[i]->clientnum, 0, 0, 0);
 			}
         }
-        
+
         if(zombiewashurt) zombiehurt = false;
 
 		this->sendpositions();
@@ -744,7 +744,7 @@ struct survivalclientmode : clientmode
 
     void drawblips(fpsent *d, int w, int h, int x, int y, int s, float rscale)
     {
-		settexture("packages/hud/blip_green.png");
+		settexture("@{tig/rr-core}/texture/hud/blip_green.png");
 		zombie *zom;
 		loopv(zombies)
 		{

@@ -9,6 +9,7 @@ void* operator new(size_t size, lua_State* L) {
 namespace lua {
     int bind_returncount = 0;
 #ifdef EXCEPTIONS_ENABLED
+
     static int wrap_exceptions(lua_State *L, lua_CFunction f) {
         try {
             return f(L); // Call wrapped function and return result.
@@ -108,51 +109,45 @@ namespace lua {
         lua_remove(L, index);
     }
 
-    bool Environment::init(const char *file) {
-        /*int s = luaL_loadfile(L, DEF_LUA_INIT);
-
-        if (s == 0)
-        {
-            // execute Lua program
-            s = lua_pcall(L, 0, 0, 0);
-        }
-
-        if (s != 0)
-        {
-            const char *error = lua_tostring(L, -1);
-            lua_pop(L, 1); // remove error message
-            throw error;
-        }*/
-
-
+    bool Environment::run(const char *file) {
 #ifdef EXCEPTIONS_ENABLED
         lua_pushlightuserdata(L, (void *) wrap_exceptions);
         luaJIT_setmode(L, -1, LUAJIT_MODE_WRAPCFUNC | LUAJIT_MODE_ON);
         pop(1);
-#else
-
 #endif
 
-        string s;
-        copystring(s, file);
-
         pushTrace();
-        int error = luaL_loadfile(L, findfile(path(s), "r")) || lua_pcall(L, 0, 0, 1);
+        int error = luaL_loadfile(L, findfile(file, "r")) || lua_pcall(L, 0, 0, 1);
         remove(1);
         if (error) {
 
             const char *errmsg = to(-1, wrapType<const char *>());
 
-            conoutf(CON_ERROR, "Could not initialize lua module: %s", errmsg);
+            conoutf(CON_ERROR, "Could not execute file (%s):\n%s", file, errmsg);
             return false;
         }
 
-        loopv(regFunctions) {
-            regFunctions[i]();
+        return true;
+    }
+
+    bool Environment::init() {
+        getGlobal("_E");
+
+        if (!isTable(-1)) {
+            newTable(regFunctions->length());
+            lua_setglobal(L, "_E");
+        }
+        pop(1);
+
+        loopv(*regFunctions) {
+            (*regFunctions)[i]();
 
         }
 
+        delete regFunctions;
+        
         isInitialized = true;
+
         return true;
     }
 
@@ -223,7 +218,7 @@ namespace lua {
         newTable(0, 0);
     }
 
-   void Environment::setTable(int id) {
+    void Environment::setTable(int id) {
         lua_settable(L, id);
     }
 
@@ -233,6 +228,10 @@ namespace lua {
 
     void Environment::getGlobal(const char *name) {
         lua_getglobal(L, name);
+    }
+
+    void Environment::setGlobal(const char* name) {
+        lua_setglobal(L, name);
     }
 
     bool Environment::isBoolean(int index) {
@@ -342,12 +341,20 @@ namespace lua {
         return false;
     }
 
-    bool Environment::registerFunction(void (*fun)(void)) {
+    bool Environment::registerDelayedFunction(const char *name, void (*fun)(void)) {
+
         if (isInitialized) {
+
             fun();
-            return true;
-        } else
-            regFunctions.add(fun);
+                    return true;
+        }
+        else
+        {
+             if (!regFunctions) {
+                regFunctions = new vector<void (*) (void)>;
+            }
+            regFunctions->add(fun);
+        }
 
         return false;
     }
@@ -357,8 +364,6 @@ namespace lua {
     Environment &getEnvironment() {
         return env;
     };
-
-
 
     void init() {
         getEnvironment().init();

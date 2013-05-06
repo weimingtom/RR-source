@@ -111,7 +111,7 @@ struct obj : vertmodel, vertloader<obj>
                         for(;;)
                         {
                             while(isspace(*c)) c++;
-                            if(!*c) break; 
+                            if(!*c) break;
                             ivec vkey(-1, -1, -1);
                             loopi(3)
                             {
@@ -174,11 +174,11 @@ struct obj : vertmodel, vertloader<obj>
         mdl.model = this;
         mdl.index = 0;
         const char *pname = parentdir(loadname);
-        defformatstring(name1)("packages/models/%s/tris.obj", loadname);
+        defformatstring(name1)("%s/tris.obj", loadname);
         mdl.meshes = sharemeshes(path(name1), 2.0);
         if(!mdl.meshes)
         {
-            defformatstring(name2)("packages/models/%s/tris.obj", pname);    // try obj in parent folder (vert sharing)
+            defformatstring(name2)("%s/tris.obj", pname);    // try obj in parent folder (vert sharing)
             mdl.meshes = sharemeshes(path(name2), 2.0);
             if(!mdl.meshes) return false;
         }
@@ -190,10 +190,10 @@ struct obj : vertmodel, vertloader<obj>
     }
 
     bool load()
-    { 
+    {
         if(loaded) return true;
-        formatstring(dir)("packages/models/%s", loadname);
-        defformatstring(cfgname)("packages/models/%s/obj.cfg", loadname);
+        formatstring(dir)("%s", loadname);
+        defformatstring(cfgname)("%s/obj.cfg", loadname);
 
         loading = this;
         identflags &= ~IDF_PERSIST;

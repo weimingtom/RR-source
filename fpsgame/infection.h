@@ -171,7 +171,7 @@ struct infectionclientmode : clientmode
 		if (dist > maxdist) return;
 		float balpha = 1.f-max(.5f, (dist/maxdist));
 
-		settexture(team==0? "packages/hud/blip_grey.png": team==1? "packages/hud/blip_blue.png": "packages/hud/blip_red.png");
+		settexture(team==0? "@{tig/rr-core}/texture/hud/blip_grey.png": team==1? "@{tig/rr-core}/texture/hud/blip_blue.png": "@{tig/rr-core}/texture/hud/blip_red.png");
 
 		vec po(pos);
 		po.normalize().mul(mindist);
@@ -245,7 +245,7 @@ struct infectionclientmode : clientmode
         d->ai->switchstate(b, ai::AI_S_PURSUE, ai::AI_T_PLAYER, closest->clientnum);
 		return true;
 	}
-	
+
 	void aifind(fpsent *d, ai::aistate &b, vector<ai::interest> &interests)
 	{
 		bool inf = d->infected;

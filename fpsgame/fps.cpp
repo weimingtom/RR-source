@@ -674,7 +674,7 @@ namespace game
 
     void drawicon(int icon, float x, float y, float sz)
     {
-        settexture("packages/hud/items.png");
+        settexture("@{tig/rr-core}/texture/hud/items.png");
         float tsz = 0.25f, tx = tsz*(icon%4), ty = tsz*(icon/4);
         gle::defvertex(2);
         gle::deftexcoord0();
@@ -838,9 +838,9 @@ namespace game
     {
         switch(index)
         {
-            case 2: return "data/crosshairs/hit.png";
-            case 1: return "data/crosshairs/teammate.png";
-            default: return "data/crosshairs/circle.png";
+            case 2: return "@{tig/rr-core}/crosshair/hit.png";
+            case 1: return "@{tig/rr-core}/crosshair/teammate.png";
+            default: return "@{tig/rr-core}/crosshair/circle.png";
         }
     }
 
@@ -1008,15 +1008,15 @@ namespace game
     void writegamedata(vector<char> &extras) {}
     void readgamedata(vector<char> &extras) {}
 
-    const char *savedconfig() { return "config.cfg"; }
-    const char *restoreconfig() { return "restore.cfg"; }
-    const char *defaultconfig() { return "data/defaults.cfg"; }
-    const char *autoexec() { return "autoexec.cfg"; }
-    const char *savedservers() { return "servers.cfg"; }
+    const char *savedconfig() { return "@{@User}/config/rr/config.cfg"; }
+    const char *restoreconfig() { return "@{@User}/config/rr/restore.cfg"; }
+    const char *defaultconfig() { return "@{tig/rr-core}/config/defaults.cfg"; }
+    const char *autoexec() { return "@{@User}/config/rr/autoexec.cfg"; }
+    const char *savedservers() { return "@{@User}/config/rr/servers.cfg"; }
 
     void loadconfigs()
     {
-        execfile("auth.cfg", false);
+        execfile("@{@User}/config/rr/auth.cfg", false);
     }
 }
 

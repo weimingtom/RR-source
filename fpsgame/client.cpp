@@ -97,7 +97,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
             {
                 if(!alive++)
                 {
-                    settexture(isteam(d->team, player1->team) ? "packages/hud/blip_blue_alive.png" : "packages/hud/blip_red_alive.png");
+                    settexture(isteam(d->team, player1->team) ? "@{tig/rr-core}/texture/hud/blip_blue_alive.png" : "@{tig/rr-core}/texture/hud/blip_red_alive.png");
                     gle::defvertex(2);
                     gle::deftexcoord0();
                     gle::begin(GL_QUADS);
@@ -114,7 +114,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
             {
                 if(!dead++)
                 {
-                    settexture(isteam(d->team, player1->team) ? "packages/hud/blip_blue_dead.png" : "packages/hud/blip_red_dead.png");
+                    settexture(isteam(d->team, player1->team) ? "@{tig/rr-core}/texture/hud/blip_blue_dead.png" : "@{tig/rr-core}/texture/hud/blip_red_dead.png");
                     gle::defvertex(2);
                     gle::deftexcoord0();
                     gle::begin(GL_QUADS);
@@ -1885,14 +1885,14 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
                 string oldname;
                 copystring(oldname, getclientmap());
                 defformatstring(mname)("getmap_%d", lastmillis);
-                defformatstring(fname)("packages/base/%s.ogz", mname);
+                defformatstring(fname)("@{@User}/map/%s.ogz", mname);
                 stream *map = openrawfile(path(fname), "wb");
                 if(!map) return;
                 conoutf("received map");
                 ucharbuf b = p.subbuf(p.remaining());
                 map->write(b.buf, b.maxlen);
                 delete map;
-                if(load_world(mname, oldname[0] ? oldname : NULL))
+                if(load_world(mname))
                     entities::spawnitems(true);
                 remove(findfile(fname, "rb"));
                 break;
@@ -1973,7 +1973,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
         conoutf("sending map...");
         defformatstring(mname)("sendmap_%d", lastmillis);
         save_world(mname, true);
-        defformatstring(fname)("packages/base/%s.ogz", mname);
+        defformatstring(fname)("@{tig/rr-core}/map/%s.ogz", mname);
         stream *map = openrawfile(path(fname), "rb");
         if(map)
         {

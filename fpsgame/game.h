@@ -3,7 +3,6 @@
 
 #include "cube.h"
 
-#define DATAPATH "data/"
 // console message types
 
 enum
@@ -153,7 +152,7 @@ enum
 	S_CBOW,
 	S_PISTOL,
 	S_PUNCH1,
-	
+
     S_CHAINSAW_ATTACK,
     S_CHAINSAW_IDLE,
 
@@ -315,7 +314,7 @@ enum
     HICON_SPACE   = 40
 };
 
-enum GUNS{ GUN_FIST = 0, GUN_SG, GUN_CG, GUN_RL, GUN_RC, GUN_GL, GUN_CARB, GUN_PISTOL, 
+enum GUNS{ GUN_FIST = 0, GUN_SG, GUN_CG, GUN_RL, GUN_RC, GUN_GL, GUN_CARB, GUN_PISTOL,
 	GUN_FIREBALL, GUN_ICEBALL, GUN_SLIMEBALL, GUN_BITE, GUN_BARREL, GUN_RIFLE, NUMGUNS };
 
 
@@ -368,7 +367,7 @@ static const struct guninfo { int sound, attackdelay, damage, maxammo, spread, p
 	{-1,			 0,	  0,	0,	0,		  0,	 0,	   0,  0,	 0,	 0,	   0,  "",					"",					 0 }
 };
 
-static char *PmodelDir[6]= {"","","","","",""};
+//static char *PmodelDir[6]= {"","","","","",""};
 
 enum PlayerClassID
 {
@@ -385,7 +384,7 @@ enum PlayerClassID
 
 static const struct PlayerClass{ const char *name; int modelId, speed, maxhealth,  guns[3], utility;} PClasses[6] =
 {
-	//name		MId	Speed	health	guns		utility; 
+	//name		MId	Speed	health	guns		utility;
 	{"Preper",	0,	55,		150,	{GUN_RL,	GUN_CARB,	0},		0	},
 	{"Moter",	1,	53,		175,	{GUN_RC,	GUN_GL,		0},		0	},
 	{"S.W.A.T.",2,	45,		250,	{GUN_SG,	GUN_PISTOL,	0},		0	},

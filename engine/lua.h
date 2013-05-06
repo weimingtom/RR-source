@@ -709,6 +709,7 @@ namespace lua {
         void pop(int id);
 
         void getGlobal(const char *name);
+        void setGlobal(const char *name);
 
         bool isBoolean(int index);
         bool isCFunction(int index);
@@ -760,7 +761,8 @@ namespace lua {
 
         int upvalueIndex(int index);
 
-        bool init(const char *file = "data/scripts/init.lua");
+        bool run(const char *file);
+        bool init();
         void pushTrace();
         void remove(int index);
         bool eval(const char *string);
@@ -778,9 +780,9 @@ namespace lua {
          */
         Environment();
 
-        vector<void (*)(void) > regFunctions;
+        vector<void (*)(void) > *regFunctions;
 
-        bool registerFunction(void(*fun)(void));
+        bool registerDelayedFunction(const char *name, void(*fun)(void));
     };
 
     Environment &getEnvironment();

@@ -262,7 +262,7 @@ struct fireballrenderer : listrenderer
     void seedemitter(particleemitter &pe, const vec &o, const vec &d, int fade, float size, int gravity)
     {
         pe.maxfade = max(pe.maxfade, fade);
-        pe.extendbb(o, (size+1+pe.ent->attr2)*WOBBLE); 
+        pe.extendbb(o, (size+1+pe.ent->attr2)*WOBBLE);
     }
 
     void renderpart(listparticle *p, const vec &o, const vec &d, int blend, int ts)
@@ -326,5 +326,5 @@ struct fireballrenderer : listrenderer
         drawexplosion(inside, p->color.r*ldrscaleb, p->color.g*ldrscaleb, p->color.b*ldrscaleb, blend/255.0f);
     }
 };
-static fireballrenderer fireballs("packages/particles/explosion.png"), bluefireballs("packages/particles/plasma.png");
+static fireballrenderer fireballs("@{tig/rr-core}/particle/explosion.png"), bluefireballs("@{tig/rr-core}/particle/plasma.png");
 

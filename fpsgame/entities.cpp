@@ -38,20 +38,24 @@ namespace entities
 
     const char *entmdlname(int type)
     {
-        static const char *entmdlnames[] =
+        static const char *entmdlnames[31] =
         {
             NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-            "ammo/shells", "ammo/bullets", "ammo/rockets", "ammo/rrounds", "ammo/grenades", "ammo/cartridges",
-            "health", "boost", "armor/green", "armor/yellow", "quad", "teleporter",
+            "@{tig/rr-core}/model/ammo/shells", "@{tig/rr-core}/model/ammo/bullets", "@{tig/rr-core}/model/ammo/rockets", "@{tig/rr-core}/model/ammo/rrounds", "@{tig/rr-core}/model/ammo/grenades", "@{tig/rr-core}/model/ammo/cartridges",
+            "@{tig/rr-core}/model/health", "@{tig/rr-core}/model/boost", "@{tig/rr-core}/model/armor/green", "@{tig/rr-core}/model/armor/yellow", "@{tig/rr-core}/model/quad", "@{tig/rr-core}/model/teleporter",
             NULL, NULL,
-            "carrot",
+            "@{tig/rr-core}/model/carrot",
             NULL, NULL,
-            "checkpoint",
+            "@{tig/rr-core}/model/checkpoint",
             NULL, NULL,
             NULL, NULL,
             NULL
         };
-        return entmdlnames[type];
+
+        if (type >= 0 && type <= 31)
+            return entmdlnames[type];
+        else
+            return NULL;
     }
 
     const char *entmodel(const entity &e)
@@ -163,7 +167,7 @@ namespace entities
         if(ents.inrange(tp) && ents[tp]->type == TELEPORT)
         {
             extentity &e = *ents[tp];
-            if(e.attr4 >= 0) 
+            if(e.attr4 >= 0)
             {
                 int snd = S_TELEPORT, flags = 0;
                 if(e.attr4 > 0) { snd = e.attr4; flags = SND_MAP; }

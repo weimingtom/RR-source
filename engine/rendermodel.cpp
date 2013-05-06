@@ -25,7 +25,7 @@ static model *__loadmodel__##modelclass(const char *filename) \
     return new modelclass(filename); \
 } \
 static int __dummy__##modelclass = addmodeltype((modeltype), __loadmodel__##modelclass);
- 
+
 #include "md2.h"
 #include "md3.h"
 #include "md5.h"
@@ -62,14 +62,14 @@ void mdlellipsecollide(int *collide)
 {
     checkmdl;
     loadingmodel->ellipsecollide = *collide!=0;
-}   
-    
+}
+
 COMMAND(mdlellipsecollide, "i");
 
 void mdlspec(int *percent)
 {
     checkmdl;
-    float spec = 1.0f; 
+    float spec = 1.0f;
     if(*percent>0) spec = *percent/100.0f;
     else if(*percent<0) spec = 0.0f;
     loadingmodel->setspec(spec);
@@ -89,7 +89,7 @@ void mdlambient(int *percent)
 COMMAND(mdlambient, "i");
 
 void mdlalphatest(float *cutoff)
-{   
+{
     checkmdl;
     loadingmodel->setalphatest(max(0.0f, min(1.0f, *cutoff)));
 }
@@ -164,7 +164,7 @@ void mdlscale(int *percent)
     if(*percent>0) scale = *percent/100.0f;
     else if(*percent<0) scale = 0.0f;
     loadingmodel->scale = scale;
-}  
+}
 
 COMMAND(mdlscale, "i");
 
@@ -172,7 +172,7 @@ void mdltrans(float *x, float *y, float *z)
 {
     checkmdl;
     loadingmodel->translate = vec(*x, *y, *z);
-} 
+}
 
 COMMAND(mdltrans, "fff");
 
@@ -205,7 +205,7 @@ void mdlbb(float *rad, float *h, float *eyeheight)
     checkmdl;
     loadingmodel->collideradius = *rad;
     loadingmodel->collideheight = *h;
-    loadingmodel->eyeheight = *eyeheight; 
+    loadingmodel->eyeheight = *eyeheight;
 }
 
 COMMAND(mdlbb, "fff");
@@ -235,7 +235,7 @@ COMMAND(mdlname, "");
     if(!skel->ragdoll) skel->ragdoll = new ragdollskel; \
     ragdollskel *ragdoll = skel->ragdoll; \
     if(ragdoll->loaded) return;
-    
+
 
 void rdvert(float *x, float *y, float *z, float *radius)
 {
@@ -275,7 +275,7 @@ void rdjoint(int *n, int *t, int *v1, int *v2, int *v3)
     j.vert[2] = *v3;
 }
 COMMAND(rdjoint, "iibbb");
-   
+
 void rdlimitdist(int *v1, int *v2, float *mindist, float *maxdist)
 {
     checkragdoll;
@@ -316,10 +316,10 @@ void mmodel(char *name)
     mmi.m = NULL;
 }
 
-void mapmodelreset(int *n) 
-{ 
+void mapmodelreset(int *n)
+{
     if(!(identflags&IDF_OVERRIDDEN) && !game::allowedittoggle()) return;
-    mapmodels.shrink(clamp(*n, 0, mapmodels.length())); 
+    mapmodels.shrink(clamp(*n, 0, mapmodels.length()));
 }
 
 mapmodelinfo *getmminfo(int i) { return mapmodels.inrange(i) ? &mapmodels[i] : 0; }
@@ -398,12 +398,11 @@ model *loadmodel(const char *name, int i, bool msg)
     model *m;
     if(mm) m = *mm;
     else
-    { 
+    {
         if(!name[0] || loadingmodel) return NULL;
         if(msg)
         {
-            defformatstring(filename)("packages/models/%s", name);
-            renderprogress(loadprogress, filename);
+            renderprogress(loadprogress, name);
         }
         loopi(NUMMODELTYPES)
         {
@@ -464,12 +463,12 @@ struct batchedmodel
     dynent *d;
     occludequery *query;
     int next;
-};  
+};
 struct modelbatch
 {
     model *m;
     int flags, batched;
-};  
+};
 static vector<batchedmodel> batchedmodels;
 static vector<modelbatch> batches;
 static vector<modelattach> modelattached;
@@ -584,7 +583,7 @@ static inline int shadowmaskmodel(const vec &center, float radius)
 
 void shadowmaskbatchedmodels(bool dynshadow)
 {
-    loopv(batchedmodels) 
+    loopv(batchedmodels)
     {
         batchedmodel &b = batchedmodels[i];
         if(b.flags&MDL_MAPMODEL || b.transparent < 1) break;
@@ -624,7 +623,7 @@ int batcheddynamicmodelbounds(int mask, vec &bbmin, vec &bbmax)
         if(b.flags&MDL_MAPMODEL) break;
         if(b.visible&mask)
         {
-            bbmin.min(vec(b.center).sub(b.radius)); 
+            bbmin.min(vec(b.center).sub(b.radius));
             bbmax.max(vec(b.center).add(b.radius));
             ++vis;
         }
@@ -639,7 +638,7 @@ int batcheddynamicmodelbounds(int mask, vec &bbmin, vec &bbmax)
             j = bm.next;
             if(bm.visible&mask)
             {
-                bbmin.min(vec(bm.center).sub(bm.radius)); 
+                bbmin.min(vec(bm.center).sub(bm.radius));
                 bbmax.max(vec(bm.center).add(bm.radius));
                 ++vis;
             }
@@ -700,7 +699,7 @@ void rendermapmodelbatches()
 
 float transmdlsx1 = -1, transmdlsy1 = -1, transmdlsx2 = 1, transmdlsy2 = 1;
 uint transmdltiles[LIGHTTILE_MAXH];
-    
+
 void rendermodelbatches()
 {
     transmdlsx1 = transmdlsy1 = 1;
@@ -731,16 +730,16 @@ void rendermodelbatches()
                 }
                 continue;
             }
-            if(!rendered) 
-            { 
-                b.m->startrender(); 
-                rendered = true; 
+            if(!rendered)
+            {
+                b.m->startrender();
+                rendered = true;
                 setaamask(true);
             }
-            if(bm.flags&MDL_CULL_QUERY) 
+            if(bm.flags&MDL_CULL_QUERY)
             {
                 bm.d->query = newquery(bm.d);
-                if(bm.d->query) 
+                if(bm.d->query)
                 {
                     startquery(bm.d->query);
                     renderbatchedmodel(b.m, bm);
@@ -751,10 +750,10 @@ void rendermodelbatches()
             renderbatchedmodel(b.m, bm);
         }
         if(rendered) b.m->endrender();
-        if(b.flags&MDL_CULL_QUERY) 
+        if(b.flags&MDL_CULL_QUERY)
         {
             bool queried = false;
-            for(int j = b.batched; j >= 0;) 
+            for(int j = b.batched; j >= 0;)
             {
                 batchedmodel &bm = batchedmodels[j];
                 j = bm.next;
@@ -859,7 +858,7 @@ void clearbatchedmapmodels()
     {
         len = i+1;
         break;
-    } 
+    }
     if(len >= batchedmodels.length()) return;
     loopv(batches)
     {
@@ -888,7 +887,7 @@ void rendermapmodel(int idx, int anim, const vec &o, float yaw, float pitch, int
     radius *= size;
 
     int visible = 0;
-    if(shadowmapping) 
+    if(shadowmapping)
     {
         visible = shadowmaskmodel(center, radius);
         if(!visible) return;
@@ -917,7 +916,7 @@ void rendermapmodel(int idx, int anim, const vec &o, float yaw, float pitch, int
 
 void rendermodel(const char *mdl, int anim, const vec &o, float yaw, float pitch, int flags, dynent *d, modelattach *a, int basetime, int basetime2, float size, float trans)
 {
-    model *m = loadmodel(mdl); 
+    model *m = loadmodel(mdl);
     if(!m) return;
 
     vec center, bbradius;
@@ -962,7 +961,7 @@ void rendermodel(const char *mdl, int anim, const vec &o, float yaw, float pitch
             }
             return;
         }
-        if(flags&MDL_CULL_QUERY) 
+        if(flags&MDL_CULL_QUERY)
         {
             d->query = newquery(d);
             if(d->query) startquery(d->query);
@@ -1024,7 +1023,7 @@ bool matchanim(const char *name, const char *pattern)
         {
             c = *pattern;
             if(!c || c=='|') break;
-            else if(c=='*') 
+            else if(c=='*')
             {
                 if(!*s || iscubespace(*s)) break;
                 do s++; while(*s && !iscubespace(*s));
@@ -1074,9 +1073,9 @@ void loadskin(const char *dir, const char *altdir, Texture *&skin, Texture *&mas
             } \
         } \
     }
-   
-    defformatstring(mdir)("packages/models/%s", dir);
-    defformatstring(maltdir)("packages/models/%s", altdir);
+
+    defformatstring(mdir)("%s", dir);
+    defformatstring(maltdir)("%s", altdir);
     masks = notexture;
     tryload(skin, NULL, NULL, "skin");
     tryload(masks, NULL, NULL, "masks");
@@ -1102,7 +1101,7 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
         basetime = lastpain;
         if(ragdoll)
         {
-            if(!d->ragdoll || d->ragdoll->millis < basetime) 
+            if(!d->ragdoll || d->ragdoll->millis < basetime)
             {
                 DELETEP(d->ragdoll);
                 anim |= ANIM_RAGDOLL;
@@ -1114,26 +1113,26 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
     else if(d->state==CS_LAGGED)                            anim = ANIM_LAG|ANIM_LOOP;
     else
     {
-        if(lastmillis-lastpain < 300) 
-        { 
+        if(lastmillis-lastpain < 300)
+        {
             anim = ANIM_PAIN;
             basetime = lastpain;
         }
         else if(lastpain < lastaction && (attack < 0 || lastmillis-lastaction < attackdelay))
-        { 
-            anim = attack < 0 ? -attack : attack; 
-            basetime = lastaction; 
+        {
+            anim = attack < 0 ? -attack : attack;
+            basetime = lastaction;
         }
 
         if(d->inwater && d->physstate<=PHYS_FALL) anim |= (((game::allowmove(d) && (d->move || d->strafe)) || d->vel.z+d->falling.z>0 ? ANIM_SWIM : ANIM_SINK)|ANIM_LOOP)<<ANIM_SECONDARY;
         else if(d->timeinair>100) anim |= (ANIM_JUMP|ANIM_END)<<ANIM_SECONDARY;
-        else if(game::allowmove(d) && (d->move || d->strafe)) 
+        else if(game::allowmove(d) && (d->move || d->strafe))
         {
             if(d->move>0) anim |= (ANIM_FORWARD|ANIM_LOOP)<<ANIM_SECONDARY;
             else if(d->strafe) anim |= ((d->strafe>0 ? ANIM_LEFT : ANIM_RIGHT)|ANIM_LOOP)<<ANIM_SECONDARY;
             else if(d->move<0) anim |= (ANIM_BACKWARD|ANIM_LOOP)<<ANIM_SECONDARY;
         }
-        
+
         if((anim&ANIM_INDEX)==ANIM_IDLE && (anim>>ANIM_SECONDARY)&ANIM_INDEX) anim >>= ANIM_SECONDARY;
     }
     if(d->ragdoll && (!ragdoll || (anim&ANIM_INDEX)!=ANIM_DYING)) DELETEP(d->ragdoll);
@@ -1149,7 +1148,7 @@ void renderclient(dynent *d, const char *mdlname, modelattach *attachments, int 
 
 void setbbfrommodel(dynent *d, const char *mdl)
 {
-    model *m = loadmodel(mdl); 
+    model *m = loadmodel(mdl);
     if(!m) return;
     vec center, radius;
     m->collisionbox(center, radius);
