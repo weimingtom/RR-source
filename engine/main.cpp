@@ -162,7 +162,6 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
     gettextres(w, h);
 
     static int lastupdate = -1, lastw = -1, lasth = -1;
-    static float backgroundu = 0, backgroundv = 0;
 #if 0
     static float detailu = 0, detailv = 0;
     static int numdecals = 0;
@@ -174,8 +173,6 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
         lastw = w;
         lasth = h;
 
-        backgroundu = rndscale(1);
-        backgroundv = rndscale(1);
 #if 0
         detailu = rndscale(1);
         detailv = rndscale(1);
@@ -202,7 +199,6 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
 
         gle::colorf(1, 1, 1);
         settexture("@{tig/rr-core}/texture/gui/background.png", 0);
-        //float bu = w*0.67f/256.0f + backgroundu, bv = h*0.67f/256.0f + backgroundv;
         bgquad(0, 0, w, h);
 
 
