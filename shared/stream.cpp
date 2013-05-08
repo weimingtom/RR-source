@@ -389,9 +389,10 @@ namespace fs
     if(Find != INVALID_HANDLE_VALUE)
     {
         do {
-            if(0 == strcmp(ffd.cFileName, ".") || 0 == strcmp(ffd.cFileName, ".."))
+            if(0 == strcmp(FindFileData.cFileName, ".") || 0 == strcmp(FindFileData.cFileName, ".."))
                 continue;
-            files.add(new listDirEntity(dirname, ffd.cFileName, !ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY, ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+                
+            files.add(new listDirEntity(dirname, FindFileData.cFileName, !FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY, FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
         } while(FindNextFile(Find, &FindFileData));
 
         FindClose(Find);
