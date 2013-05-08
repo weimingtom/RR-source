@@ -2,10 +2,30 @@
 #include "lua.h"
 #include "cube.h"
 
+#ifdef CLIENT
+extern "C"
+{
+#include "uv.h"
+#include "luvit_init.h"
+}
+#endif
+
+static int crash(lua_State *L)
+{
+    printf("LUA PANIC: %s\n", lua_tostring(L, 1));
+
+    sleep(1);
+    static char **a;
+    printf("%i", a[2][2]);
+
+    return 0;
+}
+
 void* operator new(size_t size, lua_State* L) {
     void* ptr = lua_newuserdata(L, size);
     return ptr;
 }
+
 namespace lua {
     int bind_returncount = 0;
 #ifdef EXCEPTIONS_ENABLED
@@ -102,7 +122,7 @@ namespace lua {
     }
 
     void Environment::pushTrace() {
-        lua_pushcfunction(L, traceback); // push traceback function
+        lua_pushcfunction(L, traceback);
     }
 
     void Environment::remove(int index) {
@@ -119,11 +139,14 @@ namespace lua {
         pushTrace();
         int error = luaL_loadfile(L, findfile(file, "r")) || lua_pcall(L, 0, 0, 1);
         remove(1);
+
         if (error) {
 
             const char *errmsg = to(-1, wrapType<const char *>());
 
             conoutf(CON_ERROR, "Could not execute file (%s):\n%s", file, errmsg);
+            pop(1);
+
             return false;
         }
 
@@ -139,13 +162,24 @@ namespace lua {
         }
         pop(1);
 
+
         loopv(*regFunctions) {
             (*regFunctions)[i]();
 
         }
 
         delete regFunctions;
-        
+
+
+#ifdef CLIENT
+
+     luvit_init(L, uv_default_loop());
+#endif
+
+#ifdef _DEBUG
+    #pragma message("Using lua atpanic crasher.")
+    lua_atpanic(L, crash);
+#endif
         isInitialized = true;
 
         return true;
@@ -336,6 +370,8 @@ namespace lua {
             const char *errmsg = to(-1, wrapType<const char *>());
 
             conoutf(CON_ERROR, "Could not execute string: %s", errmsg);
+
+            pop(1);
             return false;
         }
         return false;

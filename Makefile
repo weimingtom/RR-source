@@ -52,13 +52,16 @@ OBJDIR = build
 OSX_FRAMEWORKS = /Library/Frameworks
 
 # C++ compiler flags for OF client
-CLIENT_XCXXFLAGS = -std=gnu++0x
+CLIENT_XCXXFLAGS = -std=gnu++0x -DHAVE_LIBUV
 
 # C++ compiler flags for OF server
 SERVER_XCXXFLAGS = -std=gnu++0x
 
 # C compiler flags for ENet
-ENET_XCFLAGS = 
+ENET_XCFLAGS =
+
+# C compiler flags for Luvit
+LUVIT_XCFLAGS =
 
 # C compiler flags for LuaJIT
 LUAJIT_XCFLAGS =
@@ -78,7 +81,11 @@ LUAJIT_HXCFLAGS =
 
 ENET_PATH = libraries/enet
 LUAJIT_PATHB = libraries/luajit
+UV_PATH = libraries/uv
+LUVIT_PATHB = libraries/luvit
+
 LUAJIT_PATH = $(LUAJIT_PATHB)/src
+LUVIT_PATH = $(LUVIT_PATHB)/src
 
 # Variables
 
@@ -89,6 +96,8 @@ TARGET_CC = $(CROSS)$(CC)
 TARGET_CXX = $(CROSS)$(CXX)
 TARGET_AS = $(CROSS)$(AS)
 TARGET_AR = $(CROSS)ar rcus
+TARGET_AR_EXTRACT = $(CROSS)ar x
+TARGET_AR_APPEND = $(CROSS)ar q
 TARGET_STRIP = $(CROSS)strip
 
 ifeq (,$(VERBOSE))
@@ -182,7 +191,9 @@ endif
 # includes
 
 ENET_INC = $(ENET_PATH)/include
+UV_INC = $(UV_PATH)/include
 LUAJIT_INC = $(LUAJIT_PATH)
+LUVIT_INC = $(LUVIT_PATH)
 
 # binary names
 
@@ -220,7 +231,7 @@ endif
 # client/server includes
 
 CS_INC = -Ishared -Iengine -Ifpsgame
-CS_INC += -I$(ENET_INC) -I$(LUAJIT_INC)
+CS_INC += -I$(ENET_INC) -I$(LUAJIT_INC) -I$(UV_INC) -I$(LUVIT_INC)
 
 ifeq ($(TARGET_SYS),Windows)
 	CS_WIN_INC = -Iplatform_windows/include
@@ -250,8 +261,8 @@ CLIENT_CXXFLAGS = $(CXX_FLAGS) $(CXX_DEBUG) $(CXX_WARN) $(CLIENT_XCXXFLAGS) \
 	-fsigned-char -fno-exceptions -fno-rtti -DCLIENT \
 	-DBINARY_ARCH=$(TARGET_BINARCH) -DBINARY_OS=$(TARGET_BINOS)
 
-CLIENT_LDFLAGS = -L$(OBJDIR)/$(ENET_PATH) -L$(OBJDIR)/$(LUAJIT_PATH) \
-	-lenet -lluajit
+CLIENT_LDFLAGS = -L$(OBJDIR)/$(ENET_PATH) -L$(OBJDIR)/$(LUAJIT_PATH) -L$(UV_PATH) -L$(OBJDIR)/$(LUVIT_PATH) \
+	-lenet -lluajit -luv -lluvit
 
 ifeq ($(TARGET_SYS),Windows)
 	CLIENT_CXXFLAGS += -DWIN32 -DWINDOWS -DNO_STDIO_REDIRECT
@@ -385,6 +396,50 @@ SERVER_OBJ = \
 	fpsgame/server.o
 
 SERVER_OBJB = $(addprefix $(OBJDIR)/server/, $(SERVER_OBJ))
+
+
+########
+# LUVIT #
+########
+
+LUVIT_CFLAGS = $(CC_FLAGS) $(CC_DEBUG) $(CC_WARN) $(LUVIT_XCFLAGS) \
+	-I$(LUVIT_INC) -I$(LUAJIT_INC) -I$(UV_INC)
+
+LUVIT_LDFLAGS = -L$(UV_PATH) -L$(OBJDIR)/$(LUVIT_PATH) \
+	-luv -lluvit
+
+LUVIT_OBJ = \
+	$(LUVIT_PATH)/lconstants.o \
+	$(LUVIT_PATH)/lenv.o \
+	$(LUVIT_PATH)/los.o \
+	$(LUVIT_PATH)/luv.o \
+	$(LUVIT_PATH)/luv_debug.o \
+	$(LUVIT_PATH)/luv_fs.o \
+	$(LUVIT_PATH)/luv_fs_watcher.o \
+	$(LUVIT_PATH)/luv_handle.o \
+	$(LUVIT_PATH)/luvit_exports.o \
+	$(LUVIT_PATH)/luvit_init.o \
+	$(LUVIT_PATH)/luv_misc.o \
+	$(LUVIT_PATH)/luv_pipe.o \
+	$(LUVIT_PATH)/luv_process.o \
+	$(LUVIT_PATH)/luv_stream.o \
+	$(LUVIT_PATH)/luv_tcp.o \
+	$(LUVIT_PATH)/luv_timer.o \
+	$(LUVIT_PATH)/luv_tty.o \
+	$(LUVIT_PATH)/luv_udp.o \
+	$(LUVIT_PATH)/luv_zlib.o \
+	$(LUVIT_PATH)/luv_dns.o \
+	$(LUVIT_PATH)/utils.o
+
+	#$(LUVIT_PATH)/lyajl.o
+	#$(LUVIT_PATH)/lhttp_parser.o
+	#$(LUVIT_PATH)/luv_tls.o \
+	#$(LUVIT_PATH)/luv_tls_conn.o \
+
+
+LUVIT_OBJB = $(addprefix $(OBJDIR)/, $(LUVIT_OBJ))
+
+LUVIT_LIB = $(LUVIT_PATH)/libluvit.a
 
 ########
 # ENet #
@@ -673,6 +728,19 @@ $(LUAJIT_HOST_OBJB): %.o: $(LUAJIT_HOST_SRC) $$(@D)/.stamp
 	$(E) $(PURPLE)[hostcc ]$(RRED) $(subst $(OBJDIR)/,,$@)$(ENDCOL)
 	$(Q) $(HOST_CC) $(CFLAGS) -c -o $@ $(subst .o,.c,$(subst $(OBJDIR)/,,$@))
 
+# Libuv
+libuv:
+	$(Q) $(MAKE) -C libraries/uv
+
+$(LUVIT_OBJB): CFLAGS = $(LUVIT_CFLAGS)
+luvit: libuv $(LUVIT_OBJB) build/libraries/uv/.stamp
+	$(E) $(CYAN)[ar     ]$(RRED) $(LUVIT_LIB)$(ENDCOL)
+	$(Q) $(TARGET_AR) $(OBJDIR)/$(LUVIT_LIB) $(LUVIT_OBJB)
+	$(Q) cp libraries/uv/libuv.a build/libraries/uv
+	$(Q) cd build/libraries/uv && $(TARGET_AR_EXTRACT) ../../../libraries/uv/libuv.a
+	$(Q) $(TARGET_AR_APPEND) $(OBJDIR)/$(LUVIT_LIB) build/libraries/uv/*.o
+
+
 # ENet
 
 $(ENET_OBJB): CFLAGS = $(ENET_CFLAGS)
@@ -754,7 +822,7 @@ $(OBJDIR)/client/%.o: %.cpp $$(@D)/.stamp
 	$(Q) $(TARGET_CXX) $(CLIENT_CXXFLAGS) -c -o $@ \
 	$(subst .o,.cpp,$(subst $(OBJDIR)/client/,,$@))
 
-client: enet luajit $(CLIENT_OBJB)
+client: enet luajit luvit $(CLIENT_OBJB)
 	$(E) $(GREEN)[ld     ]$(RGREEN) $(CLIENT_BIN)$(ENDCOL)
 	$(Q) $(TARGET_CXX) $(CLIENT_CXXFLAGS) -o $(CLIENT_BIN) \
 	$(CLIENT_OBJB) $(CLIENT_LDFLAGS)
@@ -790,6 +858,7 @@ clean:
 	$(E) $(CYAN)[clean  ]$(RRED) $(OBJDIR) $(RGREEN)$(CLIENT_BIN) \
 	$(RCYAN)$(SERVER_BIN)$(ENDCOL)
 	$(Q) -rm -rf $(OBJDIR) $(CLIENT_BIN) $(SERVER_BIN)
+	$(Q) make -Clibraries/uv clean
 else
 clean:
 	$(E) [clean  ] $(OBJDIR) $(CLIENT_BIN) $(SERVER_BIN)
@@ -917,6 +986,7 @@ $(OBJDIR)/client/engine/pvs.o: engine/lua.h engine/engine.h shared/cube.h shared
 $(OBJDIR)/client/shared/stream.o: engine/lua.h shared/cube.h shared/tools.h shared/geom.h shared/ents.h shared/command.h shared/glexts.h shared/glemu.h shared/iengine.h shared/igame.h
 $(OBJDIR)/client/shared/zip.o: engine/lua.h shared/cube.h shared/tools.h shared/geom.h shared/ents.h shared/command.h shared/glexts.h shared/glemu.h shared/iengine.h shared/igame.h
 $(OBJDIR)/client/engine/movie.o: engine/lua.h engine/engine.h shared/cube.h shared/tools.h shared/geom.h shared/ents.h shared/command.h shared/glexts.h shared/glemu.h shared/iengine.h shared/igame.h engine/world.h engine/octa.h engine/light.h engine/bih.h engine/texture.h engine/model.h
+#$(OBJDIR)/client/engine/lua.o: engine/engine.h shared/cube.h shared/tools.h engine/lua/handle.h engline/lua/timer.h
 
 $(OBJDIR)/server/shared/tools.o: engine/lua.h shared/cube.h shared/tools.h shared/geom.h shared/ents.h shared/command.h shared/glexts.h shared/glemu.h shared/iengine.h shared/igame.h
 $(OBJDIR)/server/engine/command.o: engine/lua.h engine/engine.h shared/cube.h shared/tools.h shared/geom.h shared/ents.h shared/command.h shared/glexts.h shared/glemu.h shared/iengine.h shared/igame.h engine/world.h engine/octa.h engine/light.h engine/bih.h engine/texture.h engine/model.h
@@ -937,6 +1007,8 @@ $(OBJDIR)/server/engine/octaedit.o: engine/lua.h engine/engine.h shared/cube.h s
 $(OBJDIR)/server/engine/octarender.o: engine/lua.h engine/engine.h shared/cube.h shared/tools.h shared/geom.h shared/ents.h shared/command.h shared/glexts.h shared/glemu.h shared/iengine.h shared/igame.h engine/world.h engine/octa.h engine/light.h engine/bih.h engine/texture.h engine/model.h
 $(OBJDIR)/server/shared/stream.o: engine/lua.h shared/cube.h shared/tools.h shared/geom.h shared/ents.h shared/command.h shared/glexts.h shared/glemu.h shared/iengine.h shared/igame.h
 $(OBJDIR)/server/shared/zip.o: engine/lua.h shared/cube.h shared/tools.h shared/geom.h shared/ents.h shared/command.h shared/glexts.h shared/glemu.h shared/iengine.h shared/igame.h
+
+#$(OBJDIR)/libraries/luvit/lconstants.o:
 
 $(OBJDIR)/libraries/enet/callbacks.o: libraries/enet/include/enet/enet.h libraries/enet/include/enet/unix.h libraries/enet/include/enet/types.h libraries/enet/include/enet/protocol.h libraries/enet/include/enet/list.h libraries/enet/include/enet/callbacks.h
 $(OBJDIR)/libraries/enet/host.o: libraries/enet/include/enet/enet.h libraries/enet/include/enet/unix.h libraries/enet/include/enet/types.h libraries/enet/include/enet/protocol.h libraries/enet/include/enet/list.h libraries/enet/include/enet/callbacks.h

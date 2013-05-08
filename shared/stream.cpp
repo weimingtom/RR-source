@@ -371,7 +371,14 @@ namespace fs
 
         listDirEntity(const char *parent, const char *path_, bool isDirectory_, bool isFile_) : isFile(isFile_), isDirectory(isDirectory_)
         {
-            formatstring(path)("%s/%s", parent, path_);
+            if (parent[strlen(parent)-1] == '/')
+            {
+                formatstring(path)("%s%s", parent, path_);
+            }
+            else
+            {
+                formatstring(path)("%s/%s", parent, path_);
+            }
         }
     };
     bool listDir(const char *dirname, vector<listDirEntity *> &files)
@@ -425,7 +432,7 @@ namespace fs
         const char *path;
     };
 
-    vector<Bundle *> bundles;
+    static vector<Bundle *> bundles;
     vector<LookedUp *> lookedUp;
 
     /*
@@ -525,7 +532,7 @@ namespace fs
     void addBundle(const char *name, const char *path)
     {
         printf("Registered bundle \"%s\": %s\n", name, path);
-        bundles.add(new Bundle(name, path));
+        bundles.add(new Bundle(newstring(name), newstring(path)));
     }
 
     //TODO: allow extending packages and make this less required
@@ -601,8 +608,9 @@ namespace fs
     }
 }
 
-    LUACOMMAND(addBundle, fs::addBundle);
-    LUACOMMAND(overridePath, fs::overridePath);
+LUACOMMAND(lookUpFile, fs::lookUp);
+LUACOMMAND(addBundle, fs::addBundle);
+LUACOMMAND(overridePath, fs::overridePath);
 
 const char *findfile(const char *filename, const char *mode)
 {

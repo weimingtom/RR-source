@@ -3,6 +3,13 @@
 #include "engine.h"
 #include "joystick.h"
 
+#ifdef HAVE_LIBUV
+#include "uv.h"
+//#include "lua/luv.h"
+
+#pragma message("\nWarning: Libuv is experimental and may not work as expected.")
+#endif
+
 extern void cleargamma();
 
 void cleanup()
@@ -1165,6 +1172,8 @@ int main(int argc, char **argv)
     inbetweenframes = true;
     renderbackground("initializing...");
 
+    lua::getEnvironment().run("@{tig/engine-base}/script/init.lua");
+
     logoutf("init: world");
     camera1 = player = game::iterdynents(0);
     emptymap(0, true, NULL, false);
@@ -1229,6 +1238,7 @@ int main(int argc, char **argv)
     inputgrab(grabinput = true);
     ignoremousemotion();
 
+
     for(;;)
     {
         static int frames = 0;
@@ -1262,6 +1272,11 @@ int main(int argc, char **argv)
         recomputecamera();
         updateparticles();
         updatesounds();
+
+#ifdef HAVE_LIBUV
+
+        uv_run(uv_default_loop(), UV_RUN_NOWAIT);
+#endif
 
         if(minimized) continue;
 
