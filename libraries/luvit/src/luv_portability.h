@@ -60,10 +60,10 @@
 #ifndef S_ISCHR
 # define S_ISCHR(x)  0
 #endif
-#ifdef S_ISBLK
+#ifndef S_ISBLK
 # define S_ISBLK(x)  0
 #endif
-#ifdef S_ISLNK
+#ifndef S_ISLNK
 # define S_ISLNK(x)  0
 #endif
 #ifndef S_ISSOCK

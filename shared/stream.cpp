@@ -314,7 +314,7 @@ size_t fixpackagedir(char *dir)
     size_t len = strlen(dir);
     if(len > 0 && dir[len-1] != PATHDIV)
     {
-        dir[len] = PATHDIV;
+        //dir[len] = PATHDIV;
         dir[len+1] = '\0';
     }
     return len;
@@ -347,6 +347,7 @@ const char *sethomedir(const char *dir)
     copystring(pdir, dir);
     if(!subhomedir(pdir, sizeof(pdir), dir) || !fixpackagedir(pdir)) return NULL;
     copystring(homedir, pdir);
+	printf("Set homedir: %s\n", homedir);
     return homedir;
 }
 
@@ -356,7 +357,9 @@ const char *addpackagedir(const char *dir)
     copystring(pdir, dir);
     if(!subhomedir(pdir, sizeof(pdir), dir) || !fixpackagedir(pdir)) return NULL;
 
-    return packagedirs.add(newstring(pdir));
+	char *newdir = newstring(pdir);
+	printf("Added packagedir: %s\n", newdir);
+    return packagedirs.add(newdir);
 }
 
 
@@ -381,18 +384,25 @@ namespace fs
             }
         }
     };
-    bool listDir(const char *dirname, vector<listDirEntity *> &files)
+    bool listDir(const char *dir, vector<listDirEntity *> &files)
 {
+    string dirname;
+    copystring(dirname, dir);
+    path(dirname);
+
     #ifdef WIN32
+
+    defformatstring(listname)("%s\\*.*", dir);
     WIN32_FIND_DATA FindFileData;
-    HANDLE Find = FindFirstFile(dirname, &FindFileData);
+    HANDLE Find = FindFirstFile(listname, &FindFileData);
     if(Find != INVALID_HANDLE_VALUE)
     {
         do {
+		printf("%s => %s (%i)\n", dirname, FindFileData.cFileName, FindFileData.dwFileAttributes);
             if(0 == strcmp(FindFileData.cFileName, ".") || 0 == strcmp(FindFileData.cFileName, ".."))
                 continue;
                 
-            files.add(new listDirEntity(dirname, FindFileData.cFileName, !FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY, FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+            files.add(new listDirEntity(dirname, FindFileData.cFileName, FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY, FindFileData.dwFileAttributes & FILE_ATTRIBUTE_NORMAL));
         } while(FindNextFile(Find, &FindFileData));
 
         FindClose(Find);
@@ -413,7 +423,11 @@ namespace fs
         return true;
     }
     #endif
-    else return false;
+    else
+   {	
+	printf("INVALID HANDLE: %s\n", dirname);
+       return false;
+   }
 }
 
 
@@ -517,12 +531,15 @@ namespace fs
                 formatstring(newPath)("%s%s", bundles[i]->path, path+j);
 
                 LookedUp *lookup = new LookedUp;
-                lookup->path = newstring(newPath);
+		char *_newPath = newstring(newPath);
+		::path(_newPath);
+                lookup->path = _newPath;
+
                 lookup->name = newstring(path);
                 lookedUp.add(lookup);
 
                 //printf("Created new path: %s from %s\n", newPath, path);
-                return newPath;
+                return lookup->path;
             }
         }
 
@@ -533,7 +550,10 @@ namespace fs
     void addBundle(const char *name, const char *path)
     {
         printf("Registered bundle \"%s\": %s\n", name, path);
-        bundles.add(new Bundle(newstring(name), newstring(path)));
+        bundles.add(new Bundle(newstring(name), ::path(newstring(path))));
+
+	//Windows workaround, please fix by removing path() before lookup
+	bundles.add(new Bundle(::path(newstring(name)), ::path(newstring(path))));
     }
 
     //TODO: allow extending packages and make this less required
@@ -556,7 +576,7 @@ namespace fs
             vector<listDirEntity *> vendors;
             if(!listDir(packagedirs[i], vendors))
             {
-                printf("ERROR: could not read any bundles! does the bundle directory exist?");
+                printf("ERROR: could not read any bundles! does the bundle directory exist?\n");
                 return;
             }
 
@@ -600,6 +620,7 @@ namespace fs
         if(!homedir[0])
         {
             strcpy(homedir, "packages/user/unkown");
+	    path(homedir);
         }
 
         bundles.add(new Bundle("@User", homedir));
