@@ -698,15 +698,9 @@ default: all
 
 .SECONDEXPANSION:
 
-ifneq ($(HOST_SYS),Windows)
 %/.stamp:
 	$(Q) mkdir -p $(dir $@)
 	$(Q) touch $@
-else
-%/.stamp:
-	$(Q) -md $(subst /,\,$(dir $@))
-	$(Q) -type nul > $(subst /,\,$@)
-endif
 
 .PRECIOUS: %/.stamp
 
