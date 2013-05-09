@@ -2,3 +2,5 @@
 client_*
 server_*
 /build
+/platform_windows
+/Library/Frameworks
