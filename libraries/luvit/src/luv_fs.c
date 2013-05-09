@@ -47,11 +47,23 @@ void luv_push_stats_table(lua_State* L, uv_stat_t* s) {
   lua_setfield(L, -2, "rdev");
   lua_pushinteger(L, s->st_size);
   lua_setfield(L, -2, "size");
+#ifndef _WIN32
   lua_pushinteger(L, s->st_atime);
+#else
+  lua_pushinteger(L, -1);
+#endif
   lua_setfield(L, -2, "atime");
+#ifndef _WIN32
   lua_pushinteger(L, s->st_mtime);
+#else
+  lua_pushinteger(L, -1);
+#endif
   lua_setfield(L, -2, "mtime");
+#ifndef _WIN32
   lua_pushinteger(L, s->st_ctime);
+#else
+  lua_pushinteger(L, -1);
+#endif
   lua_setfield(L, -2, "ctime");
   lua_pushboolean(L, S_ISREG(s->st_mode));
   lua_setfield(L, -2, "is_file");

@@ -236,9 +236,9 @@ CS_INC += -I$(ENET_INC) -I$(LUAJIT_INC) -I$(UV_INC) -I$(LUVIT_INC)
 ifeq ($(TARGET_SYS),Windows)
 	CS_WIN_INC = -Iplatform_windows/include
 	ifeq ($(TARGET_ARCH),x64)
-		CS_WIN_LIB = -L../bin_win64
+		CS_WIN_LIB = -L../bin_win64  -lws2_32 -lpsapi -liphlpapi -lwinmm
 	else
-		CS_WIN_LIB = -L../bin_win32
+		CS_WIN_LIB = -L../bin_win32  -lws2_32 -lpsapi -liphlpapi -lwinmm
 	endif
 endif
 
@@ -407,6 +407,11 @@ LUVIT_CFLAGS = $(CC_FLAGS) $(CC_DEBUG) $(CC_WARN) $(LUVIT_XCFLAGS) \
 
 LUVIT_LDFLAGS = -L$(UV_PATH) -L$(OBJDIR)/$(LUVIT_PATH) \
 	-luv -lluvit
+
+ifeq ($(TARGET_SYS),Windows)
+    LUVIT_CFLAGS += $(CS_WIN_INC)
+    LUVIT_LDFLAGS += -lzlib1 $(CS_WIN_LIB)
+endif
 
 LUVIT_OBJ = \
 	$(LUVIT_PATH)/lconstants.o \
