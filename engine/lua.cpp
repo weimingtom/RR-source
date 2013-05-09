@@ -10,6 +10,7 @@ extern "C"
 }
 #endif
 
+#ifdef _DEBUG
 static int crash(lua_State *L)
 {
     printf("LUA PANIC: %s\n", lua_tostring(L, 1));
@@ -20,6 +21,7 @@ static int crash(lua_State *L)
 
     return 0;
 }
+#endif
 
 void* operator new(size_t size, lua_State* L) {
     void* ptr = lua_newuserdata(L, size);
