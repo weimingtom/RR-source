@@ -34,5 +34,11 @@ before_install:
 
 script:
   - make all
+  - (mkdir build && cd build && cmake .. && make)
+
 notifications:
-  irc: "irc.gamesurge.net#ReveladeRevolution"
+  irc:
+    channels:
+      - "irc.gamesurge.net#ReveladeRevolution"
+    on_success: always
+    on_failure: always
