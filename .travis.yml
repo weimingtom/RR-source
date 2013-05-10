@@ -37,8 +37,4 @@ script:
   - (mkdir cmakebuild && cd cmakebuild && cmake .. && make)
 
 notifications:
-  irc:
-    channels:
-      - "irc.gamesurge.net#ReveladeRevolution"
-    on_success: always
-    on_failure: always
+	webhooks: http://n.tkte.ch/h/421/D6ZQTEJ8lFTwTw9_0vSDL-dX
