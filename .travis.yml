@@ -37,7 +37,7 @@ before_install:
 
 script:
   - make all
-  - (mkdir cmakebuild && cd cmakebuild && cmake .. && make)
+#  - (mkdir cmakebuild && cd cmakebuild && cmake .. && make)
 
 notifications:
   webhooks: http://n.tkte.ch/h/421/D6ZQTEJ8lFTwTw9_0vSDL-dX
