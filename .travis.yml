@@ -34,7 +34,7 @@ before_install:
 
 script:
   - make all
-  - (mkdir build && cd build && cmake .. && make)
+  - (mkdir cmakebuild && cd cmakebuild && cmake .. && make)
 
 notifications:
   irc:
