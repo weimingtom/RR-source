@@ -3524,7 +3524,7 @@ namespace server
 
     int laninfoport() { return RR_LANINFO_PORT; }
     int serverport() { return RR_SERVER_PORT; }
-    const char *defaultmaster() { return "tigwiki.com"; }
+    const char *defaultmaster() { return "playrr.theintercooler.com"; }
     int masterport() { return RR_MASTER_PORT; }
     int numchannels() { return 3; }
 
