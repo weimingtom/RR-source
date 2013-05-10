@@ -40,4 +40,4 @@ script:
   - (mkdir cmakebuild && cd cmakebuild && cmake .. && make)
 
 notifications:
-	webhooks: http://n.tkte.ch/h/421/D6ZQTEJ8lFTwTw9_0vSDL-dX
+  webhooks: http://n.tkte.ch/h/421/D6ZQTEJ8lFTwTw9_0vSDL-dX
