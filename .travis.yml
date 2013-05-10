@@ -2,7 +2,7 @@ language: cpp
 before_install:
   # Install dependencies
   - sudo apt-get update
-  - sudo apt-get -y install build-essential zlib1g-dev curl
+  - sudo apt-get -y install build-essential zlib1g-dev curl libluajit-5.1-dev
   
   # Create the directory where to install the dependencies
   - mkdir dummyprefix
