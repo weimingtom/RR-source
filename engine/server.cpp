@@ -1040,6 +1040,7 @@ bool setuplistenserver(bool dedicated)
     return true;
 }
 
+
 void initserver(bool listen, bool dedicated)
 {
     if(dedicated)

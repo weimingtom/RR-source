@@ -74,7 +74,7 @@
 #include "iengine.h"
 #include "igame.h"
 
-#include "lua.h"
+#include "../engine/lua.h"
 
 #endif
 
