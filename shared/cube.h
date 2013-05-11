@@ -63,6 +63,7 @@
 #endif
 
 #include "tools.h"
+#include "log.h"
 #include "geom.h"
 #include "ents.h"
 #include "command.h"

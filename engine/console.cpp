@@ -30,7 +30,18 @@ void conoutfv(int type, const char *fmt, va_list args)
     static char buf[CONSTRLEN];
     vformatstring(buf, fmt, args, sizeof(buf));
     conline(type, buf);
-    logoutf("%s", buf);
+
+    int lvl = logger::LogLevel::TRACE;
+    if(type == CON_INFO || type == CON_INIT || type == CON_ECHO)
+        lvl = logger::LogLevel::INFO;
+    else if(type == CON_WARN)
+        lvl = logger::LogLevel::WARNING;
+    else if(type == CON_ERROR)
+        lvl = logger::LogLevel::ERROR;
+    else if(type == CON_DEBUG)
+        lvl = logger::LogLevel::DEBUG;
+
+    DO_LOG(lvl, "%s", buf);
 }
 
 void conoutf(const char *fmt, ...)

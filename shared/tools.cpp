@@ -8,9 +8,9 @@
 
 ////////////////////////// rnd numbers ////////////////////////////////////////
 
-#define N (624)             
-#define M (397)                
-#define K (0x9908B0DFU)       
+#define N (624)
+#define M (397)
+#define K (0x9908B0DFU)
 
 static uint state[N];
 static int next = N;
@@ -159,5 +159,84 @@ void filtertext(char *dst, const char *src, bool whitespace, int len)
         }
     }
     *dst = '\0';
+}
+
+
+#ifndef LOGSTRLEN
+#define LOGSTRLEN 512
+#endif
+
+namespace logger
+{
+    static FILE *logfile = NULL;
+    int loglevel = LogLevel::TRACE;
+    bool toStdout = true;
+
+    static inline bool needLog(int lvl)
+    {
+        return lvl <= loglevel;
+    }
+
+    static inline void writeLog(const char *msg)
+    {
+        if(toStdout)
+        {
+            printf("%s\n", msg);
+        }
+
+        if(logfile)
+        {
+            static uchar ubuf[512];
+            int len = strlen(msg), carry = 0;
+            while(carry < len)
+            {
+                int numu = encodeutf8(ubuf, sizeof(ubuf)-1, &((const uchar *)msg)[carry], len - carry, &carry);
+                if(carry >= len) ubuf[numu++] = '\n';
+                fwrite(ubuf, 1, numu, logfile);
+            }
+        }
+    }
+
+    static inline void writeLog(const char *format, va_list args)
+    {
+        static char buf[LOGSTRLEN];
+        vformatstring(buf, format, args, sizeof(buf));
+        writeLog(buf);
+    }
+
+
+    void log(int lvl, const char *message, ...)
+    {
+        if(needLog(lvl))
+        {
+            va_list args;
+            va_start(args, message);
+            writeLog(message, args);
+            va_end(args);
+        }
+    }
+
+    void closeLog()
+    {
+        if(logfile)
+        {
+            fclose(logfile);
+            logfile = NULL;
+        }
+    }
+
+    void setLogFile(const char *fileName)
+    {
+        closeLog();
+        if(fileName && fileName[0])
+        {
+            fileName = findfile(fileName, "w");
+            if(fileName) logfile = fopen(fileName, "w");
+        }
+
+        if(logfile) setvbuf(logfile, NULL, _IOLBF, BUFSIZ);
+    }
+
+
 }
 

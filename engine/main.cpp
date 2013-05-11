@@ -25,7 +25,7 @@ void cleanup()
     extern void clear_console(); clear_console();
     extern void clear_mdls();    clear_mdls();
     extern void clear_sound();   clear_sound();
-    closelogfile();
+    logger::closeLog();
     SDL_Quit();
 }
 
@@ -50,7 +50,7 @@ void fatal(const char *s, ...)    // failure exit
     if(errors <= 2) // print up to one extra recursive error
     {
         defvformatstring(msg,s,s);
-        logoutf("%s", msg);
+        LOG_FATAL("%s", msg);
 
         if(errors <= 1) // avoid recursion
         {
@@ -1057,9 +1057,7 @@ int main(int argc, char **argv)
     #endif
 
 
-
-
-    setlogfile(NULL);
+    logger::setLogFile(NULL);
 
     int dedicated = 0;
     char *load = NULL, *initscript = NULL;
@@ -1072,7 +1070,7 @@ int main(int argc, char **argv)
             case 'q':
 			{
 				const char *dir = sethomedir(&argv[i][2]);
-				if(dir) logoutf("Using home directory: %s", dir);
+				if(dir) LOG_INFO("Using home directory: %s", dir);
 				break;
 			}
 
@@ -1080,13 +1078,13 @@ int main(int argc, char **argv)
             {
                 //Adds a directory where packages may be located
                 const char *dir = addpackagedir(&argv[i][2]);
-                if(dir) logoutf("Adding package directory: %s", dir);
+                if(dir) LOG_INFO("Adding package directory: %s", dir);
                 break;
             }
         }
     }
 
-    logoutf("Init: lua");
+    LOG_INFO("Init: lua");
     lua::getEnvironment().init();
 
     fs::init();
@@ -1098,7 +1096,7 @@ int main(int argc, char **argv)
             case 'q': /* parsed first */ break;
             case 'r': /* compat, ignore */ break;
             case 'k': /* parsed first */ break;
-            case 'g': logoutf("Setting log file: %s", &argv[i][2]); setlogfile(&argv[i][2]); break;
+            case 'g': LOG_INFO("Setting log file: %s", &argv[i][2]); logger::setLogFile(&argv[i][2]); break;
             case 'd': dedicated = atoi(&argv[i][2]); if(dedicated<=0) dedicated = 2; break;
             case 'w': scr_w = clamp(atoi(&argv[i][2]), SCR_MINW, SCR_MAXW); if(!findarg(argc, argv, "-h")) scr_h = -1; break;
             case 'h': scr_h = clamp(atoi(&argv[i][2]), SCR_MINH, SCR_MAXH); if(!findarg(argc, argv, "-w")) scr_w = -1; break;
@@ -1121,7 +1119,7 @@ int main(int argc, char **argv)
 
     if(dedicated <= 1)
     {
-        logoutf("init: sdl");
+        LOG_INFO("init: sdl");
 
         int par = 0;
         #ifdef _DEBUG
@@ -1131,21 +1129,21 @@ int main(int argc, char **argv)
         if(SDL_Init(SDL_INIT_TIMER|SDL_INIT_VIDEO|SDL_INIT_AUDIO|par)<0) fatal("Unable to initialize SDL: %s", SDL_GetError());
     }
 
-    logoutf("init: net");
+    LOG_INFO("init: net");
     if(enet_initialize()<0) fatal("Unable to initialise network module");
     atexit(enet_deinitialize);
     enet_time_set(0);
 
-    logoutf("init: game");
+    LOG_INFO("init: game");
     game::parseoptions(gameargs);
     initserver(dedicated>0, dedicated>1);  // never returns if dedicated
     ASSERT(dedicated <= 1);
     game::initclient();
 
-    logoutf("init: joystick");
+    LOG_INFO("init: joystick");
     joystick::init();
 
-    logoutf("init: video");
+    LOG_INFO("init: video");
     SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "0");
     #if !defined(WIN32) && !defined(__APPLE__)
     SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
@@ -1154,13 +1152,13 @@ int main(int argc, char **argv)
     SDL_ShowCursor(SDL_FALSE);
     SDL_StopTextInput(); // workaround for spurious text-input events getting sent on first text input toggle?
 
-    logoutf("init: gl");
+    LOG_INFO("init: gl");
     gl_checkextensions();
     gl_init(scr_w, scr_h);
     notexture = textureload("@{tig/engine-base}/texture/notexture.png");
     if(!notexture) fatal("could not find core textures");
 
-    logoutf("init: console");
+    LOG_INFO("init: console");
     if(!execfile("@{tig/engine-base}/cubescript/stdlib.cfg")) fatal("cannot find data files (you are running from the wrong folder, try .bat file in the main folder)");   // this is the first file we load.
 	if(!execfile("@{tig/rr-core}/font/init.cfg")) fatal("cannot find font definitions");
     if(!setfont("default")) fatal("no default font specified");
@@ -1170,14 +1168,14 @@ int main(int argc, char **argv)
 
     lua::getEnvironment().run("@{tig/engine-base}/script/init.lua");
 
-    logoutf("init: world");
+    LOG_INFO("init: world");
     camera1 = player = game::iterdynents(0);
     emptymap(0, true, NULL, false);
 
-    logoutf("init: sound");
+    LOG_INFO("init: sound");
     initsound();
 
-    logoutf("init: cfg");
+    LOG_INFO("init: cfg");
 	execfile("@{tig/engine-base}/cubescript/keymap.cfg", true);
 	execfile("@{tig/engine-base}/cubescript/stdedit.cfg", true);
 	execfile("@{tig/engine-base}/cubescript/menus.cfg", true);
@@ -1207,7 +1205,7 @@ int main(int argc, char **argv)
     game::loadconfigs();
     initing = NOT_INITING;
 
-    logoutf("init: shaders");
+    LOG_INFO("init: shaders");
     initgbuffer();
     loadshaders();
     particleinit();
@@ -1215,13 +1213,13 @@ int main(int argc, char **argv)
 
     identflags |= IDF_PERSIST;
 
-    logoutf("init: mainloop");
+    LOG_INFO("init: mainloop");
 
     if(execfile("@{@User}/config/rr/once.cfg", false)) remove(findfile("@{@User}/config/rr/once.cfg", "rb"));
 
     if(load)
     {
-        logoutf("init: localconnect");
+        LOG_INFO("init: localconnect");
         //localconnect();
         game::changemap(load);
     }

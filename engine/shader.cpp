@@ -74,13 +74,10 @@ static void showglslinfo(GLenum type, GLuint obj, const char *name, const char *
     if(length > 1)
     {
         conoutf(CON_ERROR, "GLSL ERROR (%s:%s)", type == GL_VERTEX_SHADER ? "VS" : (type == GL_FRAGMENT_SHADER ? "FS" : "PROG"), name);
-        FILE *l = getlogfile();
-        if(l)
-        {
             GLchar *log = new GLchar[length];
             if(type) glGetShaderInfoLog_(obj, length, &length, log);
             else glGetProgramInfoLog_(obj, length, &length, log);
-            fprintf(l, "%s\n", log);
+            LOG_INFO("%s\n", log);
             int numlines = 0;
             loopi(numparts)
             {
@@ -90,14 +87,27 @@ static void showglslinfo(GLenum type, GLuint obj, const char *name, const char *
                     if(!*part) break;
                     const char *next = strchr(part, '\n');
                     numlines++;
-                    fprintf(l, "%d: ", numlines);
-                    fwrite(part, 1, next ? next - part + 1 : strlen(part), l);
-                    if(!next) { fputc('\n', l); break; }
+
+                    defformatstring(msg)("%d: ", numlines);
+                    strncat(msg, part, next ? next - part + 1 : strlen(part));
+
+                    if(!next)
+                    {
+                        strcat(msg, "\n");
+                    }
+
+                    LOG_INFO(msg);
+
+                    if(!next)
+                    {
+                        break;
+                    }
+
                     part = next + 1;
                 }
             }
             delete[] log;
-        }
+
     }
 }
 
@@ -1115,15 +1125,15 @@ ICOMMAND(forceshader, "s", (const char *name), useshaderbyname(name));
 ICOMMAND(dumpshader, "sbb", (const char *name, int *col, int *row),
 {
     Shader *s = lookupshaderbyname(name);
-    FILE *l = getlogfile();
-    if(!s || !l) return;
+
+    if(!s) return;
     if(*col >= 0)
     {
         if(*row >= MAXVARIANTROWS || !s->variants[max(*row, 0)].inrange(*col)) return;
         s = s->variants[max(*row, 0)][*col];
     }
-    if(s->vsstr) fprintf(l, "%s:%s\n%s\n", s->name, "VS", s->vsstr);
-    if(s->psstr) fprintf(l, "%s:%s\n%s\n", s->name, "FS", s->psstr);
+    if(s->vsstr) LOG_INFO("%s:%s\n%s\n", s->name, "VS", s->vsstr);
+    if(s->psstr) LOG_INFO("%s:%s\n%s\n", s->name, "FS", s->psstr);
 });
 
 void isshaderdefined(char *name)

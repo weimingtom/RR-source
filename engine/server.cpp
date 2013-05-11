@@ -3,67 +3,7 @@
 
 #include "engine.h"
 
-#define LOGSTRLEN 512
-
-static FILE *logfile = NULL;
-
-void closelogfile()
-{
-    if(logfile)
-    {
-        fclose(logfile);
-        logfile = NULL;
-    }
-}
-
-FILE *getlogfile()
-{
-#ifdef WIN32
-    return logfile;
-#else
-    return logfile ? logfile : stdout;
-#endif
-}
-
-void setlogfile(const char *fname)
-{
-    closelogfile();
-    if(fname && fname[0])
-    {
-        fname = findfile(fname, "w");
-        if(fname) logfile = fopen(fname, "w");
-    }
-    FILE *f = getlogfile();
-    if(f) setvbuf(f, NULL, _IOLBF, BUFSIZ);
-}
-
-void logoutf(const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    logoutfv(fmt, args);
-    va_end(args);
-}
-
-
-static void writelog(FILE *file, const char *buf)
-{
-    static uchar ubuf[512];
-    int len = strlen(buf), carry = 0;
-    while(carry < len)
-    {
-        int numu = encodeutf8(ubuf, sizeof(ubuf)-1, &((const uchar *)buf)[carry], len - carry, &carry);
-        if(carry >= len) ubuf[numu++] = '\n';
-        fwrite(ubuf, 1, numu, file);
-    }
-}
-
-static void writelogv(FILE *file, const char *fmt, va_list args)
-{
-    static char buf[LOGSTRLEN];
-    vformatstring(buf, fmt, args, sizeof(buf));
-    writelog(file, buf);
-}
+#define LOG_INFOv LOG_INFO
 
 #ifdef SERVER
 void fatal(const char *fmt, ...)
@@ -71,19 +11,19 @@ void fatal(const char *fmt, ...)
     void cleanupserver();
     cleanupserver();
 	defvformatstring(msg,fmt,fmt);
-	if(logfile) logoutf("%s", msg);
+	LOG_FATAL("%s", msg);
 #ifdef WIN32
 	MessageBox(NULL, msg, "Tesseract fatal error", MB_OK|MB_SYSTEMMODAL);
 #else
     fprintf(stderr, "server error: %s\n", msg);
 #endif
-    closelogfile();
+    logger::closeLog();
     exit(EXIT_FAILURE);
 }
 
 void conoutfv(int type, const char *fmt, va_list args)
 {
-    logoutfv(fmt, args);
+    LOG_INFOv(fmt, args);
 }
 
 void conoutf(const char *fmt, ...)
@@ -337,7 +277,7 @@ void disconnect_client(int n, int reason)
     string s;
     if(msg) formatstring(s)("client (%s) disconnected because: %s", clients[n]->hostname, msg);
     else formatstring(s)("client (%s) disconnected", clients[n]->hostname);
-    logoutf("%s", s);
+    LOG_INFO("%s", s);
     server::sendservmsg(s);
 }
 
@@ -409,7 +349,7 @@ ENetSocket connectmaster()
     if(masteraddress.host == ENET_HOST_ANY)
     {
 #ifdef SERVER
-        logoutf("looking up %s...", mastername);
+        LOG_INFO("looking up %s...", mastername);
 #endif
         masteraddress.port = masterport;
         if(!resolverwait(mastername, &masteraddress)) return ENET_SOCKET_NULL;
@@ -423,7 +363,7 @@ ENetSocket connectmaster()
     if(sock == ENET_SOCKET_NULL || connectwithtimeout(sock, mastername, masteraddress) < 0)
     {
 #ifdef SERVER
-        logoutf(sock==ENET_SOCKET_NULL ? "could not open socket" : "could not connect");
+        LOG_INFO(sock==ENET_SOCKET_NULL ? "could not open socket" : "could not connect");
 #endif
         return ENET_SOCKET_NULL;
     }
@@ -636,7 +576,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
     if(totalmillis-laststatus>60*1000)   // display bandwidth stats, useful for server ops
     {
         laststatus = totalmillis;
-        if(nonlocalclients || serverhost->totalSentData || serverhost->totalReceivedData) logoutf("status: %d remote clients, %.1f send, %.1f rec (K/sec)", nonlocalclients, serverhost->totalSentData/60.0f/1024, serverhost->totalReceivedData/60.0f/1024);
+        if(nonlocalclients || serverhost->totalSentData || serverhost->totalReceivedData) LOG_INFO("status: %d remote clients, %.1f send, %.1f rec (K/sec)", nonlocalclients, serverhost->totalSentData/60.0f/1024, serverhost->totalReceivedData/60.0f/1024);
         serverhost->totalSentData = serverhost->totalReceivedData = 0;
     }
 
@@ -658,7 +598,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
                 c.peer->data = &c;
                 char hn[1024];
                 copystring(c.hostname, (enet_address_get_host_ip(&c.peer->address, hn, sizeof(hn))==0) ? hn : "unknown");
-                logoutf("client connected (%s)", c.hostname);
+                LOG_INFO("client connected (%s)", c.hostname);
                 int reason = server::clientconnect(c.num, c.peer->address.host);
                 if(reason) disconnect_client(c.num, reason);
                 break;
@@ -674,7 +614,7 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
             {
                 client *c = (client *)event.peer->data;
                 if(!c) break;
-                logoutf("disconnected client (%s)", c->hostname);
+                LOG_INFO("disconnected client (%s)", c->hostname);
                 server::clientdisconnect(c->num);
                 delclient(c);
                 break;
@@ -962,28 +902,21 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
     return 0;
 }
 
-void logoutfv(const char *fmt, va_list args)
+/*
+void LOG_INFOv(const char *fmt, va_list args)
 {
     if(appwindow)
     {
         logline &line = loglines.add();
         vformatstring(line.buf, fmt, args, sizeof(line.buf));
-        if(logfile) writelog(logfile, line.buf);
+        if(logfile) LOG_INFO(line.buf);
         line.len = min(strlen(line.buf), sizeof(line.buf)-2);
         line.buf[line.len++] = '\n';
         line.buf[line.len] = '\0';
         if(outhandle) writeline(line);
     }
     else if(logfile) writelogv(logfile, fmt, args);
-}
-
-#else
-
-void logoutfv(const char *fmt, va_list args)
-{
-    FILE *f = getlogfile();
-    if(f) writelogv(f, fmt, args);
-}
+}*/
 
 #endif
 
@@ -994,7 +927,7 @@ bool isdedicatedserver() { return dedicatedserver; }
 void rundedicatedserver()
 {
     dedicatedserver = true;
-    logoutf("dedicated server started, waiting for clients...");
+    LOG_INFO("dedicated server started, waiting for clients...");
 #ifdef WIN32
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 	for(;;)
@@ -1116,9 +1049,9 @@ bool serveroption(char *opt)
         case 'j': setvar("serverport", atoi(opt+2)); return true;
         case 'm': setsvar("mastername", opt+2); setvar("updatemaster", mastername[0] ? 1 : 0); return true;
 #ifdef SERVER
-        case 'q': logoutf("Using home directory: %s", opt); sethomedir(opt+2); return true;
-        case 'k': logoutf("Adding package directory: %s", opt); addpackagedir(opt+2); return true;
-        case 'g': logoutf("Setting log file: %s", opt); setlogfile(opt+2); return true;
+        case 'q': LOG_INFO("Using home directory: %s", opt); sethomedir(opt+2); return true;
+        case 'k': LOG_INFO("Adding package directory: %s", opt); addpackagedir(opt+2); return true;
+        case 'g': LOG_INFO("Setting log file: %s", opt); logger::setLogFile(opt+2); return true;
 #endif
         default: return false;
     }
@@ -1133,7 +1066,7 @@ namespace fs
 }
 int main(int argc, char **argv)
 {
-    setlogfile(NULL);
+    logger::setLogFile(NULL);
     if(enet_initialize()<0) fatal("Unable to initialise network module");
     atexit(enet_deinitialize);
     enet_time_set(0);
