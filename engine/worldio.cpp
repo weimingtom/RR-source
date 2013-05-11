@@ -147,7 +147,7 @@ bool loadents(const char *mapName, vector<entity> &ents, uint *crc)
     return true;
 }
 
-#ifndef STANDALONE
+#ifdef CLIENT
 VARP(savebak, 0, 2, 2);
 
 enum { OCTSAV_CHILDREN = 0, OCTSAV_EMPTY, OCTSAV_SOLID, OCTSAV_NORMAL, OCTSAV_LODCUBE };

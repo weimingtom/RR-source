@@ -43,7 +43,7 @@
   #define ZLIB_DLL
 #endif
 
-#ifndef STANDALONE
+#ifdef CLIENT
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_opengl.h>
@@ -66,7 +66,7 @@
 #include "geom.h"
 #include "ents.h"
 #include "command.h"
-#ifndef STANDALONE
+#ifdef CLIENT
 #include "glexts.h"
 #include "glemu.h"
 #endif

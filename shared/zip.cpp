@@ -105,7 +105,7 @@ static bool findzipdirectory(FILE *f, zipdirectoryheader &hdr)
     return true;
 }
 
-#ifndef STANDALONE
+#ifdef CLIENT
 VAR(dbgzip, 0, 0, 1);
 #endif
 
@@ -155,7 +155,7 @@ static bool readzipdirectory(const char *archname, FILE *f, int entries, int off
         f.header = hdr.offset;
         f.size = hdr.uncompressedsize;
         f.compressedsize = hdr.compression ? hdr.compressedsize : 0;
-#ifndef STANDALONE
+#ifdef CLIENT
         if(dbgzip) conoutf(CON_DEBUG, "%s: file %s, size %d, compress %d, flags %x", archname, name, hdr.uncompressedsize, hdr.compression, hdr.flags);
 #endif
 
@@ -391,7 +391,7 @@ struct zipstream : stream
     void stopreading()
     {
         if(reading < 0) return;
-#ifndef STANDALONE
+#ifdef CLIENT
         if(dbgzip) conoutf(CON_DEBUG, info->compressedsize ? "%s: zfile.total_out %u, info->size %u" : "%s: reading %u, info->size %u", info->name, info->compressedsize ? uint(zfile.total_out) : reading - info->offset, info->size);
 #endif
         if(info->compressedsize) inflateEnd(&zfile);
@@ -509,7 +509,7 @@ struct zipstream : stream
                 if(err == Z_STREAM_END) ended = true;
                 else
                 {
-#ifndef STANDALONE
+#ifdef CLIENT
                     if(dbgzip) conoutf(CON_DEBUG, "inflate error: %s", zError(err));
 #endif
                     stopreading(); 
@@ -562,7 +562,7 @@ int listzipfiles(const char *dir, const char *ext, vector<char *> &files)
     return dirs;
 }
 
-#ifndef STANDALONE
+#ifdef CLIENT
 ICOMMAND(addzip, "sss", (const char *name, const char *mount, const char *strip), addzip(name, mount[0] ? mount : NULL, strip[0] ? strip : NULL));
 ICOMMAND(removezip, "s", (const char *name), removezip(name));
 #endif

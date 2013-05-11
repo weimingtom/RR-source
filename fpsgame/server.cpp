@@ -5,7 +5,7 @@ namespace game
     void parseoptions(vector<const char *> &args)
     {
         loopv(args)
-#ifndef STANDALONE
+#ifdef CLIENT
             if(!game::clientoption(args[i]))
 #endif
             if(!server::serveroption(args[i]))

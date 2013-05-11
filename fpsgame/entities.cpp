@@ -14,7 +14,7 @@ namespace entities
     {
     }
 
-#ifndef STANDALONE
+#ifdef CLIENT
     vector<extentity *> ents;
 
     vector<extentity *> &getents() { return ents; }

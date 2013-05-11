@@ -784,13 +784,13 @@ int listfiles(const char *dir, const char *ext, vector<char *> &files)
 
     //TODO: list files in bundles
 
-#ifndef STANDALONE
+#ifdef CLIENT
     dirs += listzipfiles(dirname, ext, files);
 #endif
     return dirs;
 }
 
-#ifndef STANDALONE
+#ifdef CLIENT
 static Sint64 rwopsseek(SDL_RWops *rw, Sint64 pos, int whence)
 {
     stream *f = (stream *)rw->hidden.unknown.data1;
@@ -948,7 +948,7 @@ struct filestream : stream
     }
 };
 
-#ifndef STANDALONE
+#ifdef CLIENT
 VAR(dbggz, 0, 0, 1);
 #endif
 
@@ -1081,7 +1081,7 @@ struct gzstream : stream
     void finishreading()
     {
         if(!reading) return;
-#ifndef STANDALONE
+#ifdef CLIENT
         if(dbggz)
         {
             uint checkcrc = 0, checksize = 0;
@@ -1422,7 +1422,7 @@ stream *openrawfile(const char *filename, const char *mode)
 
 stream *openfile(const char *filename, const char *mode)
 {
-#ifndef STANDALONE
+#ifdef CLIENT
     stream *s = openzipfile(filename, mode);
     if(s) return s;
 #endif

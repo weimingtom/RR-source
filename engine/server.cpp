@@ -65,7 +65,7 @@ static void writelogv(FILE *file, const char *fmt, va_list args)
     writelog(file, buf);
 }
 
-#ifdef STANDALONE
+#ifdef SERVER
 void fatal(const char *fmt, ...)
 {
     void cleanupserver();
@@ -201,7 +201,7 @@ void sendpacket(int n, int chan, ENetPacket *packet, int exclude)
             break;
         }
 
-#ifndef STANDALONE
+#ifdef CLIENT
         case ST_LOCAL:
             localservertoclient(chan, packet);
             break;
@@ -261,7 +261,7 @@ ENetPacket *sendfile(int cn, int chan, stream *file, const char *format, ...)
 {
     if(cn < 0)
     {
-#ifdef STANDALONE
+#ifdef SERVER
         return NULL;
 #endif
     }
@@ -291,7 +291,7 @@ ENetPacket *sendfile(int cn, int chan, stream *file, const char *format, ...)
 
     ENetPacket *packet = p.finalize();
     if(cn >= 0) sendpacket(cn, chan, packet, -1);
-#ifndef STANDALONE
+#ifdef CLIENT
     else sendclientpacket(packet, chan);
 #endif
     return packet->referenceCount > 0 ? packet : NULL;
@@ -348,7 +348,7 @@ void localclienttoserver(int chan, ENetPacket *packet)
     if(c) process(packet, c->num, chan);
 }
 
-#ifdef STANDALONE
+#ifdef SERVER
 bool resolverwait(const char *name, ENetAddress *address)
 {
     return enet_address_set_host(address, name) >= 0;
@@ -396,7 +396,7 @@ ENetSocket connectmaster()
 
     if(masteraddress.host == ENET_HOST_ANY)
     {
-#ifdef STANDALONE
+#ifdef SERVER
         logoutf("looking up %s...", mastername);
 #endif
         masteraddress.port = masterport;
@@ -410,7 +410,7 @@ ENetSocket connectmaster()
     }
     if(sock == ENET_SOCKET_NULL || connectwithtimeout(sock, mastername, masteraddress) < 0)
     {
-#ifdef STANDALONE
+#ifdef SERVER
         logoutf(sock==ENET_SOCKET_NULL ? "could not open socket" : "could not connect");
 #endif
         return ENET_SOCKET_NULL;
@@ -567,7 +567,7 @@ VAR(serveruprate, 0, 0, INT_MAX);
 SVAR(serverip, "");
 VARF(serverport, 0, server::serverport(), 0xFFFF, { if(!serverport) serverport = server::serverport(); });
 
-#ifdef STANDALONE
+#ifdef SERVER
 int curtime = 0, lastmillis = 0, totalmillis = 0;
 #endif
 
@@ -679,7 +679,7 @@ void flushserver(bool force)
     if(server::sendpackets(force) && serverhost) enet_host_flush(serverhost);
 }
 
-#ifndef STANDALONE
+#ifdef CLIENT
 void localdisconnect(bool cleanup)
 {
     bool disconnected = false;
@@ -938,7 +938,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
     vector<char *> args;
     char *buf = parsecommandline(GetCommandLine(), args);
 	appinstance = hInst;
-#ifdef STANDALONE
+#ifdef SERVER
     int standalonemain(int argc, char **argv);
     int status = standalonemain(args.length()-1, args.getbuf());
     #define main standalonemain
@@ -1004,7 +1004,7 @@ void rundedicatedserver()
 
 bool servererror(bool dedicated, const char *desc)
 {
-#ifndef STANDALONE
+#ifdef CLIENT
     if(!dedicated)
     {
         conoutf(CON_ERROR, "%s", desc);
@@ -1060,13 +1060,13 @@ void initserver(bool listen, bool dedicated)
     {
         updatemasterserver();
         if(dedicated) rundedicatedserver(); // never returns
-#ifndef STANDALONE
+#ifdef CLIENT
         else conoutf("listen server started");
 #endif
     }
 }
 
-#ifndef STANDALONE
+#ifdef CLIENT
 void startlistenserver(int *usemaster)
 {
     if(serverhost) { conoutf(CON_ERROR, "listen server is already running"); return; }
@@ -1103,7 +1103,7 @@ bool serveroption(char *opt)
         case 'i': setsvar("serverip", opt+2); return true;
         case 'j': setvar("serverport", atoi(opt+2)); return true;
         case 'm': setsvar("mastername", opt+2); setvar("updatemaster", mastername[0] ? 1 : 0); return true;
-#ifdef STANDALONE
+#ifdef SERVER
         case 'q': logoutf("Using home directory: %s", opt); sethomedir(opt+2); return true;
         case 'k': logoutf("Adding package directory: %s", opt); addpackagedir(opt+2); return true;
         case 'g': logoutf("Setting log file: %s", opt); setlogfile(opt+2); return true;
@@ -1114,7 +1114,7 @@ bool serveroption(char *opt)
 
 vector<const char *> gameargs;
 
-#ifdef STANDALONE
+#ifdef SERVER
 int main(int argc, char **argv)
 {
     setlogfile(NULL);
