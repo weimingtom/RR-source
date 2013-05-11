@@ -1944,7 +1944,9 @@ namespace server
             ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed;
         }
 
+#ifdef CLIENT
         if(!m_mp(gamemode)) kicknonlocalclients(DISC_LOCAL);
+#endif
 
         sendf(-1, 1, "risii", N_MAPCHANGE, smapname, gamemode, 1);
 

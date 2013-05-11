@@ -1,5 +1,4 @@
-add_definitions(-DCLIENT -std=gnu++0x -DHAVE_LIBUV)
-add_definitions(-DBINARY_ARCH=${OF_TARGET_ARCH} -DBINARY_OS=${OF_PLATFORM_BIN})
+add_definitions(-DCLIENT -std=gnu++0x -DHAVE_LIBUV -DBINARY_ARCH=${OF_TARGET_ARCH} -DBINARY_OS=${OF_PLATFORM_BIN})
 
 if(NOT DEFINED WIN32 AND NOT DEFINED APPLE)
     set(EXTRA_LIBS ${EXTRA_LIBS} SDL2 SDL2_image SDL2_mixer -pthread)
@@ -70,6 +69,10 @@ set(CLIENT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/server
 	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/waypoint
 	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/weapon)
+
+IF(NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+add_definitions( -O3)
+ENDIF(NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
 
 add_executable(${OF_CLIENT_BINARY} ${CLIENT_SOURCES})
 target_link_libraries(${OF_CLIENT_BINARY}

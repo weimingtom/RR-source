@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 
+IF(NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+message("Building in debug mode")
+ENDIF(NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+
 find_package(OpenGL REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -75,6 +79,7 @@ set(OF_SERVER_BINARY server_${OF_PLATFORM_BIN}_${OF_TARGET_ARCH})
 
 #client
 add_subdirectory(client)
+add_subdirectory(server)
 
 
 #end client

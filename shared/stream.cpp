@@ -401,7 +401,7 @@ namespace fs
 		printf("%s => %s (%i)\n", dirname, FindFileData.cFileName, FindFileData.dwFileAttributes);
             if(0 == strcmp(FindFileData.cFileName, ".") || 0 == strcmp(FindFileData.cFileName, ".."))
                 continue;
-                
+
             files.add(new listDirEntity(dirname, FindFileData.cFileName, FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY, FindFileData.dwFileAttributes & FILE_ATTRIBUTE_NORMAL));
         } while(FindNextFile(Find, &FindFileData));
 
@@ -424,7 +424,7 @@ namespace fs
     }
     #endif
     else
-   {	
+   {
 	printf("INVALID HANDLE: %s\n", dirname);
        return false;
    }
@@ -531,8 +531,8 @@ namespace fs
                 formatstring(newPath)("%s%s", bundles[i]->path, path+j);
 
                 LookedUp *lookup = new LookedUp;
-		char *_newPath = newstring(newPath);
-		::path(_newPath);
+                char *_newPath = newstring(newPath);
+                ::path(_newPath);
                 lookup->path = _newPath;
 
                 lookup->name = newstring(path);
@@ -567,6 +567,7 @@ namespace fs
 
     void init()
     {
+        printf("Initializing filesystem\n");
         lua::Environment &env = lua::getEnvironment();
 
         //TODO: loopv(bundleDirs)
@@ -619,8 +620,12 @@ namespace fs
         //home dir acts like a package
         if(!homedir[0])
         {
+#ifdef CLIENT
             strcpy(homedir, "packages/user/unkown");
-	    path(homedir);
+#else
+            strcpy(homedir, "server");
+#endif
+            path(homedir);
         }
 
         bundles.add(new Bundle("@User", homedir));

@@ -193,6 +193,18 @@ void sendpacket(int n, int chan, ENetPacket *packet, int exclude)
         loopv(clients) if(i!=exclude && server::allowbroadcast(i)) sendpacket(i, chan, packet);
         return;
     }
+
+    #ifdef _DEBUG
+    ASSERT(clients.inrange(n));
+    #else
+    if(!clients.inrange(n))
+    {
+        printf("Invalid client %i", n);
+        return;
+    }
+    #endif
+
+
     switch(clients[n]->type)
     {
         case ST_TCPIP:
@@ -1115,6 +1127,10 @@ bool serveroption(char *opt)
 vector<const char *> gameargs;
 
 #ifdef SERVER
+namespace fs
+{
+    extern void init();
+}
 int main(int argc, char **argv)
 {
     setlogfile(NULL);
@@ -1123,6 +1139,11 @@ int main(int argc, char **argv)
     enet_time_set(0);
     for(int i = 1; i<argc; i++) if(argv[i][0]!='-' || !serveroption(argv[i])) gameargs.add(argv[i]);
     game::parseoptions(gameargs);
+
+    lua::getEnvironment().init();
+    fs::init();
+    lua::getEnvironment().run("@{@User}/init.lua");
+
     initserver(true, true);
     return EXIT_SUCCESS;
 }
