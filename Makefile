@@ -63,6 +63,9 @@ ENET_XCFLAGS =
 # C compiler flags for Luvit
 LUVIT_XCFLAGS =
 
+# C compiler flags for libuv
+UV_XCFLAGS =
+
 # C compiler flags for LuaJIT
 LUAJIT_XCFLAGS =
 
@@ -81,11 +84,12 @@ LUAJIT_HXCFLAGS =
 
 ENET_PATH = libraries/enet
 LUAJIT_PATHB = libraries/luajit
-UV_PATH = libraries/uv
+UV_PATHB = libraries/uv
 LUVIT_PATHB = libraries/luvit
 
 LUAJIT_PATH = $(LUAJIT_PATHB)/src
 LUVIT_PATH = $(LUVIT_PATHB)/src
+UV_PATH = $(UV_PATHB)/src
 
 # Variables
 
@@ -163,11 +167,11 @@ endif
 
 ifneq ($(HOST_SYS),Windows)
 	ifeq (,$(NOCOLOR))
-		RED    = -e "\033[1;31m
-		GREEN  = -e "\033[1;32m
-		BLUE   = -e "\033[1;34m
-		PURPLE = -e "\033[1;35m
-		CYAN   = -e "\033[1;36m
+		RED    = "\033[1;31m
+		GREEN  = "\033[1;32m
+		BLUE   = "\033[1;34m
+		PURPLE = "\033[1;35m
+		CYAN   = "\033[1;36m
 		RRED   = \033[1;31m
 		RGREEN = \033[1;32m
 		RBLUE  = \033[1;34m
@@ -191,7 +195,7 @@ endif
 # includes
 
 ENET_INC = $(ENET_PATH)/include
-UV_INC = $(UV_PATH)/include
+UV_INC = $(UV_PATHB)/include
 LUAJIT_INC = $(LUAJIT_PATH)
 LUVIT_INC = $(LUVIT_PATH)
 
@@ -261,8 +265,8 @@ CLIENT_CXXFLAGS = $(CXX_FLAGS) $(CXX_DEBUG) $(CXX_WARN) $(CLIENT_XCXXFLAGS) \
 	-fsigned-char -fno-exceptions -fno-rtti -DCLIENT \
 	-DBINARY_ARCH=$(TARGET_BINARCH) -DBINARY_OS=$(TARGET_BINOS)
 
-CLIENT_LDFLAGS = -L$(OBJDIR)/$(ENET_PATH) -L$(OBJDIR)/$(LUAJIT_PATH) -L$(UV_PATH) -L$(OBJDIR)/$(LUVIT_PATH) \
-	-lenet -lluajit -luv -lluvit
+CLIENT_LDFLAGS = -L$(OBJDIR)/$(ENET_PATH) -L$(OBJDIR)/$(LUAJIT_PATH) -L$(OBJDIR)/$(LUVIT_PATH) \
+	-lenet -lluajit -lluvit $(LUVIT_LDFLAGS)
 
 ifeq ($(TARGET_SYS),Windows)
 	CLIENT_CXXFLAGS += -DWIN32 -DWINDOWS -DNO_STDIO_REDIRECT
@@ -355,8 +359,8 @@ SERVER_CXXFLAGS = $(CXX_FLAGS) $(CXX_DEBUG) $(CXX_WARN) $(SERVER_XCXXFLAGS) \
 	-fsigned-char -fno-exceptions -fno-rtti -DSERVER -DSTANDALONE \
 	-DBINARY_ARCH=$(TARGET_BINARCH) -DBINARY_OS=$(TARGET_BINOS)
 
-SERVER_LDFLAGS = -L$(OBJDIR)/$(ENET_PATH) -L$(OBJDIR)/$(LUAJIT_PATH) -L$(UV_PATH) -L$(OBJDIR)/$(LUVIT_PATH)\
-	-lenet -lluajit -luv -lluvit
+SERVER_LDFLAGS = -L$(OBJDIR)/$(ENET_PATH) -L$(OBJDIR)/$(LUAJIT_PATH) -L$(OBJDIR)/$(LUVIT_PATH)\
+	-lenet -lluajit -lluvit $(LUVIT_LDFLAGS)
 
 ifeq ($(TARGET_SYS),Windows)
 	SERVER_CXXFLAGS += -DWIN32 -DWINDOWS -DNO_STDIO_REDIRECT
@@ -399,15 +403,174 @@ SERVER_OBJ = \
 SERVER_OBJB = $(addprefix $(OBJDIR)/server/, $(SERVER_OBJ))
 
 
+##########
+# Uv	 #
+##########
+
+UV_CFLAGS = -g $(CC_FLAGS) $(CC_DEBUG) $(CC_WARN) $(UV_XCFLAGS) \
+	-I$(UV_INC) -I$(UV_INC)/uv-private -I$(UV_PATH)	
+
+UV_LDFLAGS = -lm
+
+UV_OBJ = \
+	$(UV_PATH)/fs-poll.o \
+	$(UV_PATH)/inet.o \
+	$(UV_PATH)/uv-common.o \
+	$(UV_PATH)/version.o
+
+ifeq ($(TARGET_SYS),Windows)
+UV_OBJ = \
+	$(UV_PATH)/win/async.o \
+	$(UV_PATH)/win/core.o \
+	$(UV_PATH)/win/dl.o \
+	$(UV_PATH)/win/error.o \
+	$(UV_PATH)/win/fs.o \
+	$(UV_PATH)/win/fs-event.o \
+	$(UV_PATH)/win/getaddrinfo.o \
+	$(UV_PATH)/win/handle.o \
+	$(UV_PATH)/win/loop-watcher.o \
+	$(UV_PATH)/win/pipe.o \
+	$(UV_PATH)/win/poll.o \
+	$(UV_PATH)/win/process.o \
+	$(UV_PATH)/win/process-stdio.o \
+	$(UV_PATH)/win/req.o \
+	$(UV_PATH)/win/signal.o \
+	$(UV_PATH)/win/stream.o \
+	$(UV_PATH)/win/tcp.o \
+	$(UV_PATH)/win/thread.o \
+	$(UV_PATH)/win/threadpool.o \
+	$(UV_PATH)/win/timer.o \
+	$(UV_PATH)/win/tty.o \
+	$(UV_PATH)/win/udp.o \
+	$(UV_PATH)/win/util.o \
+	$(UV_PATH)/win/winapi.o \
+	$(UV_PATH)/win/winsock.o
+else
+
+UV_CFLAGS += \
+	-D_LARGEFILE_SOURCE \
+	-D_FILE_OFFSET_BITS=64
+	
+UV_OBJ += \
+	$(UV_PATH)/unix/async.o \
+	$(UV_PATH)/unix/core.o \
+	$(UV_PATH)/unix/dl.o \
+	$(UV_PATH)/unix/error.o \
+	$(UV_PATH)/unix/fs.o \
+	$(UV_PATH)/unix/getaddrinfo.o \
+	$(UV_PATH)/unix/loop.o \
+	$(UV_PATH)/unix/loop-watcher.o \
+	$(UV_PATH)/unix/pipe.o \
+	$(UV_PATH)/unix/poll.o \
+	$(UV_PATH)/unix/process.o \
+	$(UV_PATH)/unix/signal.o \
+	$(UV_PATH)/unix/stream.o \
+	$(UV_PATH)/unix/tcp.o \
+	$(UV_PATH)/unix/thread.o \
+	$(UV_PATH)/unix/threadpool.o \
+	$(UV_PATH)/unix/timer.o \
+	$(UV_PATH)/unix/tty.o \
+	$(UV_PATH)/unix/udp.o
+
+ifeq (Sunos,$(TARGET_SYS))
+UV_HAVE_DTRACE=1
+UV_CFLAGS += -D__EXTENSIONS__ -D_XOPEN_SOURCE=500
+UV_LDFLAGS +=-lkstat -lnsl -lsendfile -lsocket
+
+UV_OBJ += \
+	$(UV_PATH)/unix/sunos.o \
+	$(UV_PATH)/unix/dtrace.o
+	
+UV_DTRACE_OBJS += \
+	$(UV_PATH)/unix/core.o
+endif
+
+ifeq (Aix,$(TARGET_SYS))
+UV_CFLAGS += -D_ALL_SOURCE -D_XOPEN_SOURCE=500
+UV_LDFLAGS += -lperfstat
+UV_OBJ += \
+	$(UV_PATH)/unix/aix.o
+endif
+
+ifeq (Darwin,$(TARGET_SYS))
+HAVE_DTRACE=1
+# dtrace(1) probes contain dollar signs on OS X. Mute the warnings they
+# generate but only when CC=clang, -Wno-dollar-in-identifier-extension
+# is a clang extension.
+ifeq (__clang__,$(shell sh -c "$(CC) -dM -E - </dev/null | grep -ow __clang__"))
+CFLAGS += -Wno-dollar-in-identifier-extension
+endif
+UV_CFLAGS += -D_DARWIN_USE_64_BIT_INODE=1
+UV_LDFLAGS += -framework Foundation \
+           -framework CoreServices \
+           -framework ApplicationServices \
+           -dynamiclib -install_name "@rpath/libuv.dylib"
+UV_OBJ += \
+	$(UV_PATH)/unix/darwin.o \
+	$(UV_PATH)/unix/kqueue.o \
+	$(UV_PATH)/unix/fsevents.o \
+	$(UV_PATH)/unix/proctitle.o \
+	$(UV_PATH)/unix/darwin-proctitle.o
+endif
+
+ifeq (Linux,$(TARGET_SYS))
+UV_CFLAGS += -D_GNU_SOURCE
+UV_LDFLAGS+=-ldl -lrt
+UV_OBJ += \
+	$(UV_PATH)/unix/linux-core.o \
+	$(UV_PATH)/unix/linux-inotify.o \
+    $(UV_PATH)/unix/linux-syscalls.o \
+    $(UV_PATH)/unix/proctitle.o
+endif
+
+ifeq (Freebsd,$(TARGET_SYS))
+HAVE_DTRACE=1
+UV_LDFLAGS+=-lkvm
+UV_OBJ += \
+	$(UV_PATH)/unix/freebsd.o \
+	$(UV_PATH)/unix/kqueue.o
+endif
+
+ifeq (Dragonfly,$(TARGET_SYS))
+UV_LDFLAGS+=-lkvm
+UV_OBJ += \
+	$(UV_PATH)/unix/freebsd.o \
+	$(UV_PATH)/unix/kqueue.o
+endif
+
+ifeq (Netbsd,$(TARGET_SYS))
+UV_LDFLAGS+=-lkvm
+UV_OBJ += \
+	$(UV_PATH)/unix/netbsd.o \
+	$(UV_PATH)/unix/kqueue.o
+endif
+
+ifeq (Openbsd,$(TARGET_SYS))
+UV_LDFLAGS+=-lkvm
+UV_OBJ += \
+	$(UV_PATH)/unix/openbsd.o \
+	$(UV_PATH)/unix/kqueue.o
+endif
+
+ifeq ($(HAVE_DTRACE), 1)
+UV_DTRACE_HEADER = $(UV_PATH)/unix/uv-dtrace.h
+UV_CFLAGS += -Isrc/unix
+UV_CFLAGS += -DHAVE_DTRACE
+endif
+
+endif
+
+UV_OBJB = $(addprefix $(OBJDIR)/, $(UV_OBJ))
+	
 ########
 # LUVIT #
 ########
 
 LUVIT_CFLAGS = $(CC_FLAGS) $(CC_DEBUG) $(CC_WARN) $(LUVIT_XCFLAGS) \
-	-I$(LUVIT_INC) -I$(LUAJIT_INC) -I$(UV_INC)
+	-I$(LUVIT_INC) -I$(LUAJIT_INC) -I$(UV_INC) $(UV_CFLAGS)
 
 LUVIT_LDFLAGS = -L$(UV_PATH) -L$(OBJDIR)/$(LUVIT_PATH) \
-	-luv -lluvit
+	-lluvit $(UV_LDFLAGS)
 
 ifeq ($(TARGET_SYS),Windows)
     LUVIT_CFLAGS += $(CS_WIN_INC)
@@ -443,7 +606,7 @@ LUVIT_OBJ = \
 	#$(LUVIT_PATH)/luv_tls_conn.o \
 
 
-LUVIT_OBJB = $(addprefix $(OBJDIR)/, $(LUVIT_OBJ))
+LUVIT_OBJB = $(addprefix $(OBJDIR)/, $(LUVIT_OBJ)) $(UV_OBJB)
 
 LUVIT_LIB = $(LUVIT_PATH)/libluvit.a
 
@@ -728,18 +891,16 @@ $(LUAJIT_HOST_OBJB): %.o: $(LUAJIT_HOST_SRC) $$(@D)/.stamp
 	$(E) $(PURPLE)[hostcc ]$(RRED) $(subst $(OBJDIR)/,,$@)$(ENDCOL)
 	$(Q) $(HOST_CC) $(CFLAGS) -c -o $@ $(subst .o,.c,$(subst $(OBJDIR)/,,$@))
 
-# Libuv
-libuv:
-	$(Q) $(MAKE) -C libraries/uv
+# Uv
+$(UV_OBJB): CFLAGS = $(UV_CFLAGS)
+libuv: $(UV_OBJB) $(DTRACE_HEADER)
+
+# Luvit
 
 $(LUVIT_OBJB): CFLAGS = $(LUVIT_CFLAGS)
-luvit: libuv $(LUVIT_OBJB) build/libraries/uv/.stamp
+luvit: libuv $(LUVIT_OBJB) build/libraries/luvit/.stamp
 	$(E) $(CYAN)[ar     ]$(RRED) $(LUVIT_LIB)$(ENDCOL)
 	$(Q) $(TARGET_AR) $(OBJDIR)/$(LUVIT_LIB) $(LUVIT_OBJB)
-	$(Q) cp libraries/uv/libuv.a build/libraries/uv
-	$(Q) cd build/libraries/uv && $(TARGET_AR_EXTRACT) ../../../libraries/uv/libuv.a
-	$(Q) $(TARGET_AR_APPEND) $(OBJDIR)/$(LUVIT_LIB) build/libraries/uv/*.o
-
 
 # ENet
 
@@ -858,7 +1019,6 @@ clean:
 	$(E) $(CYAN)[clean  ]$(RRED) $(OBJDIR) $(RGREEN)$(CLIENT_BIN) \
 	$(RCYAN)$(SERVER_BIN)$(ENDCOL)
 	$(Q) -rm -rf $(OBJDIR) $(CLIENT_BIN) $(SERVER_BIN)
-	$(Q) make -Clibraries/uv clean
 else
 clean:
 	$(E) [clean  ] $(OBJDIR) $(CLIENT_BIN) $(SERVER_BIN)
@@ -1008,7 +1168,10 @@ $(OBJDIR)/server/engine/octarender.o: engine/lua.h engine/engine.h shared/cube.h
 $(OBJDIR)/server/shared/stream.o: engine/lua.h shared/cube.h shared/tools.h shared/geom.h shared/ents.h shared/command.h shared/glexts.h shared/glemu.h shared/iengine.h shared/igame.h
 $(OBJDIR)/server/shared/zip.o: engine/lua.h shared/cube.h shared/tools.h shared/geom.h shared/ents.h shared/command.h shared/glexts.h shared/glemu.h shared/iengine.h shared/igame.h
 
-#$(OBJDIR)/libraries/luvit/lconstants.o:
+
+$(OBJDIR)/libraries/uv/include/uv-private/uv-unix.h: include/uv-private/uv-bsd.h include/uv-private/uv-darwin.h include/uv-private/uv-linux.h include/uv-private/uv-sunos.h 
+$(OBJDIR)/libraries/uv/src/unix/internal.h: src/unix/linux-syscalls.h src/uv-common.h
+$(OBJDIR)/libraries/uv/src/uv-common.h: src/queue.h
 
 $(OBJDIR)/libraries/enet/callbacks.o: libraries/enet/include/enet/enet.h libraries/enet/include/enet/unix.h libraries/enet/include/enet/types.h libraries/enet/include/enet/protocol.h libraries/enet/include/enet/list.h libraries/enet/include/enet/callbacks.h
 $(OBJDIR)/libraries/enet/host.o: libraries/enet/include/enet/enet.h libraries/enet/include/enet/unix.h libraries/enet/include/enet/types.h libraries/enet/include/enet/protocol.h libraries/enet/include/enet/list.h libraries/enet/include/enet/callbacks.h
