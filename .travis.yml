@@ -11,7 +11,7 @@ before_install:
   
   # Luajit
   - git clone git://github.com/Theintercooler/RR-luajit.git
-  - (cd luajit-2.0 && make && sudo make install)
+  - (cd RR-luajit && make && sudo make install)
   
   #SDL2
   - hg clone http://hg.libsdl.org/SDL && mkdir SDL_build
