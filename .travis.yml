@@ -26,7 +26,7 @@ before_install:
 
 script:
   - make all -j5
-  - (mkdir cmakebuild && cd cmakebuild && cmake .. && make -j5)
+  - (mkdir cmakebuild && cd cmakebuild && cmake -DTRAVIS_BUILD=1 .. && make -j5)
 
 notifications:
   webhooks: http://n.tkte.ch/h/421/D6ZQTEJ8lFTwTw9_0vSDL-dX
