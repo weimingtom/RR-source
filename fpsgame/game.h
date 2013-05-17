@@ -122,7 +122,10 @@ static struct gamemodeinfo
 #define m_edit         (m_check(gamemode, M_EDIT))
 #define m_timed        (m_checknot(gamemode, M_EDIT|M_LOCAL))
 #define m_botmode      (m_checknot(gamemode, M_LOCAL))
-#define m_mp(mode)     (m_checknot(mode, M_LOCAL))
+/**
+ * @todo: remove m_mp
+ */
+#define m_mp(mode)     true //(m_checknot(mode, M_LOCAL))
 
 enum { MM_AUTH = -1, MM_OPEN = 0, MM_VETO, MM_LOCKED, MM_PRIVATE, MM_PASSWORD, MM_START = MM_AUTH };
 

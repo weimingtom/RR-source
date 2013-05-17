@@ -9,10 +9,10 @@ set(LUVIT_INCLUDE_DIRS
 	CACHE INTERNAL "Luvit include directories"
 )
 
-set(LUVIT_LIBRARY luvit)
+set(LUVIT_LIBRARY luvit CACHE INTERNAL "Luvit library")
 
 include_directories(${LUVIT_INCLUDE_DIRS})
-add_library(${LUVIT_LIBRARY}
+add_library(${LUVIT_LIBRARY} STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/src/lconstants.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/lenv.c
 #	${CMAKE_CURRENT_SOURCE_DIR}/src/lhttp_parser.c
@@ -40,5 +40,8 @@ add_library(${LUVIT_LIBRARY}
 #	${CMAKE_CURRENT_SOURCE_DIR}/src/lyajl.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils.c)
 
-set(LUVIT_LIBRARIES ${LUVIT_LIBRARY} ${UV_LIBRARIES} CACHE INTERNAL "Luvit libraries")
+set(LUVIT_LIBRARIES
+	${LUVIT_LIBRARY}
+	${UV_LIBRARIES}
+	CACHE INTERNAL "Luvit libraries")
 	

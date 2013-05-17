@@ -3,6 +3,11 @@
 
 #include "engine.h"
 
+extern "C"
+{
+#include "uv.h"
+}
+
 #define LOG_INFOv LOG_INFO
 
 #ifdef SERVER
@@ -564,6 +569,8 @@ void serverslice(bool dedicated, uint timeout)   // main server update, called f
         lastmillis += curtime;
         totalmillis = millis;
         updatetime();
+
+        uv_run(uv_default_loop(), UV_RUN_NOWAIT);
     }
     server::serverupdate();
 
@@ -1064,6 +1071,7 @@ namespace fs
 {
     extern void init();
 }
+
 int main(int argc, char **argv)
 {
     logger::setLogFile(NULL);

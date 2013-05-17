@@ -1267,10 +1267,7 @@ int main(int argc, char **argv)
         updateparticles();
         updatesounds();
 
-#ifdef HAVE_LIBUV
-
         uv_run(uv_default_loop(), UV_RUN_NOWAIT);
-#endif
 
         if(minimized) continue;
 

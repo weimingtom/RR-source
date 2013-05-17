@@ -2,12 +2,20 @@
 #include "lua.h"
 #include "cube.h"
 
-#ifdef CLIENT
 extern "C"
 {
 #include "uv.h"
 #include "luvit_init.h"
 }
+
+#ifdef SERVER
+    namespace server
+    {
+        namespace lua
+        {
+            int luaopen_server(lua_State *L);
+        }
+    }
 #endif
 
 #ifdef _DEBUG
@@ -172,12 +180,16 @@ namespace lua {
 
         delete regFunctions;
 
+    luvit_init(L, uv_default_loop());
+#ifdef SERVER
 
-#ifdef CLIENT
+      /* Pull up the preload table */
+    select("package", "preload");
 
-     luvit_init(L, uv_default_loop());
+    pushRow("native_server", server::lua::luaopen_server);
+
+    pop(2);
 #endif
-
 #ifdef _DEBUG
     #pragma message("Using lua atpanic crasher.")
     lua_atpanic(L, crash);

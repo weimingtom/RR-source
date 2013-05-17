@@ -1268,13 +1268,6 @@ COMMAND(newmap, "i");
 COMMAND(mapenlarge, "");
 COMMAND(shrinkmap, "");
 
-void mapname()
-{
-    result(game::getclientmap());
-}
-
-COMMAND(mapname, "");
-
 void mpeditent(int i, const vec &o, int type, int attr1, int attr2, int attr3, int attr4, int attr5, bool local)
 {
     if(i < 0 || i >= MAXENTS) return;

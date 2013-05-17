@@ -1969,12 +1969,13 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
 
     void sendmap()
     {
+
+
         if(!m_edit || (player1->state==CS_SPECTATOR && remote && !player1->privilege)) { conoutf(CON_ERROR, "\"sendmap\" only works in coop edit mode"); return; }
         conoutf("sending map...");
         defformatstring(mname)("sendmap_%d", lastmillis);
         save_world(mname, true);
-        defformatstring(fname)("@{tig/rr-core}/map/%s.ogz", mname);
-        stream *map = openrawfile(path(fname), "rb");
+        stream *map = openrawfile(ogzname, "rb");
         if(map)
         {
             stream::offset len = map->size();
@@ -1988,7 +1989,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
             delete map;
         }
         else conoutf(CON_ERROR, "could not read map");
-        remove(findfile(fname, "rb"));
+        remove(ogzname);
     }
     COMMAND(sendmap, "");
 

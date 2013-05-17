@@ -621,11 +621,10 @@ namespace fs
         if(!homedir[0])
         {
 #ifdef CLIENT
-            strcpy(homedir, "packages/user/unkown");
+            sethomedir("packages/user/unkown");
 #else
-            strcpy(homedir, "server");
+            sethomedir("server");
 #endif
-            path(homedir);
         }
 
         bundles.add(new Bundle("@User", homedir));

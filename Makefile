@@ -355,8 +355,8 @@ SERVER_CXXFLAGS = $(CXX_FLAGS) $(CXX_DEBUG) $(CXX_WARN) $(SERVER_XCXXFLAGS) \
 	-fsigned-char -fno-exceptions -fno-rtti -DSERVER -DSTANDALONE \
 	-DBINARY_ARCH=$(TARGET_BINARCH) -DBINARY_OS=$(TARGET_BINOS)
 
-SERVER_LDFLAGS = -L$(OBJDIR)/$(ENET_PATH) -L$(OBJDIR)/$(LUAJIT_PATH) \
-	-lenet -lluajit
+SERVER_LDFLAGS = -L$(OBJDIR)/$(ENET_PATH) -L$(OBJDIR)/$(LUAJIT_PATH) -L$(UV_PATH) -L$(OBJDIR)/$(LUVIT_PATH)\
+	-lenet -lluajit -luv -lluvit
 
 ifeq ($(TARGET_SYS),Windows)
 	SERVER_CXXFLAGS += -DWIN32 -DWINDOWS -DNO_STDIO_REDIRECT
@@ -393,7 +393,8 @@ SERVER_OBJ = \
 	engine/worldio.o \
 	engine/lua.o \
 	fpsgame/entities.o \
-	fpsgame/server.o
+	fpsgame/server.o \
+	server/core_bindings.o
 
 SERVER_OBJB = $(addprefix $(OBJDIR)/server/, $(SERVER_OBJ))
 
