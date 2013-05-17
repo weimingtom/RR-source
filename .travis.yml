@@ -4,40 +4,29 @@ before_install:
   - sudo apt-get update
   - sudo apt-get -y install build-essential zlib1g-dev curl libluajit-5.1-dev
   
-  # Create the directory where to install the dependencies
-  - mkdir dummyprefix
-  - export PREFIX=$PWD/dummyprefix
-  - export PATH=$PATH:$PWD/dummyprefix/bin
-  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/dummyprefix
-  - export LD_RUN_PATH=$LD_RUN_PATH:$PWD/dummyprefix
-  - export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/dummyprefix
-  
   # Download and install automake-1.13.1, required for SDL
   - curl "http://ftp.gnu.org/gnu/automake/automake-1.13.1.tar.gz" > automake-1.13.1.tar.gz
   - tar -zxvf automake-1.13.1.tar.gz
-  - cd automake-1.13.1
-  - ./configure --prefix=$PREFIX --docdir=$PREFIX/share/doc/automake-1.13.1
-  - (make && make install)
-  - cd ..
+  - (cd automake-1.13.1 && ./configure && make -j5 && sudo make install)
   
   #SDL2
   - hg clone http://hg.libsdl.org/SDL && mkdir SDL_build
   - (cd SDL && ./autogen.sh)
-  - (cd SDL_build && ../SDL/configure --prefix=$PREFIX && make -j5 && make install)
+  - (cd SDL_build && ../SDL/configure && make -j5 && sudo make install)
   
   #SDL2_image
   - hg clone http://hg.libsdl.org/SDL_image
   - (cd SDL_image && ./autogen.sh)
-  - (cd SDL_image && ./configure --prefix=$PREFIX && make -j5 && make install)
+  - (cd SDL_image && ./configure && make -j5 && sudo make install)
   
   #SDL2_mixer
   - hg clone http://hg.libsdl.org/SDL_mixer
   - (cd SDL_mixer && ./autogen.sh)  
-  - (cd SDL_mixer && ./configure --prefix=$PREFIX && make -j5 && make install)
+  - (cd SDL_mixer && ./configure && make -j5 && sudo make install)
 
 script:
-  - make all
-#  - (mkdir cmakebuild && cd cmakebuild && cmake .. && make)
+  - make all -j5
+  - (mkdir cmakebuild && cd cmakebuild && cmake .. && make -j5)
 
 notifications:
   webhooks: http://n.tkte.ch/h/421/D6ZQTEJ8lFTwTw9_0vSDL-dX
