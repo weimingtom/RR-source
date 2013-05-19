@@ -141,7 +141,7 @@ namespace game
             delay = 1000;
         }
         modelattach a[5];
-        static const char *vweps[] = {"vwep/fist", "vwep/shotg", "vwep/chaing", "vwep/rocket", "vwep/rifle", "vwep/gl", "vwep/pistol"};
+        static const char *vweps[] = {"@{tig/rr-core}/model/vwep/fist", "@{tig/rr-core}/model/vwep/shotg", "@{tig/rr-core}/model/vwep/chaing", "@{tig/rr-core}/model/vwep/rocket", "@{tig/rr-core}/model/vwep/rifle", "@{tig/rr-core}/model/vwep/gl", "@{tig/rr-core}/model/vwep/pistol"};
         int ai = 0;
         if((!mdl.vwep || d->gunselect!=GUN_FIST) && d->gunselect<=GUN_PISTOL)
         {
