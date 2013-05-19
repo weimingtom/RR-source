@@ -347,7 +347,8 @@ CLIENT_OBJ = \
 	fpsgame/scoreboard.o \
 	fpsgame/server.o \
 	fpsgame/waypoint.o \
-	fpsgame/weapon.o
+	fpsgame/weapon.o \
+	fpsgame/messageSystem.o
 
 CLIENT_OBJB = $(addprefix $(OBJDIR)/client/, $(CLIENT_OBJ))
 
@@ -398,7 +399,8 @@ SERVER_OBJ = \
 	engine/lua.o \
 	fpsgame/entities.o \
 	fpsgame/server.o \
-	server/core_bindings.o
+	server/core_bindings.o \
+	fpsgame/messageSystem.o
 
 SERVER_OBJB = $(addprefix $(OBJDIR)/server/, $(SERVER_OBJ))
 
@@ -1012,7 +1014,13 @@ cube2font: $(OBJDIR)/cube2font.o
 	$(OBJDIR)/cube2font.o `freetype-config --libs` -lz
 
 # general targets
-all: client server
+all: deprecated client server
+
+deprecated:
+	$(E) $(RED)[WARNING  ]$(RBLUE) ===================================================================================================== $(ENDCOL)
+	$(E) $(RED)[WARNING  ]$(RBLUE) The makefile build method will be deprecated, please use cmake to generate makefiles for your system. $(ENDCOL)
+	$(E) $(RED)[WARNING  ]$(RBLUE) ===================================================================================================== $(ENDCOL)
+
 
 ifneq ($(FLAV), Windows)
 clean:
