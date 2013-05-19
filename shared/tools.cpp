@@ -162,10 +162,6 @@ void filtertext(char *dst, const char *src, bool whitespace, int len)
 }
 
 
-#ifndef LOGSTRLEN
-#define LOGSTRLEN 512
-#endif
-
 namespace logger
 {
     static FILE *logfile = NULL;
