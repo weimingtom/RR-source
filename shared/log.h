@@ -21,6 +21,14 @@
 #define LOG_ERROR(msg, ...)     DO_LOG(logger::LogLevel::ERROR, msg, ##__VA_ARGS__)
 #define LOG_FATAL(msg, ...)     DO_LOG(logger::LogLevel::FATAL, msg, ##__VA_ARGS__)
 
+#ifdef ERROR
+#undef ERROR
+#endif
+
+#ifndef LOGSTRLEN
+#define LOGSTRLEN 512
+#endif
+
 namespace logger
 {
     struct LogLevel
@@ -35,7 +43,7 @@ namespace logger
             TRACE
         };
 
-        Level lvl;
+        int lvl;
     };
 
     void log(int lvl, const char *message, ...) PRINTFARGS(2, 3);

@@ -6,7 +6,7 @@ elseif(APPLE)
     set(EXTRA_LIBS ${EXTRA_LIBS} ${SDL2_LIBRARY} ${SDL2_IMAGE_LIBRARY}
         ${SDL2_MIXER_LIBRARY})
 elseif(WIN32)
-    set(EXTRA_LIBS ${EXTRA_LIBS} SDL2 SDL_image SDL2_mixer opengl32
+    set(EXTRA_LIBS ${EXTRA_LIBS} SDL2 SDL2_image SDL2_mixer opengl32
         ws2_32 winmm)
 endif()
 

@@ -18,12 +18,15 @@ extern "C"
     }
 #endif
 
-#ifdef _DEBUG
+#ifdef LUA_PANIC_DEBUG
 static int crash(lua_State *L)
 {
     printf("LUA PANIC: %s\n", lua_tostring(L, 1));
 
+    #ifndef WINDOWS
     sleep(1);
+    #endif
+
     static char **a;
     printf("%i", a[2][2]);
 
@@ -190,7 +193,7 @@ namespace lua {
 
     pop(2);
 #endif
-#ifdef _DEBUG
+#ifdef LUA_PANIC_DEBUG
     #pragma message("Using lua atpanic crasher.")
     lua_atpanic(L, crash);
 #endif
