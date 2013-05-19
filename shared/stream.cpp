@@ -532,8 +532,7 @@ namespace fs
 
                 LookedUp *lookup = new LookedUp;
 
-                lookup->path = newstring(newPath);
-                ::path(lookup->path);
+                lookup->path = ::path(newstring(newPath));
 
                 lookup->name = newstring(path);
                 lookedUp.add(lookup);
