@@ -1,4 +1,5 @@
 #include "game.h"
+#include "messageSystem.h"
 
 namespace game
 {
@@ -1856,7 +1857,10 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
                 break;
 
             default:
-                neterr("type", cn < 0);
+                if(!messageSystem::MessageManager::receive(type, cn, d ? d->clientnum : -1, p))
+                {
+                    neterr("type", cn < 0);
+                }
                 return;
         }
     }

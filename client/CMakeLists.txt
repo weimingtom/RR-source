@@ -68,11 +68,13 @@ set(CLIENT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/scoreboard
 	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/server
 	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/waypoint
-	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/weapon)
+	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/weapon
+	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/messageSystem)
 
-IF(NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-add_definitions( -O3 -DLOG_ENABLE_TRACE -DLOG_ENABLE_DEBUG)
-ENDIF(NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+IF(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+	message("-- Compiling client in debug mode")
+	add_definitions( -O3 -DLOG_ENABLE_TRACE -DLOG_ENABLE_DEBUG)
+ENDIF()
 
 add_executable(${OF_CLIENT_BINARY} ${CLIENT_SOURCES})
 target_link_libraries(${OF_CLIENT_BINARY}

@@ -1,4 +1,5 @@
 #include "game.h"
+#include "messageSystem.h"
 
 namespace game
 {
@@ -494,8 +495,10 @@ namespace game
 
     void initclient()
     {
+        LOG_INFO("Initializing client");
         player1 = spawnstate(new fpsent);
         players.add(player1);
+        messageSystem::MessageManager::registerInternal();
     }
 
     VARP(showmodeinfo, 0, 1, 1);

@@ -1,5 +1,6 @@
 #include "game.h"
 #include "../server/server.h"
+#include "messageSystem.h"
 
 
 namespace game
@@ -444,6 +445,7 @@ namespace server
 
     void serverinit()
     {
+        messageSystem::MessageManager::registerInternal();
         smapname[0] = '\0';
         resetitems();
     }
@@ -2452,6 +2454,9 @@ namespace server
 #ifdef SERVER
                         server::lua::onConnect(server::lua::instance);
 #endif
+                        //Register protocol messages
+                        messageSystem::MessageManager::syncMessages(ci->clientnum);
+
                         connected(ci);
                     }
                     break;
@@ -3187,10 +3192,13 @@ namespace server
 
             default: genericmsg:
             {
-                int size = server::msgsizelookup(type);
-                if(size<=0) { disconnect_client(sender, DISC_MSGERR); return; }
-                loopi(size-1) getint(p);
-                if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
+                if(!messageSystem::MessageManager::receive(type, -1, sender, p))
+                {
+                    int size = server::msgsizelookup(type);
+                    if(size<=0) { disconnect_client(sender, DISC_MSGERR); return; }
+                    loopi(size-1) getint(p);
+                    if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
+                }
                 break;
             }
         }

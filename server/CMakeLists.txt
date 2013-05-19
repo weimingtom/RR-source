@@ -24,11 +24,13 @@ set(SERVER_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/../engine/lua.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/entities.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/server.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/../fpsgame/messageSystem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/core_bindings.cpp)
 
-IF(NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+IF(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+message("-- Compiling server in debug mode")
 add_definitions( -O3 -DLOG_ENABLE_TRACE -DLOG_ENABLE_DEBUG)
-ENDIF(NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+ENDIF(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
 
 add_executable(${OF_SERVER_BINARY} ${SERVER_SOURCES})
 target_link_libraries(${OF_SERVER_BINARY}
