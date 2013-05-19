@@ -473,7 +473,7 @@ static bool loadsoundslot(soundslot &slot, bool msg = false)
             formatstring(filename)("%s%s", slot.sample->name, exts[i]);
 
         if(msg && !i) renderprogress(0, filename);
-        path(filename);
+        
         slot.sample->chunk = loadwav(filename);
         if(slot.sample->chunk) return true;
     }
