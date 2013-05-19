@@ -531,9 +531,9 @@ namespace fs
                 formatstring(newPath)("%s%s", bundles[i]->path, path+j);
 
                 LookedUp *lookup = new LookedUp;
-                char *_newPath = newstring(newPath);
-                ::path(_newPath);
-                lookup->path = _newPath;
+
+                lookup->path = newstring(newPath);
+                ::path(lookup->path);
 
                 lookup->name = newstring(path);
                 lookedUp.add(lookup);
@@ -549,11 +549,14 @@ namespace fs
 
     void addBundle(const char *name, const char *path)
     {
-        printf("Registered bundle \"%s\": %s\n", name, path);
-        bundles.add(new Bundle(newstring(name), ::path(newstring(path))));
+        char *actualPath = ::path(newstring(path));
+        char *altName = ::path(newstring(name));
 
-	//Windows workaround, please fix by removing path() before lookup
-	bundles.add(new Bundle(::path(newstring(name)), ::path(newstring(path))));
+        printf("Registered bundle \"%s\": %s (Actually: %s, also registered %s)\n", name, path, actualPath, altName);
+        bundles.add(new Bundle(newstring(name), actualPath));
+
+        //Windows workaround, please fix by removing path() before lookup
+        bundles.add(new Bundle(altName, actualPath));
     }
 
     //TODO: allow extending packages and make this less required
@@ -602,6 +605,7 @@ namespace fs
                             {
                                 printf("Package: %s %i %i\n", packages[i]->path, packages[i]->isDirectory, packages[i]->isFile);
                                 defformatstring(configName)("%s/%s", packages[i]->path, "package.lua");
+                                path(configName);
 
                                 env.push(packages[i]->path);
                                 env.setGlobal("__BUNDLE_PATH__");
