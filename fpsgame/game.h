@@ -351,24 +351,28 @@ static struct itemstat { int add, sound; const char *name; int icon; int info; }
 #define EXP_SELFPUSH 2.5f
 #define EXP_DISTSCALE 1.5f
 
-static const struct guninfo { int sound, attackdelay, damage, maxammo, spread, projspeed, kickamount, range, rays, hitpush, exprad, ttl; const char *name, *file; short part; } guns[NUMGUNS] =
+static const struct guninfo { int sound, attackdelay, damage, maxammo, spread, projspeed, kickamount, range, rays, hitpush, exprad, ttl; const char *name, *file; short part; int icon; } guns[NUMGUNS] =
 {
 	//sound		  attd	damage ammo	sprd	prsd	kb	rng	 rays  htp	exr	 ttl  name					file			part
-    { S_PUNCH1,    250,  50,	1,	0,		  0,	0,   14,   1,   80,	 0,    0, "MELEE",				"",					 0 },
-    { S_SG,       1400,  10,	36,	400,	  0,	20, 1024, 20,   80,  0,    0, "shotgun",			"",					 0 },
-    { S_CG,        100,  30,	200,100,	  0,	7,  1024,  1,   80,  0,    0, "machine gun",        "",					 0 },
-    { S_RLFIRE,    800, 120,	10,	0,		320,	10, 1024,  1,  160, 40,    0, "RPG",				"",					 0 },
-    { S_FLAUNCH,   600,  90,	20,	0,		200,	10, 1024,  1,  250, 45, 1500, "Razzor Cannon",		"",					 0 }, // razzor cannon
-	{ S_FLAUNCH,   600,  90,	20,	0,		200,	10, 1024,  1,  250, 45, 1500, "grenadelauncher",	"",					 0 },
-	{ S_PISTOL,    500,  35,	60,	50,		  0,	 7,	1024,  1,   80,  0,    0, "carbine",			"",					 0 }, //carbine
-    { S_PISTOL,    500,  35,	60,	50,		  0,	 7,	1024,  1,   80,  0,    0, "revolver",			"",		 			 0 },
-    { S_FLAUNCH,   200,  20,	0,	0,		200,	 1,	1024,  1,   80, 40,    0, "fireball",			NULL,	PART_FIREBALL1 },
-    { S_ICEBALL,   200,  40,	0,	0,		120,	 1,	1024,  1,   80, 40,    0, "iceball",			NULL,   PART_FIREBALL2 },
-    { S_SLIMEBALL, 200,  30,	0,	0,		640,	 1,	1024,  1,   80, 40,    0, "slimeball",			NULL,   PART_FIREBALL3 },
-    { S_PIGR1,     250,  50,	0,	0,		  0,	 1,	  12,  1,   80,  0,    0, "bite",				NULL,				 0 },
-    { -1,            0, 120,	0,	0,		  0,	 0,    0,  1,   80, 40,    0, "barrel",				NULL,				 0 },
-	{-1,			 0,	  0,	0,	0,		  0,	 0,	   0,  0,	 0,	 0,	   0,  "",					"",					 0 }
+    { S_PUNCH1,    250,  50,	1,	0,		  0,	0,   14,   1,   80,	 0,    0, "MELEE",				"",					 0,     HICON_FIST },
+    { S_SG,       1400,  10,	36,	400,	  0,	20, 1024, 20,   80,  0,    0, "shotgun",			"",					 0,     HICON_SG },
+    { S_CG,        100,  30,	200,100,	  0,	7,  1024,  1,   80,  0,    0, "machine gun",        "",					 0,     HICON_CG },
+    { S_RLFIRE,    800, 120,	10,	0,		320,	10, 1024,  1,  160, 40,    0, "RPG",				"",					 0,     HICON_RIFLE },
+    { S_FLAUNCH,   600,  90,	20,	0,		200,	10, 1024,  1,  250, 45, 1500, "Razzor Cannon",		"",					 0,     HICON_RL }, // razzor cannon
+	{ S_FLAUNCH,   600,  90,	20,	0,		200,	10, 1024,  1,  250, 45, 1500, "grenadelauncher",	"",					 0,     HICON_RL },
+	{ S_PISTOL,    500,  35,	60,	50,		  0,	 7,	1024,  1,   80,  0,    0, "carbine",			"",					 0,     HICON_PISTOL }, //carbine
+    { S_PISTOL,    500,  35,	60,	50,		  0,	 7,	1024,  1,   80,  0,    0, "revolver",			"",		 			 0,     HICON_PISTOL },
+    { S_FLAUNCH,   200,  20,	0,	0,		200,	 1,	1024,  1,   80, 40,    0, "fireball",			NULL,	PART_FIREBALL1,     HICON_RL },
+    { S_ICEBALL,   200,  40,	0,	0,		120,	 1,	1024,  1,   80, 40,    0, "iceball",			NULL,   PART_FIREBALL2,     HICON_FIST },
+    { S_SLIMEBALL, 200,  30,	0,	0,		640,	 1,	1024,  1,   80, 40,    0, "slimeball",			NULL,   PART_FIREBALL3,     HICON_FIST },
+    { S_PIGR1,     250,  50,	0,	0,		  0,	 1,	  12,  1,   80,  0,    0, "bite",				NULL,				 0,     HICON_FIST },
+    { -1,            0, 120,	0,	0,		  0,	 0,    0,  1,   80, 40,    0, "barrel",				NULL,				 0,     HICON_FIST },
+	{-1,			 0,	  0,	0,	0,		  0,	 0,	   0,  0,	 0,	 0,	   0,  "",					"",					 0,     HICON_FIST }
 };
+
+#define GUN_AMMO_MAX(gunselect) guns[gunselect].maxammo
+#define NUMWEAPS NUMGUNS
+#define WEAP_USABLE(weapon) true
 
 //static char *PmodelDir[6]= {"","","","","",""};
 
@@ -416,7 +420,11 @@ struct fpsstate
     int aitype, skill;
 	int pclass;
 
-    fpsstate() : maxhealth(100), aitype(AI_NONE), skill(0), pclass(0) {}
+    //Fire
+    bool onfire;
+    int burnmillis;
+
+    fpsstate() : maxhealth(100), aitype(AI_NONE), skill(0), pclass(0), onfire(false) {}
 
     void baseammo(int gun, int k = 2, int scale = 1)
     {
@@ -754,6 +762,12 @@ namespace game
     extern void getbestteams(vector<const char *> &best);
     extern void clearteaminfo();
     extern void setteaminfo(const char *team, int frags);
+    extern int groupplayers(); //killme: made public
+    struct scoregroup : teamscore //killme: made public
+    {
+        vector<fpsent *> players;
+    };
+    extern vector<scoregroup *> groups; //killme: made public
 
     // render
     struct playermodelinfo

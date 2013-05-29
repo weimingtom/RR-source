@@ -1,5 +1,6 @@
 #include "game.h"
 #include "messageSystem.h"
+#include "engine.h"
 
 namespace game
 {
@@ -689,7 +690,6 @@ namespace game
         gle::end();
     }
 
-
     float abovegameplayhud(int w, int h)
     {
         switch(hudplayer()->state)
@@ -701,7 +701,173 @@ namespace game
                 return 1650.0f/1800.0f;
         }
     }
+        void drawometer(float progress, float size, vec pos, vec color)
+        {
+        pushhudmatrix();
 
+//todo          glColor3fv(color.v);
+        //hudmatrix.d = vec4(color.x, color.y, color.z, 1);
+        hudmatrix.translate(vec(pos.x, pos.y, 0));
+        hudmatrix.scale(size, size, 1);
+        flushhudmatrix(); //needed?
+
+                int angle = progress*360.f;
+                int loops = angle/45;
+                angle %= 45;
+                float x = 0, y = -.5;
+                settexture("@{tig/rr-core}/texture/hud/meter.png");
+        gle::defvertex(2);
+        gle::deftexcoord0();
+        gle::begin(GL_TRIANGLE_FAN);
+                gle::attribf(.5, .5);   gle::attribf(0, 0);
+                gle::attribf(.5, 0);    gle::attribf(x, y);
+                loopi(loops)
+                {
+                        y==0||y==x? y -= x: x += y; // y-x==0
+                        gle::attribf(x+.5, y+.5);       gle::attribf(x, y);
+                }
+
+                if (angle)
+                {
+                        float ang = sinf(angle*RAD)*(sqrtf(powf(x, 2)+powf(y, 2)));
+                        if (y==0||y==x) { (x < 0)? y += ang : y -= ang; } // y-x==0
+                        else { (y < 0)? x -= ang: x += ang; }
+                        gle::attribf(x+.5, y+.5);       gle::attribf(x, y);
+                }
+                gle::end();
+
+                pophudmatrix();
+        }
+    /*
+        vector<hudevent> hudevents;
+
+        void drawhudevents(fpsent *d, int w, int h) // not fully implemented yet
+        {
+                if (d != player1) return;
+                if (d->state != CS_ALIVE)
+                {
+                        hudevents.shrink(0);
+                        return;
+                }
+                float rw = ((float)w / ((float)h/1800.f)), rh = 1800;
+                float iw = rw+512.f, ix = 256;
+
+                loopi(hudevents.length())
+                {
+                        if (lastmillis-hudevents[i].millis > 2000)
+                        {
+                                hudevents.remove(i);
+                                if (hudevents.length()) hudevents[0].millis = lastmillis;
+                                continue;
+                        }
+
+                        float x = clamp((lastmillis-hudevents[i].millis)-1000.f, -1000.f, 1000.f);
+                        x = ((x<0? min(x+500.f, 0.f): max(x-500.f, 0.f))+500)/1000*iw -ix;
+                        float y = 350;
+
+                        Texture *i_special = NULL;
+                        switch (hudevents[i].type)
+                        {
+                                case HET_HEADSHOT:
+                                        i_special = textureload("@{tig/rr-core}/texture/hud/.png", 0, true, false);
+                                        break;
+                                case HET_DIRECTHIT:
+                                        i_special = textureload("@{tig/rr-core}/texture/hud/.png", 0, true, false);
+                                        break;
+                        }
+                        float sw = i_special->xs/2,
+                                  sh = i_special->ys;
+//todo
+                        glBindTexture(GL_TEXTURE_2D, i_special->id);
+                        glColor4f(1.f, 1.f, 1.f, 1.f);
+
+                        gle::defvertex(2);
+                gle::deftexcoord0();
+                gle::begin(GL_TRIANGLE_STRIP);
+                        gle::attribf(0, 0); gle::attribf(x-sw,       y);
+                        gle::attribf(1, 0); gle::attribf(x+sw,       y);
+                        gle::attribf(0, 1); gle::attribf(x-sw,       y+sh);
+                        gle::attribf(1, 1); gle::attribf(x+sw,       y+sh);
+                        gle::end();
+                        break;
+                }
+        }
+    */
+        float a_scale = 1.2f;
+//#include "engine.h"
+        void drawroundicon(int w,int h)
+        {
+                //static Texture *i_round = NULL;
+                //if (!i_round) i_round = textureload("@{tig/rr-core}/texture/hud/round.png", 0, true, false);
+                //static Texture *i_roundnum = NULL;
+                //if (!i_roundnum) i_roundnum = textureload("@{tig/rr-core}/texture/hud/roundnum.png", 0, true, false);
+
+                pushhudmatrix();
+        hudmatrix.scale(a_scale, a_scale, 1);
+        flushhudmatrix();
+                float x = 230,
+                      y = 1700/a_scale;// - i_round->ys/a_scale;
+                float sw = 70,//i_round->xs,
+                      sh = 70;//i_round->ys;
+
+                // draw meter
+                drawometer(/*min((float)remain/(float)roundtotal, 1.f)*/1.0f, 150, vec(x+120, y-80, 0), vec(1, 0, 0));
+
+        //      glColor4f(1.f, 1.f, 1.f, 1.f); hudmatrix.d = vec4(1, 1, 1, 1);
+
+                // draw "round" icon
+                //glBindTexture(GL_TEXTURE_2D, i_round->id);
+        settexture("@{tig/rr-core}/texture/hud/round.png");
+
+        gle::defvertex(2);
+        gle::deftexcoord0();
+        gle::begin(GL_TRIANGLE_STRIP);
+        gle::attribf(0, 0); gle::attribf(x,          y);
+        gle::attribf(1, 0); gle::attribf(x+sw,       y);
+        gle::attribf(0, 1); gle::attribf(x,          y+sh);
+        gle::attribf(1, 1); gle::attribf(x+sw,       y+sh);
+        gle::end();
+
+                // draw round number (fingers)
+                x += sw+10;
+                y -= sh/2.5;
+        float dmround = 4.0;
+                float rxscale = min(740.f/(dmround*40-(dmround/5)*15), 1.f);
+                x /= rxscale;
+                hudmatrix.scale(rxscale, 1, 1);
+        flushhudmatrix();
+        settexture("@{tig/rr-core}/texture/hud/roundnum.png");
+                //glBindTexture(GL_TEXTURE_2D, i_roundnum->id);
+                sw = 70;//i_roundnum->xs;
+                sh = 70;//i_roundnum->ys;
+
+                for(int i=0; i<dmround; i++)
+                {
+            gle::defvertex(2);
+            gle::deftexcoord0();
+            gle::begin(GL_TRIANGLE_STRIP);
+                        if(i%5 == 4)
+                        {
+                                float tempx = x-(50*3);
+                                float tempy = y-20;
+
+                                gle::attribf(0, 0); gle::attribf(tempx+(180.f),   tempy);
+                                gle::attribf(1, 0); gle::attribf(tempx+(220.f),   tempy+(sh*.6f));
+                                gle::attribf(0, 1); gle::attribf(tempx,           tempy+(sh*.8f));
+                                gle::attribf(1, 1); gle::attribf(tempx+(40.f),    tempy+(sh*1.3f));
+
+                                x += 25;
+                        } else {
+                                gle::attribf(0, 0); gle::attribf(i%5 < 2 ? x+sw : x, y);
+                                gle::attribf(1, 0); gle::attribf(i%5 < 2 ? x : x+sw, y);
+                                gle::attribf(0, 1); gle::attribf(i%5 < 2 ? x+sw : x, y+sh);
+                                gle::attribf(1, 1); gle::attribf(i%5 < 2 ? x : x+sw, y+sh);
+                                x += 40;
+                        }
+            gle::end();
+                }
+                pophudmatrix();
+        }
     int ammohudup[3] = { GUN_CG, GUN_RL, GUN_GL },
         ammohuddown[3] = { GUN_RIFLE, GUN_SG, GUN_PISTOL },
         ammohudcycle[7] = { -1, -1, -1, -1, -1, -1, -1 };
@@ -764,30 +930,334 @@ namespace game
         pophudmatrix();
     }
 
-
-    void drawhudicons(fpsent *d)
+    void drawammohud(fpsent *d, int w, int h)
     {
-        pushhudmatrix();
-        hudmatrix.scale(2, 2, 1);
+        float rw = ((float)w / ((float)h/1800.f)), rh = 1800, sz = HICON_SIZE;
+                //glColor4f(1.f, 1.f, 1.f, 1.f);
+
+                // draw ammo bar
+
+                //static Texture *ammo_bar = NULL;
+                //if (!ammo_bar) ammo_bar = textureload("@{tig/rr-core}/texture/hud/ammo_bar.png", 0, true, false);
+                //glBindTexture(GL_TEXTURE_2D, ammo_bar->id);
+        settexture("@{tig/rr-core}/texture/hud/ammo_bar.png");
+
+                float aw = 100, ah = 100;//ammo_bar->xs * 1.9, ah = ammo_bar->ys * 1.9;
+                float ax = rw - aw, ay = rh - ah;
+
+                //glColor3f((m_teammode||d->infected)? 0.7: 1, d->infected? 1: (m_teammode? 0.7: 1), d->infected? 0.7: 1);
+                //again: possible hudmatrix.d dunno test it
+
+        gle::defvertex(2);
+        gle::deftexcoord0();
+        gle::begin(GL_TRIANGLE_STRIP);
+                gle::attribf(0, 0); gle::attribf(ax     ,       ay);
+                gle::attribf(1, 0); gle::attribf(ax+aw, ay);
+                gle::attribf(0, 1); gle::attribf(ax     ,       ay+ah);
+                gle::attribf(1, 1); gle::attribf(ax+aw, ay+ah);
+                gle::end();
+
+                pushhudmatrix();
+                hudmatrix.scale(2.f, 2.f, 1.f);
         flushhudmatrix();
+                // draw ammo count
 
-        draw_textf("%d", (HICON_X + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, d->state==CS_DEAD ? 0 : d->health);
-        if(d->state!=CS_DEAD)
-        {
-            if(d->armour) draw_textf("%d", (HICON_X + HICON_STEP + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, d->armour);
-            draw_textf("%d", (HICON_X + 2*HICON_STEP + HICON_SIZE + HICON_SPACE)/2, HICON_TEXTY/2, d->ammo[d->gunselect]);
-        }
+                char tcx[10];
+                int tcw, tch;
+                sprintf(tcx, "%d", d->ammo[d->gunselect]);
+                text_bounds(tcx, tcw, tch);
+                draw_text(tcx, (int)rw/2 - 80 - tcw/2, (rh-260-tch)/2);
 
+                // draw bullets
+
+                //static Texture *ammo_bullet = NULL;
+                //if (!ammo_bullet) ammo_bullet = textureload("@{tig/rr-core}/texture/hud/ammo_bullet.png", 0, true, false);
+                //glBindTexture(GL_TEXTURE_2D, ammo_bullet->id);
+
+
+                float step = 15,
+                          sx = (int)rw/2 - 190,
+                          sy = (rh-260-tch)/2;
+
+                int btd;
+                int max = GUN_AMMO_MAX(d->gunselect);
+                if (max <= 21 && d->ammo[d->gunselect] <= 21) btd = d->ammo[d->gunselect];
+                else btd = (int)ceil((float)min(d->ammo[d->gunselect], max)/max * 21.f);
+
+                loopi(btd)
+                {
+                        gle::defvertex(2);
+            gle::deftexcoord0();
+            gle::begin(GL_TRIANGLE_STRIP);
+                        gle::attribf(0, 0); gle::attribf(sx                             ,       sy);
+                        gle::attribf(1, 0); gle::attribf(sx+20/*ammo_bullet->w*/,       sy);
+                        gle::attribf(0, 1); gle::attribf(sx                             ,       sy+20/*ammo_bullet->h*/);
+                        gle::attribf(1, 1); gle::attribf(sx+20/*ammo_bullet->w*/,       sy+20/*ammo_bullet->h*/);
+                        gle::end();
+
+                        sx -= step;
+                }
+                pophudmatrix();
+
+                // draw weapon icons
+
+        pushhudmatrix();
+        float xup = (rw-1000+sz)*1.5f, yup = HICON_Y*1.5f+8;
+        glScalef(1/1.5f, 1/1.5f, 1);
+                loopi(NUMWEAPS)
+                {
+                        int gun = (i+1)%NUMWEAPS;
+                        if (!WEAP_USABLE(gun)) continue;
+                        if (gun == d->gunselect)
+                        {
+                                drawicon(guns[gun].icon, xup - 30, yup - 60, 180);
+                                xup += sz * 1.5;
+                                continue;
+                        }
+                        if (!d->ammo[gun]) continue;
+
+            drawicon(guns[gun].icon, xup, yup, sz);
+                        xup += sz * 1.5;
+                }
         pophudmatrix();
+        }
+    void drawhudbody(float x, float y, float sx, float sy, float ty)
+    {
+                gle::defvertex(2);
+        gle::deftexcoord0();
+        gle::begin(GL_TRIANGLE_STRIP);
+                gle::attribf(0, ty); gle::attribf(x     ,       y);
+                gle::attribf(1, ty); gle::attribf(x+sx, y);
+                gle::attribf(0, 1);  gle::attribf(x     ,       y+sy);
+                gle::attribf(1, 1);  gle::attribf(x+sx, y+sy);
+                gle::end();
+    }
 
-        drawicon(HICON_HEALTH, HICON_X, HICON_Y);
+        VARP(gunwaithud, 0, 1, 1);
+
+        void drawcrosshairhud(fpsent *d, int w, int h)
+        {
+                if (!gunwaithud || d->gunwait <= 300) return;
+
+                float mwait = ((float)(lastmillis-d->lastaction)*(float)(lastmillis-d->lastaction))/((float)d->gunwait*(float)d->gunwait);
+                mwait = clamp(mwait, 0.f, 1.f);
+
+                ////static Texture *gunwaitt = NULL;
+                ////if (!gunwaitt) gunwaitt = textureload("@{tig/rr-core}/texture/hud/gunwait.png", 0, true, false);
+                //static Texture *gunwaitft = NULL;
+                //if (!gunwaitft) gunwaitft = textureload("@{tig/rr-core}/texture/hud/gunwait_filled.png", 0, true, false);
+
+                float rw = ((float)w / ((float)h/1800.f)), rh = 1800;
+                float scale = a_scale * 1.6;
+                float x = (rw/scale)/2.f+100, y = (rh-40/*gunwaitft->ys*/*2.f)/(scale*2.f);
+
+                pushhudmatrix();
+                hudmatrix.scale(scale, scale, 1);
+        flushhudmatrix();
+                //glColor4f(1.0f, 1.0f, 1.0f, 0.5); hudmatrix.d = vec4( probably
+
+                //glBindTexture(GL_TEXTURE_2D, gunwaitt->id);
+                //drawhudbody(x, y, gunwaitt->xs, gunwaitt->ys, 0);
+        settexture("@{tig/rr-core}/texture/hud/gunwait_filled.png");
+                //glBindTexture(GL_TEXTURE_2D, gunwaitft->id);
+                drawhudbody(x, y + (1-mwait) * 40/*gunwaitft->ys*/, 30/*gunwaitft->xs*/, mwait * 20/*gunwaitft->ys*/, 1-mwait);
+
+                pophudmatrix();
+        }
+
+        VARP(hudplayers, 0, 1, 1);
+
+        void drawhudplayers(fpsent *d, int w, int h)
+        {
+                #define loopscoregroup(o, b) \
+                loopv(sg->players) \
+                { \
+                        fpsent *o = sg->players[i]; \
+                        b; \
+                }
+
+                int numgroups = groupplayers();
+                if (numgroups <= 1) return;
+
+                if (!hudplayers) return;
+
+                scoregroup *sg = NULL;
+                loopv(groups) if (!strcmp(groups[i]->team, d->team)) sg = groups[0];
+                if (!sg) return;
+
+                int numplayers = min(sg->players.length(), 9);
+                int x = 1800*w/h - 500, y = 540, step = curfont->scale+4;
+                int iy = y + step*numplayers - 15;
+
+                //glEnable(GL_BLEND);
+                //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                //defaultshader->set();
+        //hudshader->set();
+
+                //static Texture *teamhudbg = NULL; //lol wtf you declare it as NULL and say if ! ? :D
+                //if (!teamhudbg) teamhudbg = textureload("@{tig/rr-core}/texture/hud/teamhudbg.png", 0, true, false);
+                //glBindTexture(GL_TEXTURE_2D, teamhudbg->id);
+        settexture("@{tig/rr-core}/texture/hud/teamhudbg.png");
+
+                //glColor4f(.2f, .2f, .6f, .2f);
+
+                gle::defvertex(2);
+        gle::deftexcoord0();
+        gle::begin(GL_TRIANGLE_STRIP);
+                gle::attribf(0.f, 0.f); gle::attribf(x-10,  y-10);
+                gle::attribf(1.f, 0.f); gle::attribf(x+460, y-10);
+                gle::attribf(0.f, 1.f); gle::attribf(x-10,  iy);
+                gle::attribf(1.f, 1.f); gle::attribf(x+460, iy);
+                gle::end();
+
+                string cname;
+                stringformatter cfmt = stringformatter(cname);
+                //settextscale(.6f);
+
+                loopi(numplayers)
+                {
+                        fpsent *o = sg->players[i];
+                        cfmt("%s: \fb%s", PClasses[o->pclass].name, colorname(o));
+                        draw_text(cname, x, y);
+                        y += step;
+                }
+
+                //settextscale(1.f);
+        }
+
+        int lastguts=0, lastgutschangemillis=0, lastgutschange=0;
+
+        int pmillis = 0;
+
+        float lasthp = 0, lastap = 0;
+    void drawhudicons(fpsent *d, int w, int h)
+        {
         if(d->state!=CS_DEAD)
         {
-            if(d->armour) drawicon(HICON_BLUE_ARMOUR+d->armourtype, HICON_X + HICON_STEP, HICON_Y);
-            drawicon(HICON_FIST+d->gunselect, HICON_X + 2*HICON_STEP, HICON_Y);
-            if(d->quadmillis) drawicon(HICON_QUAD, HICON_X + 3*HICON_STEP, HICON_Y);
-            if(ammohud) drawammohud(d);
-        }
+                        // draw guts
+                        /*if(m_survivalb)
+                        {
+                                //int tw, th;
+                                //text_bounds(gutss, tw, th);
+                                int guts = (d==player1)? d->guts: lastguts;
+                                //@todo: consider making the G in "Guts" lowercase
+                                defformatstring(gutss)("\f1Guts: \f3%d", guts);
+                                draw_text(gutss, w*1800/h - 420, 1350);
+
+                                if (guts != lastguts)
+                                {
+                                        lastgutschange = guts-lastguts;
+                                        lastgutschangemillis = lastmillis;
+                                }
+                                if (lastgutschange && lastmillis-lastgutschangemillis<2550)
+                                {
+                                        formatstring(gutss)(lastgutschange>0? "\fg+%d": "\fe%d", lastgutschange);
+                                        draw_text(gutss, w*1800/h - 262, 1300, 255, 255, 255, 255-((lastmillis-lastgutschangemillis)/10));
+                                }
+                                lastguts = guts;
+                        }*/
+
+                        // draw ammo
+            if(d->quadmillis) drawicon(HICON_QUAD, 80, 1200);
+            if(ammohud) drawammohud(d, w, h);
+                        //if(m_dmsp) drawroundicon(w,h);
+                        drawcrosshairhud(d, w, h);
+
+                        if (!m_insta)
+                        {
+                                //static Texture *h_body_fire = NULL;
+                                //if (!h_body_fire) h_body_fire = textureload("@{tig/rr-core}/texture/hud/body_fire.png", 0, true, false);
+                                //static Texture *h_body = NULL;
+                                //if (!h_body) h_body = textureload("@{tig/rr-core}/texture/hud/body.png", 0, true, false);
+                                //static Texture *h_body_white = NULL;
+                                //if (!h_body_white) h_body_white = textureload("@{tig/rr-core}/texture/hud/body_white.png", 0, true, false);
+
+                                pushhudmatrix();
+                                hudmatrix.scale(a_scale, a_scale, 1);
+
+                                int bx = HICON_X * 2,
+                                        by = HICON_Y/a_scale - 50/*h_body->ys*//a_scale;
+                                int bt = lastmillis - pmillis;
+
+                                // draw fire
+                                float falpha = d->onfire? (float)(abs(((lastmillis-d->burnmillis)%900)-450)+50)/500: 0.f;
+                                if (falpha)
+                                {
+                                        //glBindTexture(GL_TEXTURE_2D, h_body_fire->id);
+                    settexture("@{tig/rr-core}/texture/hud/body_fire.png");
+                    //i uncommented all these textureload stuff because glBindTexture wont work anymore
+                    //i would recommend to write a function void gettexturesize(int &h, int &w); or sth
+                                        //glColor4f(1.f, 1.f, 1.f, falpha); hudmatrix.d probably
+
+                                        // -20 works for "some reason"
+                                        drawhudbody(bx, HICON_Y/a_scale - 30/*h_body_fire->ys*//a_scale - 20,
+                                                                50/*h_body_fire->xs*/, 30/*h_body_fire->ys*/, 0);
+                                }
+
+                                // draw health
+                                lasthp += float((d->health>lasthp)? 1: (d->health<lasthp)? -1: 0) * min(curtime/10.f, float(abs(d->health-lasthp)));
+                                lasthp = min(lasthp, (float)d->maxhealth);
+                                float b = max(lasthp, 0.f) / d->maxhealth, ba = 1;
+                                if (b <= .4f)
+                                {
+                                        ba = ((float)bt-500) / 500 + 0.2;
+                                        if (ba < 0) ba *= -1;
+                                        if (bt >= 1000) pmillis = lastmillis;
+                                }
+                settexture("@{tig/rr-core}/texture/hud/body.png");
+                                //glBindTexture(GL_TEXTURE_2D, h_body->id);
+                                drawhudbody(bx, by, 50/*h_body->xs*/, 40/*h_body->ys*/, 0);
+                settexture("@{tig/rr-core}/texture/hud/body_white.png");
+                                //glBindTexture(GL_TEXTURE_2D, h_body_white->id);
+                                glColor4f(1-b, max(b-0.6f, 0.f), 0.0, ba);
+                                drawhudbody(bx, by + (1-b) * 30/*h_body_white->ys*/, 46/*h_body_white->xs*/, b * 30/*h_body_white->ys*/, 1-b);
+
+                                // draw armour
+                                //static Texture *h_body_armour = NULL;
+                                //if (!h_body_armour) h_body_armour = textureload("@{tig/rr-core}/texture/hud/body_armour.png", 0, true, false);
+                                //glBindTexture(GL_TEXTURE_2D, h_body_armour->id);
+                settexture("@{tig/rr-core}/texture/hud/body_armour.png");
+                                float a_alpha = .8f;
+
+                                if (d->armour)
+                                {
+                                        int maxarmour = d->armour;
+                                        /*if (d->armourtype == A_BLUE)
+                                        {
+                                                maxarmour = 50;
+                                                //glColor4f(0.f, 0.f, 1.f, a_alpha); //all wont work but try .d
+                                        }
+                                        else if (d->armourtype == A_GREEN)
+                                        {
+                                                maxarmour = 100;
+                                                //glColor4f(0.f, .7f, 0.f, a_alpha);
+                                        }
+                                        else if (d->armourtype == A_YELLOW)
+                                        {
+                                                maxarmour = 200;
+                                                //glColor4f(1.f, 0.5f, 0.f, a_alpha);
+                                        }*/
+
+                                        lastap += ((d->armour>lastap)? 1: (d->armour<lastap)? -1: 0) * min(curtime/10.f, float(abs(d->armour-lastap)));
+                                        lastap = min(lastap, (float)maxarmour);
+                                        float c = max(lastap, 0.f) / (float)maxarmour;
+                                        drawhudbody(bx, by + (1-c) * 30/*h_body_armour->ys*/, 48/*h_body_armour->xs*/, c * 30/*h_body_armour->ys*/, 1-c);
+                                }
+
+                                pophudmatrix();
+
+                                char tst[20];
+                                int tw, th;
+                                if (d->armour > 0)
+                                        sprintf(tst, "%d/%d", d->health, d->armour);
+                                else
+                                        sprintf(tst, "%d", d->health);
+                                text_bounds(tst, tw, th);
+                                draw_text(tst, bx + (/*h_body->xs*/30*a_scale)/2 - tw/2, by*a_scale + /*h_body->ys*/46*a_scale + 6);
+                        }
+                        drawhudplayers(d, w, h);
+                        //drawhudevents(d, w, h);
+       }
     }
 
     void gameplayhud(int w, int h)
@@ -821,7 +1291,8 @@ namespace game
         fpsent *d = hudplayer();
         if(d->state!=CS_EDITING)
         {
-            if(d->state!=CS_SPECTATOR) drawhudicons(d);
+            drawhudicons(d, w, h);
+
             if(cmode) cmode->drawhud(d, w, h);
         }
 
