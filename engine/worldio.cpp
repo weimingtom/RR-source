@@ -32,7 +32,7 @@ vector<mapDefinition *> mapRegistry;
 
 void registerMap(const char *name, const char *path)
 {
-    mapRegistry.add(new mapDefinition(name, path));
+    mapRegistry.add(new mapDefinition(newstring(name), newstring(path)));
 }
 
 COMMAND(registerMap, "ss");
