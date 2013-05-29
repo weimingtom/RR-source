@@ -1175,7 +1175,15 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
         {
             cmds = tex->name;
             file = strrchr(tex->name, '>');
-            if(!file) { if(msg) conoutf(CON_ERROR, "could not load texture %s", tex->name); return false; }
+            if(!file)
+            {
+                LOG_ERROR("could not load texture %s", tex->name);
+                if(msg)
+                {
+                    conoutf(CON_ERROR, "could not load texture %s", tex->name);
+                }
+                return false;
+            }
             file++;
         }
         else file = tex->name;
@@ -1188,7 +1196,15 @@ static bool texturedata(ImageData &d, const char *tname, Slot::Tex *tex = NULL, 
     {
         cmds = tname;
         file = strrchr(tname, '>');
-        if(!file) { if(msg) conoutf(CON_ERROR, "could not load texture %s", tname); return NULL; }
+        if(!file)
+        {
+            LOG_ERROR("could not load texture %s", tname);
+            if(msg)
+            {
+                conoutf(CON_ERROR, "could not load texture %s", tname);
+            }
+            return NULL;
+        }
         file++;
     }
 
