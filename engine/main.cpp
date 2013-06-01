@@ -204,6 +204,7 @@ void renderbackground(const char *caption, Texture *mapshot, const char *mapname
 
 
         glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 #if 0
         settexture("<premul>data/gui/background_detail.png", 0);
         float du = w*0.8f/512.0f + detailu, dv = h*0.8f/512.0f + detailv;

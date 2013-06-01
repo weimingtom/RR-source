@@ -532,7 +532,7 @@ bool ellipsecollide(physent *d, const vec &dir, const vec &o, const vec &center,
     yo.rotate_around_z(yaw*RAD);
     yo.add(o);
     float x = yo.x - d->o.x, y = yo.y - d->o.y;
-    float angle = atan2f(y, x), dangle = angle-(d->yaw+90)*RAD, eangle = angle-(yaw+90)*RAD;
+    float angle = atan2f(y, x), dangle = angle-d->yaw*RAD, eangle = angle-yaw*RAD;
     float dx = d->xradius*cosf(dangle), dy = d->yradius*sinf(dangle);
     float ex = xr*cosf(eangle), ey = yr*sinf(eangle);
     float dist = sqrtf(x*x + y*y) - sqrtf(dx*dx + dy*dy) - sqrtf(ex*ex + ey*ey);
@@ -715,23 +715,45 @@ bool plcollide(physent *d, const vec &dir)    // collide with player or monster
     return true;
 }
 
-void rotatebb(vec &center, vec &radius, int yaw)
+void rotatebb(vec &center, vec &radius, int yaw, int pitch, int roll)
 {
-    if(yaw < 0) yaw = 360 + yaw%360;
-    else if(yaw >= 360) yaw %= 360;
-    const vec2 &rot = sincos360[yaw];
-    vec2 oldcenter(center), oldradius(radius);
-    center.x = oldcenter.x*rot.x - oldcenter.y*rot.y;
-    center.y = oldcenter.y*rot.x + oldcenter.x*rot.y;
-    radius.x = fabs(oldradius.x*rot.x) + fabs(oldradius.y*rot.y);
-    radius.y = fabs(oldradius.y*rot.x) + fabs(oldradius.x*rot.y);
+    if(roll)
+    {
+        if(roll < 0) roll = 360 + roll%360;
+        else if(roll >= 360) roll %= 360;
+        const vec2 &rot = sincos360[roll];
+        center.rotate_around_y(rot.x, -rot.y);
+        vec2 oldradius(radius.x, radius.z);
+        radius.x = fabs(oldradius.x*rot.x) + fabs(oldradius.y*rot.y);
+        radius.z = fabs(oldradius.y*rot.x) + fabs(oldradius.x*rot.y);
+    }
+    if(pitch)
+    {
+        if(pitch < 0) pitch = 360 + pitch%360;
+        else if(pitch >= 360) pitch %= 360;
+        const vec2 &rot = sincos360[pitch];
+        center.rotate_around_x(rot.x, rot.y);
+        vec2 oldradius(radius.y, radius.z);
+        radius.y = fabs(oldradius.x*rot.x) + fabs(oldradius.y*rot.y);
+        radius.z = fabs(oldradius.y*rot.x) + fabs(oldradius.x*rot.y);
+    }
+    if(yaw)
+    {
+        if(yaw < 0) yaw = 360 + yaw%360;
+        else if(yaw >= 360) yaw %= 360;
+        const vec2 &rot = sincos360[yaw];
+        center.rotate_around_z(rot.x, rot.y);
+        vec2 oldradius(radius);
+        radius.x = fabs(oldradius.x*rot.x) + fabs(oldradius.y*rot.y);
+        radius.y = fabs(oldradius.y*rot.x) + fabs(oldradius.x*rot.y);
+    }
 }
 
 template<class E, class M>
-static inline bool mmcollide(physent *d, const vec &dir, const extentity &e, const vec &center, const vec &radius, float yaw)
+static inline bool mmcollide(physent *d, const vec &dir, const extentity &e, const vec &center, const vec &radius, float yaw, float pitch, float roll)
 {
     E entvol(d);
-    M mdlvol(e.o, center, radius, yaw);
+    M mdlvol(e.o, center, radius, yaw, pitch, roll);
     vec cp;
     if(mpr::collide(entvol, mdlvol, NULL, NULL, &cp))
     {
@@ -750,32 +772,34 @@ bool mmcollide(physent *d, const vec &dir, octaentities &oc)               // co
     {
         extentity &e = *ents[oc.mapmodels[i]];
         if(e.flags&extentity::F_NOCOLLIDE) continue;
-        model *m = loadmodel(NULL, e.attr2);
+        model *m = loadmodel(NULL, e.attr1);
         if(!m || !m->collide) continue;
         vec center, radius;
         m->collisionbox(center, radius);
-        float yaw = e.attr1;
+        if(e.attr5 > 0) { float scale = e.attr5/100.f; center.mul(scale); radius.mul(scale); }
+        int yaw = e.attr2, pitch = e.attr3, roll = e.attr4;
         switch(d->collidetype)
         {
             case COLLIDE_ELLIPSE:
+                if(pitch || roll) rotatebb(center, radius, 0, pitch, roll);
                 if(m->ellipsecollide)
                 {
-                    //if(!mmcollide<mpr::EntCylinder, mpr::ModelEllipse>(d, dir, e, center, radius, yaw)) return false;
+                    //if(!mmcollide<mpr::EntCylinder, mpr::ModelEllipse>(d, dir, e, center, radius, yaw, pitch, roll)) return false;
                     if(!ellipsecollide(d, dir, e.o, center, yaw, radius.x, radius.y, radius.z, radius.z)) return false;
                 }
-                //else if(!mmcollide<mpr::EntCylinder, mpr::ModelOBB>(d, dir, e, center, radius, yaw)) return false;
+                //else if(!mmcollide<mpr::EntCylinder, mpr::ModelOBB>(d, dir, e, center, radius, yaw, pitch, roll)) return false;
                 else if(!ellipserectcollide(d, dir, e.o, center, yaw, radius.x, radius.y, radius.z, radius.z)) return false;
                 break;
             case COLLIDE_OBB:
                 if(m->ellipsecollide)
                 {
-                    if(!mmcollide<mpr::EntOBB, mpr::ModelEllipse>(d, dir, e, center, radius, yaw)) return false;
+                    if(!mmcollide<mpr::EntOBB, mpr::ModelEllipse>(d, dir, e, center, radius, yaw, pitch, roll)) return false;
                 }
-                else if(!mmcollide<mpr::EntOBB, mpr::ModelOBB>(d, dir, e, center, radius, yaw)) return false;
+                else if(!mmcollide<mpr::EntOBB, mpr::ModelOBB>(d, dir, e, center, radius, yaw, pitch, roll)) return false;
                 break;
             case COLLIDE_AABB:
             default:
-                rotatebb(center, radius, e.attr1);
+                rotatebb(center, radius, yaw, pitch, roll);
                 if(!rectcollide(d, dir, center.add(e.o), radius.x, radius.y, radius.z, radius.z)) return false;
                 break;
         }
@@ -1476,6 +1500,47 @@ bool move(physent *d, vec &dir)
     return !collided;
 }
 
+void crouchplayer(physent *pl, int moveres, bool local)
+{
+    if(!curtime) return;
+    float minheight = pl->maxheight * CROUCHHEIGHT, speed = (pl->maxheight - minheight) * curtime / float(CROUCHTIME);
+    if(pl->crouching < 0)
+    {
+        if(pl->eyeheight > minheight)
+        {
+            float diff = min(pl->eyeheight - minheight, speed);
+            pl->eyeheight -= diff;
+            if(pl->physstate > PHYS_FALL)
+            {
+                pl->o.z -= diff;
+                pl->newpos.z -= diff;
+            }
+        }
+    }
+    else if(pl->eyeheight < pl->maxheight)
+    {
+        float diff = min(pl->maxheight - pl->eyeheight, speed), step = diff/moveres;
+        pl->eyeheight += diff;
+        if(pl->physstate > PHYS_FALL)
+        {
+            pl->o.z += diff;
+            pl->newpos.z += diff;
+        }
+        pl->crouching = 0;
+        loopi(moveres)
+        {
+            if(collide(pl, vec(0, 0, pl->physstate <= PHYS_FALL ? -1 : 1), 0, true)) break;
+            pl->crouching = 1;
+            pl->eyeheight -= step;
+            if(pl->physstate > PHYS_FALL)
+            {
+                pl->o.z -= step;
+                pl->newpos.z -= step;
+            }
+        }
+    }
+}
+
 bool bounce(physent *d, float secs, float elasticity, float waterfric, float grav)
 {
     // make sure bouncers don't start inside geometry
@@ -1710,7 +1775,7 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
         {
             if(pl==player) d.mul(floatspeed/100.0f);
         }
-        else if(!water && game::allowmove(pl)) d.mul((pl->move && !pl->strafe ? 1.3f : 1.0f) * (pl->physstate < PHYS_SLOPE ? 1.3f : 1.0f));
+        else if(pl->physstate >= PHYS_SLOPE && pl->crouching) d.mul(0.4f);
     }
     float fric = water && !floating ? 20.0f : (pl->physstate >= PHYS_SLOPE || floating ? 6.0f : 30.0f);
     pl->vel.lerp(d, pl->vel, pow(1 - 1/fric, curtime/20.0f));
@@ -1931,6 +1996,7 @@ dir(left,     strafe,  1, k_left,  k_right);
 dir(right,    strafe, -1, k_right, k_left);
 
 ICOMMAND(jump,   "D", (int *down), { if(!*down || game::canjump()) player->jumping = *down!=0; });
+ICOMMAND(crouch, "D", (int *down), { if(!*down) player->crouching = abs(player->crouching); else if(game::cancrouch()) player->crouching = -1; });
 ICOMMAND(attack, "D", (int *down), { game::doattack(*down!=0); });
 
 bool entinmap(dynent *d, bool avoidplayers)        // brute force but effective way to find a free spawn spot in the map

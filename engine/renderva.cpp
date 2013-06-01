@@ -338,7 +338,7 @@ void drawbb(const ivec &bo, const ivec &br, const vec &camera)
         gle::attribf(ox rx, oy ry, oz rz);
     GENFACEVERTS(bo.x, bo.x + br.x, bo.y, bo.y + br.y, bo.z, bo.z + br.z, , , , , , )
     #undef GENFACEORIENT
-    #undef GENFACEVERTS
+    #undef GENFACEVERT
 
     xtraverts += gle::end();
 }
@@ -407,7 +407,7 @@ static inline void rendermapmodel(extentity &e)
 {
     int anim = ANIM_MAPMODEL|ANIM_LOOP, basetime = 0;
     if(e.flags&extentity::F_ANIM) entities::animatemapmodel(e, anim, basetime);
-    rendermapmodel(e.attr2, anim, e.o, e.attr1, 0, MDL_CULL_VFC | MDL_CULL_DIST, basetime);
+    rendermapmodel(e.attr1, anim, e.o, e.attr2, e.attr3, e.attr4, MDL_CULL_VFC | MDL_CULL_DIST, basetime, e.attr5 > 0 ? e.attr5/100.0f : 1.0f);
 }
 
 void rendermapmodels()
@@ -994,7 +994,7 @@ void batchshadowmapmodels()
     for(octaentities *oe = shadowmms; oe; oe = oe->rnext) loopvk(oe->mapmodels)
     {
         extentity &e = *ents[oe->mapmodels[k]];
-        if(e.flags&extentity::F_NOVIS) continue;
+        if(e.flags&(extentity::F_NOVIS|extentity::F_NOSHADOW)) continue;
         e.visible = true;
     }
     for(octaentities *oe = shadowmms; oe; oe = oe->rnext) loopvj(oe->mapmodels)

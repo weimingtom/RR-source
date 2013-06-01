@@ -18,13 +18,18 @@ bool getentboundingbox(extentity &e, ivec &o, ivec &r)
             return false;
         case ET_MAPMODEL:
         {
-            model *m = loadmodel(NULL, e.attr2);
+            model *m = loadmodel(NULL, e.attr1);
             if(m)
             {
                 vec center, radius;
                 m->boundbox(center, radius);
-                rotatebb(center, radius, e.attr1);
-
+                if(e.attr5 > 0)
+                {
+                    float scale = e.attr5/100.0f;
+                    center.mul(scale);
+                    radius.mul(scale);
+                }
+                rotatebb(center, radius, e.attr2, e.attr3, e.attr4);
                 o = e.o;
                 o.add(center);
                 r = radius;
@@ -65,7 +70,7 @@ void modifyoctaentity(int flags, int id, extentity &e, cube *c, const ivec &cor,
             switch(e.type)
             {
                 case ET_MAPMODEL:
-                    if(loadmodel(NULL, e.attr2))
+                    if(loadmodel(NULL, e.attr1))
                     {
                         if(va)
                         {
@@ -93,7 +98,7 @@ void modifyoctaentity(int flags, int id, extentity &e, cube *c, const ivec &cor,
             switch(e.type)
             {
                 case ET_MAPMODEL:
-                    if(loadmodel(NULL, e.attr2))
+                    if(loadmodel(NULL, e.attr1))
                     {
                         oe.mapmodels.removeobj(id);
                         if(va)
@@ -264,7 +269,7 @@ char *entname(entity &e)
 }
 
 extern selinfo sel;
-extern bool havesel, selectcorners;
+extern bool havesel;
 int entlooplevel = 0;
 int efocus = -1, enthover = -1, entorient = -1, oldhover = -1;
 bool undonext = true;
@@ -474,10 +479,11 @@ void entselectionbox(const entity &e, vec &eo, vec &es)
         eo.y += e.o.y;
         eo.z = e.o.z - entselradius + es.z;
     }
-    else if(e.type == ET_MAPMODEL && (m = loadmodel(NULL, e.attr2)))
+    else if(e.type == ET_MAPMODEL && (m = loadmodel(NULL, e.attr1)))
     {
         m->collisionbox(eo, es);
-        rotatebb(eo, es, e.attr1);
+        if(e.attr5 > 0) { float scale = e.attr5/100.0f; eo.mul(scale); es.mul(scale); }
+        rotatebb(eo, es, e.attr2, e.attr3, e.attr4);
 #if 0
         if(m->collide)
             eo.z -= player->aboveeye; // wacky but true. see physics collide
@@ -648,6 +654,15 @@ void renderentradius(extentity &e, bool color)
         }
 
         case ET_MAPMODEL:
+        {
+            if(color) gle::colorf(0, 1, 1);
+            entities::entradius(e, color);
+            vec dir;
+            vecfromyawpitch(e.attr2, e.attr3, 1, 0, dir);
+            renderentarrow(e, dir, 4);
+            break;
+        }
+
         case ET_PLAYERSTART:
         {
             if(color) gle::colorf(0, 1, 1);
@@ -806,12 +821,13 @@ bool dropentity(entity &e, int drop = -1)
     if(drop<0) drop = entdrop;
     if(e.type == ET_MAPMODEL)
     {
-        model *m = loadmodel(NULL, e.attr2);
+        model *m = loadmodel(NULL, e.attr1);
         if(m)
         {
             vec center;
             m->boundbox(center, radius);
-            rotatebb(center, radius, e.attr1);
+            if(e.attr5 > 0) { float scale = e.attr5/100.0f; center.mul(scale); radius.mul(scale); }
+            rotatebb(center, radius, e.attr2, e.attr3, e.attr4);
             radius.x += fabs(center.x);
             radius.y += fabs(center.y);
         }
@@ -889,6 +905,8 @@ extentity *newentity(bool local, const vec &o, int type, int v1, int v2, int v3,
         switch(type)
         {
                 case ET_MAPMODEL:
+                    if(!e.attr2) e.attr2 = (int)camera1->yaw;
+                    break;
                 case ET_PLAYERSTART:
                     e.attr5 = e.attr4;
                     e.attr4 = e.attr3;

@@ -610,12 +610,12 @@ struct ctfclientmode : clientmode
 #if 0
             if(m_hold)
                 rendermodel(flagname, ANIM_MAPMODEL|ANIM_LOOP,
-                        pos, angle, 0,
+                        pos, angle, 0, 0,
                         MDL_GHOST | MDL_CULL_VFC,
                         NULL, NULL, 0, 0, 0.5f + 0.5f*(2*fabs(fmod(lastmillis/1000.0f, 1.0f) - 0.5f)));
 #endif
             rendermodel(flagname, ANIM_MAPMODEL|ANIM_LOOP,
-                        pos, angle, 0,
+                        pos, angle, 0, 0,
                         MDL_CULL_VFC | MDL_CULL_OCCLUDED,
                         NULL, NULL, 0, 0, 0.3f + (f.vistime ? 0.7f*min((lastmillis - f.vistime)/1000.0f, 1.0f) : 0.0f));
 
@@ -713,6 +713,7 @@ struct ctfclientmode : clientmode
                 dropped = getint(p);
                 if(dropped) loopk(3) droploc[k] = getint(p)/DMF;
             }
+            if(p.overread()) break;
             if(commit && flags.inrange(i))
             {
                 flag &f = flags[i];
