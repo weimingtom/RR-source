@@ -29,7 +29,7 @@ enum                            // static entity types
     ENVMAP = ET_ENVMAP,         // attr1 = radius
     PARTICLES = ET_PARTICLES,
     MAPSOUND = ET_SOUND,
-    SPOTLIGHT = ET_SPOTLIGHT,
+    SPOTLIGHT = ET_SPOTLIGHT,   // attr1 = radius, attr2 = yawspeed, attr3 = pitchspeed
     I_SHELLS, I_BULLETS, I_ROCKETS, I_ROUNDS, I_GRENADES, I_CARTRIDGES, //remove at some point
     I_HEALTH, I_BOOST,I_GREENARMOUR, I_YELLOWARMOUR,I_QUAD,		//remove at some point
 	AMMO_L1,AMMO_L2,AMMO_L3,HEALTH_L1,HEALTH_L2,HEALTH_L3,	//once we are using

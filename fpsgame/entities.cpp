@@ -92,6 +92,7 @@ namespace entities
 
     void renderentities()
     {
+        static int lastLightUpdate = 0;
         loopv(ents)
         {
             extentity &e = *ents[i];
@@ -101,6 +102,36 @@ namespace entities
                 case TELEPORT:
                     if(e.attr2 < 0) continue;
                     break;
+
+                /**
+                 * Tig: Moving spotlights
+                 * @todo: More movement behaviour
+                 * @todo: fix bugs that cause the spotlight to move out of the map
+                 */
+                case LIGHT:
+                    if(e.attached && e.attached->type == SPOTLIGHT)
+                    {
+                        extentity &s = *e.attached;
+
+                        int timeDiff = lastmillis - lastLightUpdate;
+
+                        float dx = s.o.x - e.o.x;
+                        float dy = s.o.y - e.o.y;
+
+                        float radius = sqrt(pow(dx, 2) + pow(dy, 2));
+
+                        float pitchdiff = s.attr2 * timeDiff;
+                        pitchdiff = pitchdiff / 1000.f;
+                        pitchdiff = fmodf(pitchdiff, PI2);
+
+                        if( (pitchdiff != 0.0f) && radius > 0.0f)
+                        {
+                            s.o.x = e.o.x + radius * cos(pitchdiff + acos(dx/radius));
+                            s.o.y = e.o.y + radius * sin(pitchdiff + asin(dy/radius));
+                        }
+                    }
+                    break;
+
                 default:
                     if(!e.spawned || e.type < I_SHELLS || e.type > I_QUAD) continue;
                     break;
@@ -113,6 +144,7 @@ namespace entities
                 rendermodel(mdlname, ANIM_MAPMODEL|ANIM_LOOP, p, lastmillis/(float)revs, 0, MDL_CULL_VFC | MDL_CULL_DIST | MDL_CULL_OCCLUDED);
             }
         }
+        lastLightUpdate = lastmillis;
     }
 
     void addammo(int type, int &v, bool local)
@@ -380,6 +412,10 @@ namespace entities
 
             case JUMPPAD:
                 renderentarrow(e, vec((int)(char)e.attr3*10.0f, (int)(char)e.attr2*10.0f, e.attr1*12.5f).normalize(), 4);
+                break;
+
+            case SPOTLIGHT:
+                renderentarrow(e, vec((int)(char)e.attr4*10.0f, (int)(char)e.attr3*10.0f, e.attr2*12.5f).normalize(), 4);
                 break;
 
             case FLAG:
