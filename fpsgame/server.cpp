@@ -519,7 +519,7 @@ namespace server
     collectservmode collectmode;
     servmode *smode = NULL;
 
-    bool canspawnitem(int type) { return !m_noitems && (type>=I_SHELLS && type<=I_QUAD && (!m_noammo || type<I_SHELLS || type>I_CARTRIDGES)); }
+	bool canspawnitem(int type) { return !m_noitems && (type >= AMMO_L1 && type <= HEALTH_L3);}//return !m_noitems && (type>=AMMO_L1 && type<=I_QUAD && (!m_noammo || type<I_SHELLS || type>I_CARTRIDGES)); }
 
     int spawntime(int type)
     {
@@ -528,34 +528,19 @@ namespace server
         int sec = 0;
         switch(type)
         {
-            case I_SHELLS:
-            case I_BULLETS:
-            case I_ROCKETS:
-            case I_ROUNDS:
-            case I_GRENADES:
-            case I_CARTRIDGES: sec = np*4; break;
-            case I_HEALTH: sec = np*5; break;
-            case I_GREENARMOUR: sec = 20; break;
-            case I_YELLOWARMOUR: sec = 30; break;
-            case I_BOOST: sec = 60; break;
-            case I_QUAD: sec = 70; break;
+			case AMMO_L1:
+			case AMMO_L2:
+			case AMMO_L3:sec = np*4; break;
+			case HEALTH_L1:
+			case HEALTH_L2:
+			case HEALTH_L3: sec = np*5; break;
         }
         return sec*1000;
     }
 
     bool delayspawn(int type)
     {
-        switch(type)
-        {
-            case I_GREENARMOUR:
-            case I_YELLOWARMOUR:
-                return true;
-            case I_BOOST:
-            case I_QUAD:
-                return true;
-            default:
-                return false;
-        }
+		return false;
     }
 
     bool pickup(int i, int sender)         // server side item pickup, acknowledge first client that gets it
@@ -617,7 +602,7 @@ namespace server
 
     void autoteam()
     {
-        static const char * const teamnames[2] = {"good", "evil"};
+        static const char * const teamnames[2] = {TEAM_1, TEAM_2};
         vector<clientinfo *> team[2];
         float teamrank[2] = {0, 0};
         for(int round = 0, remaining = clients.length(); remaining>=0; round++)
@@ -663,7 +648,7 @@ namespace server
 
     const char *chooseworstteam(const char *suggest = NULL, clientinfo *exclude = NULL)
     {
-        teamrank teamranks[2] = { teamrank("good"), teamrank("evil") };
+        teamrank teamranks[2] = { teamrank(TEAM_1), teamrank(TEAM_2) };
         const int numteams = sizeof(teamranks)/sizeof(teamranks[0]);
         loopv(clients)
         {
@@ -1173,8 +1158,8 @@ namespace server
         // only allow edit messages in coop-edit mode
         if(type>=N_EDITENT && type<=N_EDITVAR && !m_edit) return -1;
         // server only messages
-        static const int servtypes[] = { N_SERVINFO, N_INITCLIENT, N_WELCOME, N_MAPCHANGE, N_SERVMSG, N_DAMAGE, N_HITPUSH, N_SHOTFX, N_EXPLODEFX, N_DIED, N_SPAWNSTATE, N_FORCEDEATH, N_TEAMINFO, N_ITEMACC, N_ITEMSPAWN, N_TIMEUP, N_CDIS, N_CURRENTMASTER, N_PONG, N_RESUME, N_BASESCORE, N_BASEINFO, N_BASEREGEN, N_ANNOUNCE, N_SENDDEMOLIST, N_SENDDEMO, N_DEMOPLAYBACK, N_SENDMAP, N_DROPFLAG, N_SCOREFLAG, N_RETURNFLAG, N_RESETFLAG, N_INVISFLAG, N_CLIENT, N_AUTHCHAL, N_INITAI, N_EXPIRETOKENS, N_DROPTOKENS, N_STEALTOKENS, N_DEMOPACKET };
-        if(ci)
+        static const int servtypes[] = { N_SERVINFO, N_INITCLIENT, N_WELCOME, N_MAPCHANGE, N_SERVMSG, N_DAMAGE, N_HITPUSH, N_SHOTFX, N_EXPLODEFX, N_DIED, N_SPAWNSTATE, N_FORCEDEATH, N_TEAMINFO, N_ITEMACC, N_ITEMSPAWN, N_TIMEUP, N_CDIS, N_CURRENTMASTER, N_PONG, N_RESUME, N_BASESCORE, N_BASEINFO, N_BASEREGEN, N_ANNOUNCE, N_SENDDEMOLIST, N_SENDDEMO, N_DEMOPLAYBACK, N_SENDMAP, N_DROPFLAG, N_SCOREFLAG, N_RETURNFLAG, N_RESETFLAG, N_INVISFLAG, N_CLIENT, N_AUTHCHAL, N_INITAI, N_SETCLASS, N_EXPIRETOKENS, N_DROPTOKENS, N_STEALTOKENS, N_DEMOPACKET };
+        if(ci) 
         {
             loopi(sizeof(servtypes)/sizeof(int)) if(type == servtypes[i]) return -1;
             if(type < N_EDITENT || type > N_EDITVAR || !m_edit)
@@ -1395,6 +1380,7 @@ namespace server
             putint(p, ci->ownernum);
             putint(p, ci->state.aitype);
             putint(p, ci->state.skill);
+			putint(p, ci->state.pclass);
             putint(p, ci->playermodel);
             sendstring(ci->name, p);
             sendstring(ci->team, p);
@@ -1405,6 +1391,7 @@ namespace server
             putint(p, ci->clientnum);
             sendstring(ci->name, p);
             sendstring(ci->team, p);
+			putint(p, ci->state.pclass);
             putint(p, ci->playermodel);
         }
     }
@@ -1860,12 +1847,20 @@ namespace server
             bool dup = false;
             loopj(i) if(hits[j].target==h.target) { dup = true; break; }
             if(dup) continue;
-
+			if(isteam(target->team,ci->team)&& !(target == ci)) continue;
             int damage = guns[gun].damage;
+			damage += (int(damage*0.1)-rnd(int(damage*0.2)));
             if(gs.quadmillis) damage *= 4;
-            damage = int(damage*(1-h.dist/EXP_DISTSCALE/guns[gun].exprad));
-            if(target==ci) damage /= EXP_SELFDAMDIV;
-            dodamage(target, ci, damage, gun, h.dir);
+			damage *= (1/EXP_DISTSCALE*(pow(EXP_DISTSCALE,(1-(h.dist/guns[gun].exprad)))));
+			vec tp = vec(target->state.o);
+			vec ap = vec(ci->state.o);
+			float dist = tp.dist2(ap);
+			float scale = int(DIST_HEIGHT*pow(DIST_PUSH,-((pow(dist,2))/DIST_PULL)));
+			scale = ((scale*0.01)+0.5);
+			if(scale > 1.f)scale = (((scale-1.f)/0.5f)*0.2f)+1.0;
+			damage *= scale;
+			if(target==ci) damage *= EXP_SELFDAM;
+			dodamage(target, ci, damage, gun, h.dir);
         }
     }
 
@@ -1901,8 +1896,17 @@ namespace server
 
                     totalrays += h.rays;
                     if(totalrays>maxrays) continue;
-                    int damage = h.rays*guns[gun].damage;
-                    if(gs.quadmillis) damage *= 4;
+					int damage = guns[gun].damage/guns[gun].rays;
+					damage *= totalrays;
+					damage += (int(damage*0.1)-rnd(int(damage*0.2)));
+					if(gs.quadmillis) damage *= 4;
+					vec tp = vec(target->state.o);
+					vec ap = vec(ci->state.o);
+					float dist = tp.dist2(ap);
+					float scale = int(DIST_HEIGHT*pow(DIST_PUSH,-((pow(dist,2))/DIST_PULL)));
+					scale = ((scale*0.01)+0.5);
+					if(scale > 1.f)scale = (((scale-1.f)/0.5f)*0.2f)+1.0;
+					damage *= scale;
                     dodamage(target, ci, damage, gun, h.dir);
                 }
                 break;
@@ -2402,7 +2406,7 @@ namespace server
         ci->state.lasttimeplayed = lastmillis;
 
         const char *worst = m_teammode ? chooseworstteam(NULL, ci) : NULL;
-        copystring(ci->team, worst ? worst : "good", MAXTEAMLEN+1);
+        copystring(ci->team, worst ? worst : TEAM_1, MAXTEAMLEN+1);
 
         sendwelcome(ci);
         if(restorescore(ci)) sendresume(ci);
@@ -2631,6 +2635,11 @@ namespace server
 
             case N_TRYSPAWN:
                 if(!ci || !cq || cq->state.state!=CS_DEAD || cq->state.lastspawn>=0 || (smode && !smode->canspawn(cq))) break;
+				if(!(ci->state.lastdeath == 0)&& !(smode))
+				{
+					if(max(0, 5-(lastmillis-ci->state.lastdeath)/1000) > 0) 
+						break;
+				}
                 if(!ci->clientmap[0] && !ci->mapcrc)
                 {
                     ci->mapcrc = -1;
@@ -2778,6 +2787,17 @@ namespace server
             {
                 ci->playermodel = getint(p);
                 QUEUE_MSG;
+                break;
+            }
+
+			case N_SWITCHCLASS:
+            {
+				
+				int playerclass = getint(p);
+				if(playerclass < 0 || playerclass > NUMPCS-1) break;
+				ci->state.pclass = playerclass;
+                sendf(-1, 1, "ri3x", N_SETCLASS,sender, playerclass);
+				suicide(ci);
                 break;
             }
 

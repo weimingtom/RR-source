@@ -198,23 +198,25 @@ namespace game
             fpsent *d = players[i];
             if(d == player1 || d->state==CS_SPECTATOR || d->state==CS_SPAWNING || d->lifesequence < 0 || d == exclude || (d->state==CS_DEAD && hidedead)) continue;
             int team = 0;
-            if(teamskins) team = isteam(player1->team, d->team) ? 1 : 2;
+            if(teamskins) team = isteam("blue", d->team) ? 1 : 2; //stops blue from always being on your team
+			//team = isteam(d->team,"good") ? 1 : 2;
             renderplayer(d, getplayermodelinfo(d), team, 1);
             copystring(d->info, colorname(d));
-            if(d->maxhealth>100) { defformatstring(sn)(" +%d", d->maxhealth-100); concatstring(d->info, sn); }
-            if(d->state!=CS_DEAD) particle_text(d->abovehead(), d->info, PART_TEXT, 1, team ? (team==1 ? 0x6496FF : 0xFF4B19) : 0x1EC850, 2.0f);
+            //if(d->maxhealth>100) { defformatstring(sn)(" +%d", d->maxhealth-100); concatstring(d->info, sn); }
+            //if(d->state!=CS_DEAD) particle_text(d->abovehead(), d->info, PART_TEXT, 1, team ? (team==1 ? 0x6496FF : 0xFF4B19) : 0x1EC850, 2.0f);
         }
         loopv(ragdolls)
         {
             fpsent *d = ragdolls[i];
             int team = 0;
-            if(teamskins) team = isteam(player1->team, d->team) ? 1 : 2;
+            //if(teamskins) team = isteam(player1->team, d->team) ? 1 : 2;
+			team = isteam(d->team,"good") ? 1 : 2;
             float fade = 1.0f;
             if(ragdollmillis && ragdollfade)
                 fade -= clamp(float(lastmillis - (d->lastupdate + max(ragdollmillis - ragdollfade, 0)))/min(ragdollmillis, ragdollfade), 0.0f, 1.0f);
             renderplayer(d, getplayermodelinfo(d), team, fade);
-        }
-        if(isthirdperson() && !followingplayer() && (player1->state!=CS_DEAD || !hidedead)) renderplayer(player1, getplayermodelinfo(player1), teamskins || true ? 1 : 0, 1);
+        } 
+		if(isthirdperson() && !followingplayer() && (player1->state!=CS_DEAD || !hidedead)) renderplayer(player1, getplayermodelinfo(player1), isteam(player1->team,"blue")?1:2, 1);
         entities::renderentities();
         renderbouncers();
         renderprojectiles();

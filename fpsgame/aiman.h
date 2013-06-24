@@ -7,7 +7,7 @@ namespace aiman
 
     void calcteams(vector<teamscore> &teams)
     {
-        static const char * const defaults[2] = { "good", "evil" };
+        static const char * const defaults[2] = { TEAM_1, TEAM_2 };
         loopv(clients)
         {
             clientinfo *ci = clients[i];
@@ -80,7 +80,7 @@ namespace aiman
         return least;
 	}
 
-	bool addai(int skill, int limit)
+	int addai(int skill, int limit)
 	{
 		int numai = 0, cn = -1, maxai = limit >= 0 ? min(limit, MAXBOTS) : MAXBOTS;
 		loopv(bots)
@@ -89,7 +89,7 @@ namespace aiman
             if(!ci || ci->ownernum < 0) { if(cn < 0) cn = i; continue; }
 			numai++;
 		}
-		if(numai >= maxai) return false;
+		if(numai >= maxai) return -1;
         if(bots.inrange(cn))
         {
             clientinfo *ci = bots[cn];
@@ -108,6 +108,7 @@ namespace aiman
         const char *team = m_teammode ? chooseteam() : "";
         if(!bots[cn]) bots[cn] = new clientinfo;
         clientinfo *ci = bots[cn];
+		ci->state.pclass = rnd(4); //change to NUMPCS
 		ci->clientnum = MAXCLIENTS + cn;
 		ci->state.aitype = AI_BOT;
         clientinfo *owner = findaiclient();
@@ -123,7 +124,7 @@ namespace aiman
 		ci->aireinit = 2;
 		ci->connected = true;
         dorefresh = true;
-		return true;
+		return ci->clientnum;
 	}
 
 	void deleteai(clientinfo *ci)
@@ -154,7 +155,7 @@ namespace aiman
 		if(ci->ownernum < 0) deleteai(ci);
 		else if(ci->aireinit >= 1)
 		{
-			sendf(-1, 1, "ri6ss", N_INITAI, ci->clientnum, ci->ownernum, ci->state.aitype, ci->state.skill, ci->playermodel, ci->name, ci->team);
+			sendf(-1, 1, "ri6ss", N_INITAI, ci->clientnum, ci->ownernum, ci->state.aitype, ci->state.skill, ci->state.pclass, ci->playermodel, ci->name, ci->team);
 			if(ci->aireinit == 2)
             {
                 ci->reassign();
@@ -228,7 +229,12 @@ namespace aiman
 	void reqadd(clientinfo *ci, int skill)
 	{
         if(!ci->local && !ci->privilege) return;
-        if(!addai(skill, !ci->local && ci->privilege < PRIV_ADMIN ? botlimit : -1)) sendf(ci->clientnum, 1, "ris", N_SERVMSG, "failed to create or assign bot");
+		int a = addai(skill, !ci->local && ci->privilege < PRIV_ADMIN ? botlimit : -1);
+        if(a<0)
+		{
+			sendf(ci->clientnum, 1, "ris", N_SERVMSG, "failed to create or assign bot");
+			return;
+		}
 	}
 
 	void reqdel(clientinfo *ci)

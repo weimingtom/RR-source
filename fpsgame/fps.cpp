@@ -268,9 +268,6 @@ namespace game
             respawnself();
         }
     }
-	void switchplayerclass(int playerclass){player1->pclass = playerclass;};
-
-	VARFP(playerclass, 0, 0, NUMPCS-1, if(player1->pclass != playerclass) switchplayerclass(playerclass) );
 
     void spawnplayer(fpsent *d)   // place at random spawn
     {
@@ -294,6 +291,17 @@ namespace game
         if(intermission) return;
         if((player1->attacking = on)) respawn();
     }
+	
+	void dosprint(bool on)
+	{
+		return;
+		if(intermission) return;
+		if(player1->state != CS_ALIVE){ player1->sprinting = false; return;}
+		int a = PClasses[player1->pclass].speed;
+		player1->maxspeed = on ? a*20 : a;
+		conoutf("%s", on ? "true" : "false");
+		player1->sprinting = on;
+	}
 
     bool canjump()
     {
@@ -511,6 +519,8 @@ namespace game
 
     VARP(showmodeinfo, 0, 1, 1);
 
+	//VARFP(playerclass, 0, 0, NUMPCS-1, if(player1->pclass != playerclass) switchplayerclass(playerclass) );
+	ICOMMAND(playerclass, "i", (int *playerclass), switchplayerclass(*playerclass))
 
     void startgame()
     {
@@ -531,6 +541,7 @@ namespace game
             d->maxhealth = 100;
             d->lifesequence = -1;
             d->respawned = d->suicided = -2;
+			d->pclass = 0;
         }
 
         setclientmode();

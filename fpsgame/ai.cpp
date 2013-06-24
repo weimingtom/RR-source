@@ -137,7 +137,7 @@ namespace ai
         if(d->ai) DELETEP(d->ai);
     }
 
-    void init(fpsent *d, int at, int ocn, int sk, int bn, int pm, const char *name, const char *team)
+    void init(fpsent *d, int at, int ocn, int sk, int bn, int pm, int pc, const char *name, const char *team)
     {
         loadwaypoints();
 
@@ -167,6 +167,8 @@ namespace ai
         d->ownernum = ocn;
         d->skill = sk;
         d->playermodel = chooserandomplayermodel(pm);
+		if(pc < NUMPCS) d->pclass = pc;
+		else conoutf("ERROR: %d", pc);
 
         if(resetthisguy) removeweapons(d);
         if(d->ownernum >= 0 && player1->clientnum == d->ownernum)
@@ -420,9 +422,9 @@ namespace ai
             }
             default:
             {
-                if(e.type >= I_SHELLS && e.type <= I_CARTRIDGES && !d->hasmaxammo(e.type))
+                if(e.type >= AMMO_L1 && e.type <= I_CARTRIDGES && !d->hasmaxammo())
                 {
-                    int gun = e.type - I_SHELLS + GUN_SG;
+                    int gun = e.type - AMMO_L1 + GUN_SG;
                     // go get a weapon upgrade
                     if(gun == d->ai->weappref) score = 1e8f;
                     else if(isgoodammo(gun)) score = hasgoodammo(d) ? 1e2f : 1e4f;
@@ -491,7 +493,7 @@ namespace ai
             {
                 static vector<int> nearby;
                 nearby.setsize(0);
-                findents(I_SHELLS, I_QUAD, false, d->feetpos(), vec(32, 32, 24), nearby);
+                findents(AMMO_L1, I_QUAD, false, d->feetpos(), vec(32, 32, 24), nearby);
                 loopv(nearby)
                 {
                     int id = nearby[i];
@@ -585,7 +587,7 @@ namespace ai
 
     void itemspawned(int ent)
     {
-        if(entities::ents.inrange(ent) && entities::ents[ent]->type >= I_SHELLS && entities::ents[ent]->type <= I_QUAD)
+        if(entities::ents.inrange(ent) && entities::ents[ent]->type >= AMMO_L1 && entities::ents[ent]->type <= I_QUAD)
         {
             loopv(players) if(players[i] && players[i]->ai && players[i]->aitype == AI_BOT && players[i]->canpickup(entities::ents[ent]->type))
             {
@@ -597,7 +599,7 @@ namespace ai
                     case I_GREENARMOUR: case I_YELLOWARMOUR: case I_QUAD: break;
                     default:
                     {
-                        itemstat &is = itemstats[entities::ents[ent]->type-I_SHELLS];
+                        itemstat &is = itemstats[entities::ents[ent]->type-AMMO_L1];
                         wantsitem = isgoodammo(is.info) && d->ammo[is.info] <= (d->ai->weappref == is.info ? is.add : is.add/2);
                         break;
                     }
@@ -686,7 +688,7 @@ namespace ai
                 if(entities::ents.inrange(b.target))
                 {
                     extentity &e = *(extentity *)entities::ents[b.target];
-                    if(!e.spawned || e.type < I_SHELLS || e.type > I_CARTRIDGES || d->hasmaxammo(e.type)) return 0;
+                    if(!e.spawned || e.type < AMMO_L1 || e.type > I_CARTRIDGES || d->hasmaxammo()) return 0;
                     //if(d->feetpos().squaredist(e.o) <= CLOSEDIST*CLOSEDIST)
                     //{
                     //    b.idle = 1;

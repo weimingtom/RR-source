@@ -184,6 +184,14 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
         addmsg(N_SWITCHMODEL, "ri", player1->playermodel);
     }
 
+	void switchplayerclass(int playerclass)
+    {
+		if(playerclass < 0 || playerclass > NUMPCS) return;
+		if(playerclass == player1->pclass) return;
+		player1->pclass = playerclass;
+        addmsg(N_SWITCHCLASS, "ri", player1->pclass);
+    }
+
     struct authkey
     {
         char *name, *key, *desc;
@@ -1358,6 +1366,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
                 copystring(d->name, text, MAXNAMELEN+1);
                 getstring(text, p);
                 filtertext(d->team, text, false, MAXTEAMLEN);
+				d->pclass = getint(p);
                 d->playermodel = getint(p);
                 break;
             }
@@ -1384,6 +1393,17 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
                     d->playermodel = model;
                     if(d->ragdoll) cleanragdoll(d);
                 }
+                break;
+            }
+
+			case N_SETCLASS:
+            {
+				int scn = getint(p);
+				int playerclass = getint(p);
+				if(scn > MAXCLIENTS) scn -= MAXCLIENTS;
+				fpsent *pl = getclient(scn);
+				if(!pl){break;}
+				pl->pclass = playerclass;
                 break;
             }
 
@@ -1421,7 +1441,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
                 parsestate(s, p);
                 s->state = CS_ALIVE;
                 if(cmode) cmode->pickspawn(s);
-                else findplayerspawn(s);
+				else findplayerspawn(s,-1,!strcmp(s->team, "blue") ? 1 : (!strcmp(s->team, "red") ? 2 : 0));
                 if(s == player1)
                 {
                     showscores(false);
@@ -1842,7 +1862,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
 
             case N_INITAI:
             {
-                int bn = getint(p), on = getint(p), at = getint(p), sk = clamp(getint(p), 1, 101), pm = getint(p);
+                int bn = getint(p), on = getint(p), at = getint(p), sk = clamp(getint(p), 1, 101), pc = getint(p), pm = getint(p);
                 string name, team;
                 getstring(text, p);
                 filtertext(name, text, false, MAXNAMELEN);
@@ -1850,7 +1870,7 @@ ICOMMAND(getplayerclassinfo, "i", (int *i), result(getclassinfo(*i)));
                 filtertext(team, text, false, MAXTEAMLEN);
                 fpsent *b = newclient(bn);
                 if(!b) break;
-                ai::init(b, at, on, sk, bn, pm, name, team);
+                ai::init(b, at, on, sk, bn, pm, pc, name, team);
                 break;
             }
 

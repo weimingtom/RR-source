@@ -3,6 +3,9 @@
 
 #include "cube.h"
 
+#define TEAM_1 "red"
+#define TEAM_2 "blue"
+
 // console message types
 
 enum
@@ -30,8 +33,6 @@ enum                            // static entity types
     PARTICLES = ET_PARTICLES,
     MAPSOUND = ET_SOUND,
     SPOTLIGHT = ET_SPOTLIGHT,   // attr1 = radius, attr2 = yawspeed, attr3 = pitchspeed
-    I_SHELLS, I_BULLETS, I_ROCKETS, I_ROUNDS, I_GRENADES, I_CARTRIDGES, //remove at some point
-    I_HEALTH, I_BOOST,I_GREENARMOUR, I_YELLOWARMOUR,I_QUAD,		//remove at some point
 	AMMO_L1,AMMO_L2,AMMO_L3,HEALTH_L1,HEALTH_L2,HEALTH_L3,	//once we are using
 
     TELEPORT,                   // attr1 = idx, attr2 = model, attr3 = tag
@@ -46,7 +47,10 @@ enum                            // static entity types
     PLATFORM,                   // attr1 = angle, attr2 = idx, attr3 = tag, attr4 = speed
     ELEVATOR,                   // attr1 = angle, attr2 = idx, attr3 = tag, attr4 = speed
     FLAG,                       // attr1 = angle, attr2 = team
-    MAXENTTYPES
+	TRIGGER,
+    MAXENTTYPES,
+	I_SHELLS, I_BULLETS, I_ROCKETS, I_ROUNDS, I_GRENADES, I_CARTRIDGES, //remove at some point
+	I_HEALTH, I_BOOST,I_GREENARMOUR, I_YELLOWARMOUR,I_QUAD,		//remove at some point
 };
 
 struct fpsentity : extentity
@@ -56,9 +60,9 @@ struct fpsentity : extentity
 
 
 
-enum { M_NONE = 0, M_SEARCH, M_HOME, M_ATTACKING, M_PAIN, M_SLEEP, M_AIMING };  // monster states
+enum MonsterStates { M_NONE = 0, M_SEARCH, M_HOME, M_ATTACKING, M_PAIN, M_SLEEP, M_AIMING };  // monster states
 
-enum
+enum Modes
 {
     M_TEAM       = 1<<0,
     M_NOITEMS    = 1<<1,
@@ -207,7 +211,7 @@ enum
 
 // network messages codes, c2s, c2c, s2c
 
-enum { PRIV_NONE = 0, PRIV_MASTER, PRIV_AUTH, PRIV_ADMIN };
+enum AuthorizationTypes { PRIV_NONE = 0, PRIV_MASTER, PRIV_AUTH, PRIV_ADMIN };
 
 enum
 {
@@ -232,7 +236,7 @@ enum
     N_PAUSEGAME, N_GAMESPEED,
     N_ADDBOT, N_DELBOT, N_INITAI, N_FROMAI, N_BOTLIMIT, N_BOTBALANCE,
     N_MAPCRC, N_CHECKMAPS,
-    N_SWITCHNAME, N_SWITCHMODEL, N_SWITCHTEAM,
+    N_SWITCHNAME, N_SWITCHMODEL, N_SWITCHTEAM, N_SWITCHCLASS, N_SETCLASS,
     N_INITTOKENS, N_TAKETOKEN, N_EXPIRETOKENS, N_DROPTOKENS, N_DEPOSITTOKENS, N_STEALTOKENS,
     N_SERVCMD,
     N_DEMOPACKET,
@@ -262,7 +266,7 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
     N_PAUSEGAME, 0, N_GAMESPEED, 0,
     N_ADDBOT, 2, N_DELBOT, 1, N_INITAI, 0, N_FROMAI, 2, N_BOTLIMIT, 2, N_BOTBALANCE, 2,
     N_MAPCRC, 0, N_CHECKMAPS, 1,
-    N_SWITCHNAME, 0, N_SWITCHMODEL, 2, N_SWITCHTEAM, 0,
+    N_SWITCHNAME, 0, N_SWITCHMODEL, 2, N_SWITCHTEAM, 0, N_SWITCHCLASS, 2, N_SETCLASS, 2,
     N_INITTOKENS, 0, N_TAKETOKEN, 2, N_EXPIRETOKENS, 0, N_DROPTOKENS, 0, N_DEPOSITTOKENS, 2, N_STEALTOKENS, 0,
     N_SERVCMD, 0,
     N_DEMOPACKET, 0,
@@ -274,7 +278,7 @@ static const int msgsizes[] =               // size inclusive message token, 0 f
 #define RR_MASTER_PORT 28787
 #define PROTOCOL_VERSION 259            // bump when protocol changes
 #define DEMO_VERSION 1                  // bump when demo format changes
-#define DEMO_MAGIC "TESSERACT_DEMO\0\0" //keep it compatible
+#define DEMO_MAGIC "RR_DEMO\0\0"
 
 struct demoheader
 {
@@ -321,14 +325,14 @@ enum GUNS{ GUN_FIST = 0, GUN_SG, GUN_CG, GUN_RL, GUN_RC, GUN_GL, GUN_CARB, GUN_P
 	GUN_FIREBALL, GUN_ICEBALL, GUN_SLIMEBALL, GUN_BITE, GUN_BARREL, GUN_RIFLE, NUMGUNS };
 
 
-static struct itemstat { int add, sound; const char *name; int icon; int info; } itemstats[] =
+static struct itemstat { float add, sound; const char *name; int icon; int info; } itemstats[] =
 {
-	{41,S_ITEMAMMO, "AMMO_L1", HICON_CG, 0},
-	{50,S_ITEMAMMO, "AMMO_L2", HICON_CG, 0},
-	{100,S_ITEMAMMO, "AMMO_L3", HICON_CG, 0},
-	{41,S_ITEMHEALTH, "HEALTH_L1", HICON_HEALTH, 0},
-	{50,S_ITEMHEALTH, "HEALTH_L2", HICON_HEALTH, 0},
-	{100,S_ITEMHEALTH, "HEALTH_L3", HICON_HEALTH, 0}
+	{0.205f,S_ITEMAMMO, "AMMO_L1", HICON_CG, 0},
+	{0.5f,S_ITEMAMMO, "AMMO_L2", HICON_CG, 0},
+	{1.f,S_ITEMAMMO, "AMMO_L3", HICON_CG, 0},
+	{0.205f,S_ITEMHEALTH, "HEALTH_L1", HICON_HEALTH, 0},
+	{0.5f,S_ITEMHEALTH, "HEALTH_L2", HICON_HEALTH, 0},
+	{1.f,S_ITEMHEALTH, "HEALTH_L3", HICON_HEALTH, 0}
 
 };
 //static struct itemstat { int add, max, sound; const char *name; int icon, info; } itemstats[] =
@@ -345,29 +349,33 @@ static struct itemstat { int add, sound; const char *name; int icon; int info; }
 //    {200,   200,   S_ITEMARMOUR, "YA", HICON_YELLOW_ARMOUR},
 //    {20000, 30000, S_ITEMPUP,    "Q", HICON_QUAD},
 //};
+#define DEBUG 1;
+#define MAXRAYS 20 // maxium rays a gun can have
+#define EXP_SELFDAM	 1.f //amount of damage absorbed when player hits them self --- damage *= selfdam
+#define EXP_SELFPUSH 3.0f //amount of pushback a player gets from hitting themself ---
+// next 3 variable form a bell curve, where y = the percentage of damage and x = the distance between attacker and victum
+#define DIST_HEIGHT ((40*sqrt(2*PI))) //part of a 3 part bell curve -- this determinds the max height of the bell cuve (y axis) - 40 will keep the number between 100.1004 (hense why it is capped to an int) and 0;
+#define DIST_PULL (2*(pow(500.f,2))) // part of a 3 part bell curve -- this determinds the about of pull latterally (x axis) - simply put the higher 500 is the more damage at farther distance: NOTE a bell curve has 2 major parts: is an open curve(closer you get to the middle the less movement), closed curve (the farther you get the less movement) --  look at a bell curve its pretty self explanitory -- this number controls the closed curve
+#define DIST_PUSH 50.f //part of a 3 part bell curve -- this determinds the bottom curve (open curve) of the bell curve - simply put the this pulls the middle (where the two curve meet) forward (towards 0 along the x) the higher this number the farther out the middle is -- do not modify this number unless you know what you are doint (this is basically the mean )
+#define EXP_DISTSCALE 3.0f//the power at which the explosion distance is calculated on -- damage*(1/scale * (scale ^ (1- (dist/maxdist))))
 
-#define MAXRAYS 20
-#define EXP_SELFDAMDIV 2
-#define EXP_SELFPUSH 2.5f
-#define EXP_DISTSCALE 1.5f
-
-static const struct guninfo { int sound, attackdelay, damage, maxammo, spread, projspeed, kickamount, range, rays, hitpush, exprad, ttl; const char *name, *file; short part; int icon; } guns[NUMGUNS] =
+static const struct guninfo { int sound, attackdelay, damage, maxammo, spread, projspeed, kickamount, range, rays, hitpush, exprad, ttl; const char *name, *file; short part; int icon; short reload; int rewait; } guns[NUMGUNS] =
 {
-	//sound		  attd	damage ammo	sprd	prsd	kb	rng	 rays  htp	exr	 ttl  name					file			part
-    { S_PUNCH1,    250,  50,	1,	0,		  0,	0,   14,   1,   80,	 0,    0, "MELEE",				"",					 0,     HICON_FIST },
-    { S_SG,       1400,  10,	36,	400,	  0,	20, 1024, 20,   80,  0,    0, "shotgun",			"",					 0,     HICON_SG },
-    { S_CG,        100,  30,	200,100,	  0,	7,  1024,  1,   80,  0,    0, "machine gun",        "",					 0,     HICON_CG },
-    { S_RLFIRE,    800, 120,	10,	0,		320,	10, 1024,  1,  160, 40,    0, "RPG",				"",					 0,     HICON_RIFLE },
-    { S_FLAUNCH,   600,  90,	20,	0,		200,	10, 1024,  1,  250, 45, 1500, "Razzor Cannon",		"",					 0,     HICON_RL }, // razzor cannon
-	{ S_FLAUNCH,   600,  90,	20,	0,		200,	10, 1024,  1,  250, 45, 1500, "grenadelauncher",	"",					 0,     HICON_RL },
-	{ S_PISTOL,    500,  35,	60,	50,		  0,	 7,	1024,  1,   80,  0,    0, "carbine",			"",					 0,     HICON_PISTOL }, //carbine
-    { S_PISTOL,    500,  35,	60,	50,		  0,	 7,	1024,  1,   80,  0,    0, "revolver",			"",		 			 0,     HICON_PISTOL },
-    { S_FLAUNCH,   200,  20,	0,	0,		200,	 1,	1024,  1,   80, 40,    0, "fireball",			NULL,	PART_FIREBALL1,     HICON_RL },
-    { S_ICEBALL,   200,  40,	0,	0,		120,	 1,	1024,  1,   80, 40,    0, "iceball",			NULL,   PART_FIREBALL2,     HICON_FIST },
-    { S_SLIMEBALL, 200,  30,	0,	0,		640,	 1,	1024,  1,   80, 40,    0, "slimeball",			NULL,   PART_FIREBALL3,     HICON_FIST },
-    { S_PIGR1,     250,  50,	0,	0,		  0,	 1,	  12,  1,   80,  0,    0, "bite",				NULL,				 0,     HICON_FIST },
-    { -1,            0, 120,	0,	0,		  0,	 0,    0,  1,   80, 40,    0, "barrel",				NULL,				 0,     HICON_FIST },
-	{-1,			 0,	  0,	0,	0,		  0,	 0,	   0,  0,	 0,	 0,	   0,  "",					"",					 0,     HICON_FIST }
+	//sound		  attd	damage ammo	sprd	prsd	kb	rng	 rays  htp	exr	 ttl  name					file			part        icon        reload rewait
+    { S_PUNCH1,    250,  50,	1,	0,		  0,	0,   14,   1,   80,	 0,    0, "MELEE",				"",					 0,     HICON_FIST,    1,       0},
+    { S_SG,       1400,  10,	36,	400,	  0,	20, 1024, 20,   80,  0,    0, "shotgun",			"",					 0,     HICON_SG,    4,     2000},
+    { S_CG,        100,  30,	200,100,	  0,	7,  1024,  1,   80,  0,    0, "machine gun",        "",					 0,     HICON_CG, 	40,		2000},
+    { S_RLFIRE,    800, 120,	10,	0,		320,	10, 1024,  1,  160, 40,    0, "RPG",				"",					 0,     HICON_RIFLE, 4,		1500},
+    { S_FLAUNCH,   600,  90,	20,	0,		200,	10, 1024,  1,  250, 45, 1500, "Razzor Cannon",		"",					 0,     HICON_RL,	4,		1200}, // razzor cannon
+	{ S_FLAUNCH,   600,  90,	20,	0,		200,	10, 1024,  1,  250, 45, 1500, "grenadelauncher",	"",					 0,     HICON_RL,	8,		500},
+	{ S_PISTOL,    500,  35,	60,	50,		  0,	 7,	1024,  1,   80,  0,    0, "carbine",			"",					 0,     HICON_PISTOL,	16,	700}, //carbine
+    { S_PISTOL,    500,  35,	60,	50,		  0,	 7,	1024,  1,   80,  0,    0, "revolver",			"",		 			 0,     HICON_PISTOL,	7,	200},
+    { S_FLAUNCH,   200,  20,	0,	0,		200,	 1,	1024,  1,   80, 40,    0, "fireball",			NULL,	PART_FIREBALL1,     HICON_RL,		1,	0},
+    { S_ICEBALL,   200,  40,	0,	0,		120,	 1,	1024,  1,   80, 40,    0, "iceball",			NULL,   PART_FIREBALL2,     HICON_FIST,		1,	0 },
+    { S_SLIMEBALL, 200,  30,	0,	0,		640,	 1,	1024,  1,   80, 40,    0, "slimeball",			NULL,   PART_FIREBALL3,     HICON_FIST,		1,	0 },
+    { S_PIGR1,     250,  50,	0,	0,		  0,	 1,	  12,  1,   80,  0,    0, "bite",				NULL,				 0,     HICON_FIST,		1,	0 },
+    { -1,            0, 120,	0,	0,		  0,	 0,    0,  1,   80, 40,    0, "barrel",				NULL,				 0,     HICON_FIST,		1,	0 },
+	{-1,			 0,	  0,	0,	0,		  0,	 0,	   0,  0,	 0,	 0,	   0,  "",					"",					 0,     HICON_FIST,		1,	0 }
 };
 
 #define GUN_AMMO_MAX(gunselect) guns[gunselect].maxammo
@@ -417,8 +425,12 @@ struct fpsstate
     int quadmillis;
     int gunselect, gunwait;
     int ammo[NUMGUNS];
+	int reload[NUMGUNS];
+	int reloadwait;
     int aitype, skill;
-	int pclass;
+	int pclass; //curent playerclass
+	PlayerClass pcs;
+	bool sprinting;
 
     //Fire
     bool onfire;
@@ -434,18 +446,25 @@ struct fpsstate
 
     void addammo(int gun, int k = 1, int scale = 1)
     {
-        itemstat &is = itemstats[gun-GUN_SG];
+        itemstat &is = itemstats[gun];
 		const PlayerClass &pcs = PClasses[pclass];
 		loopi(WEAPONS_PER_CLASS){
 			const guninfo &gi = guns[pcs.guns[i]];
-			ammo[pcs.guns[i]] = min(((is.add*gi.maxammo)+ammo[pcs.guns[i]]),gi.maxammo);
+			const int a = pcs.guns[i];
+			ammo[a] = min((int((is.add)*gi.maxammo)+ammo[pcs.guns[i]]),gi.maxammo);
 		}
 
     }
 
-    bool hasmaxammo(int type)
+    bool hasmaxammo()
     {
-       return false;
+		const PlayerClass &pcs = PClasses[pclass];
+		loopi(WEAPONS_PER_CLASS){
+			const guninfo &gi = guns[pcs.guns[i]];
+			if(gi.maxammo != ammo[pcs.guns[i]])
+				return false;
+		}
+		return true;
     }
 
     bool canpickup(int type)
@@ -457,7 +476,10 @@ struct fpsstate
 			case HEALTH_L1:
 			case HEALTH_L2:
             case HEALTH_L3: return health<maxhealth;
-            default: return true;
+			case AMMO_L1:
+			case AMMO_L2:
+			case AMMO_L3: return !hasmaxammo();
+			default: return false;
         }
     }
 
@@ -470,26 +492,30 @@ struct fpsstate
 			case HEALTH_L1:
 			case HEALTH_L2:
             case HEALTH_L3:
-                health = min((maxhealth*is.add)+health, maxhealth);
+                health = min(int((maxhealth*(is.add))+health), maxhealth);
                 break;
             default:
-                //ammo[is.info] = min(ammo[is.info]+is.add, is.max);
+                addammo(type-AMMO_L1);
                 break;
         }
     }
 
     void respawn()
     {
-		const PlayerClass &pcs = PClasses[pclass];
+		//if(npclass >-1 && npclass < NUMPCS) pclass = npclass; npclass = -1;
+		pcs = PClasses[pclass];
 		maxhealth = health = pcs.maxhealth;
         armour = 0;
         quadmillis = 0;
 		gunselect = pcs.guns[0];
         gunwait = 0;
+		reloadwait = 0;
         loopi(NUMGUNS) ammo[i] = 0;
+		loopi(NUMGUNS) reload[i] = 0;
 		loopi(WEAPONS_PER_CLASS-1){
 		const guninfo &gi = guns[pcs.guns[i]];
 		ammo[pcs.guns[i]] = gi.maxammo;
+		reload[pcs.guns[i]] = gi.reload;
 		}
 		ammo[pcs.guns[WEAPONS_PER_CLASS-1]] = 1;
     }
@@ -507,6 +533,23 @@ struct fpsstate
     {
         return gun >= 0 && gun <= NUMGUNS && gun != exclude && ammo[gun] > 0;
     }
+	void reloaded()
+	{
+		if(reloadwait) return;
+		int amountleft = reload[gunselect];
+		const guninfo &gi = guns[gunselect];
+		if(ammo[gunselect] < gi.reload) reload[gunselect] = ammo[gunselect];
+		else reload[gunselect] = gi.reload;
+		ammo[gunselect] -= (gi.reload-amountleft);
+		if(ammo[gunselect] < 0) ammo[gunselect] = 0;
+	}
+	void startreload()
+	{
+		if(reloadwait) return;
+		const guninfo &gi = guns[gunselect];
+		if (reload[gunselect] == gi.reload) return;
+		reloadwait = gi.rewait+lastmillis+gunwait;
+	}
 };
 
 struct fpsent : dynent, fpsstate
@@ -806,5 +849,6 @@ namespace server
 }
 
 #endif
+
 
 

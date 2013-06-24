@@ -25,15 +25,15 @@ namespace entities
     const char *itemname(int i)
     {
         int t = ents[i]->type;
-        if(t<I_SHELLS || t>I_QUAD) return NULL;
-        return itemstats[t-I_SHELLS].name;
+        if(t<AMMO_L1 || t>I_QUAD) return NULL;
+        return itemstats[t-AMMO_L1].name;
     }
 
     int itemicon(int i)
     {
         int t = ents[i]->type;
-        if(t<I_SHELLS || t>I_QUAD) return -1;
-        return itemstats[t-I_SHELLS].icon;
+        if(t<AMMO_L1 || t>HEALTH_L3) return -1;
+        return itemstats[t-AMMO_L1].icon;
     }
 
     const char *entmdlname(int type)
@@ -133,7 +133,7 @@ namespace entities
                     break;
 
                 default:
-                    if(!e.spawned || e.type < I_SHELLS || e.type > I_QUAD) continue;
+                    if(!e.spawned || e.type < AMMO_L1 || e.type > I_QUAD) continue;
                     break;
             }
             const char *mdlname = entmodel(e);
@@ -149,7 +149,7 @@ namespace entities
 
     void addammo(int type, int &v, bool local)
     {
-        itemstat &is = itemstats[type-I_SHELLS];
+        itemstat &is = itemstats[type-AMMO_L1];
         v += is.add;
         //if(v>is.max) v = is.max;
         if(local) msgsound(is.sound);
@@ -157,7 +157,7 @@ namespace entities
 
     void repammo(fpsent *d, int type, bool local)
     {
-        addammo(type, d->ammo[type-I_SHELLS+GUN_SG], local);
+        addammo(type, d->ammo[type-AMMO_L1+GUN_SG], local);
     }
 
     // these two functions are called when the server acknowledges that you really
@@ -167,16 +167,16 @@ namespace entities
     {
         if(!ents.inrange(n)) return;
         int type = ents[n]->type;
-        if(type<I_SHELLS || type>I_QUAD) return;
+        if(type<AMMO_L1 || type>I_QUAD) return;
         ents[n]->spawned = false;
         if(!d) return;
-        itemstat &is = itemstats[type-I_SHELLS];
+        itemstat &is = itemstats[type-AMMO_L1];
         if(d!=player1 || isthirdperson())
         {
             //particle_text(d->abovehead(), is.name, PART_TEXT, 2000, 0xFFC864, 4.0f, -8);
             particle_icon(d->abovehead(), is.icon%4, is.icon/4, PART_HUD_ICON_GREY, 2000, 0xFFFFFF, 2.0f, -8);
         }
-        playsound(itemstats[type-I_SHELLS].sound, d!=player1 ? &d->o : NULL, NULL, 0, 0, 0, -1, 0, 1500);
+        playsound(itemstats[type-AMMO_L1].sound, d!=player1 ? &d->o : NULL, NULL, 0, 0, 0, -1, 0, 1500);
         d->pickup(type);
         if(d==player1) switch(type)
         {
@@ -349,7 +349,7 @@ namespace entities
     void putitems(packetbuf &p)            // puts items in network stream and also spawns them locally
     {
         putint(p, N_ITEMLIST);
-        loopv(ents) if(ents[i]->type>=I_SHELLS && ents[i]->type<=I_QUAD && (ents[i]->type<I_SHELLS || ents[i]->type>I_CARTRIDGES))
+        loopv(ents) if(ents[i]->type>=AMMO_L1 && ents[i]->type<=I_QUAD && (ents[i]->type<AMMO_L1 || ents[i]->type>I_CARTRIDGES))
         {
             putint(p, i);
             putint(p, ents[i]->type);
@@ -362,9 +362,10 @@ namespace entities
     void spawnitems(bool force)
     {
 
-        loopv(ents) if(ents[i]->type>=I_SHELLS && ents[i]->type<=I_QUAD && ( ents[i]->type<I_SHELLS || ents[i]->type>I_CARTRIDGES))
+        //loopv(ents) if(ents[i]->type>=I_SHELLS && ents[i]->type<=I_QUAD && ( ents[i]->type<I_SHELLS || ents[i]->type>I_CARTRIDGES))
+        loopv(ents) if(ents[i]->type>=AMMO_L1 && ents[i]->type<=HEALTH_L3)
         {
-            ents[i]->spawned = force || !server::delayspawn(ents[i]->type);
+            ents[i]->spawned = force; //|| !server::delayspawn(ents[i]->type);
         }
     }
 
@@ -440,8 +441,9 @@ namespace entities
         static const char *entnames[] =
         {
             "none?", "light", "mapmodel", "playerstart", "envmap", "particles", "sound", "spotlight",
-            "shells", "bullets", "rockets", "riflerounds", "grenades", "cartridges",
-            "health", "healthboost", "greenarmour", "yellowarmour", "quaddamage",
+            //"shells", "bullets", "rockets", "riflerounds", "grenades", "cartridges",
+            //"health", "healthboost", "greenarmour", "yellowarmour", "quaddamage",
+			"AMMO_L1","AMMO_L2","AMMO_L3","HEALTH_L1","HEALTH_L2","HEALTH_L3",
             "teleport", "teledest",
             "monster", "carrot", "jumppad",
             "base", "respawnpoint",
